@@ -195,7 +195,7 @@ namespace tignear::tsf {
 			m_read_lock--;
 			m_write_lock--;
 		}
-		//コピーを阻止
+		//コピー不可
 		void operator =(const TextStoreLock& src) {}
 		TextStoreLock(const TextStoreLock& src) {}
 		tignear::stdex::shared_recursive_mutex m_lock;
