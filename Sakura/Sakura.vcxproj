@@ -183,7 +183,6 @@
     <ClInclude Include="TextStoreLock.h" />
     <ClInclude Include="TSFDWriteDrawer.h" />
     <ClInclude Include="D2DLineUtil.h" />
-    <ClInclude Include="TSFUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConsoleWindow.cpp" />

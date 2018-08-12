@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "FailToThrow.h"
 #include "ConsoleWindow.h"
-#include "TSFUtil.h"
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::dwrite::TextBuilder;
