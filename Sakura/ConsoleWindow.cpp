@@ -83,7 +83,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_SEMI_EXPANDED,
-		static_cast<FLOAT>(72),
+		static_cast<FLOAT>(16),
 		L"ja-jp");
 	FailToThrowHR(m_docmgr->Push(m_context.Get()));
 	SetTimer(m_hwnd, CallAsyncTimerId, 60u, NULL);
@@ -384,13 +384,13 @@ void ConsoleWindow::OnPaint() {
 			D2D1::ColorF(D2D1::ColorF::Red, 1.0f),
 			&red
 		);
-		ComPtr<ID2D1SolidColorBrush> black;
+		ComPtr<ID2D1SolidColorBrush> textColor;
 		t->CreateSolidColorBrush(
 			D2D1::ColorF(D2D1::ColorF::Black, 1.0f),
-			&black
+			&textColor
 		);
 
-		static auto clearColor = D2D1::ColorF(0xFEEEED, 1.0f);
+		static auto clearColor = D2D1::ColorF(D2D1::ColorF::LightPink, 1.0f);
 		ComPtr<ID2D1SolidColorBrush> clearColorBrush;
 		t->CreateSolidColorBrush(
 			clearColor,
@@ -469,10 +469,10 @@ void ConsoleWindow::OnPaint() {
 				//attrÇ…ëÆê´Ç™ì¸Ç¡ÇƒÇ¢ÇÈÇÃÇ≈ëÆê´Ç…äÓÇ√Ç¢Çƒï`âÊÇ≥ÇπÇÈ
 				ComPtr<TsfDWriteDrawerEffect> effect = new TsfDWriteDrawerEffect(
 					convertColor(attr.crBk, t, transparency.Get()).Get(),
-					convertColor(attr.crText, t, black.Get()).Get(),
+					convertColor(attr.crText, t, textColor.Get()).Get(),
 					attr.lsStyle == TF_LS_NONE ? std::unique_ptr<TsfDWriteDrawerEffectUnderline>() : std::make_unique<TsfDWriteDrawerEffectUnderline>(convertLineStyle(attr.lsStyle),
 					static_cast<bool>(attr.fBoldLine), 
-					convertColor(attr.crLine, t, black.Get()).Get())
+					convertColor(attr.crLine, t, textColor.Get()).Get())
 				);
 				ComPtr<ITfRangeACP> rangeAcp;
 				range.As(&rangeAcp);
@@ -494,7 +494,7 @@ void ConsoleWindow::OnPaint() {
 
 		ComPtr<TsfDWriteDrawerEffect> defaultEffect = new TsfDWriteDrawerEffect{
 			transparency.Get(), 
-			black.Get(),
+			textColor.Get(),
 			std::unique_ptr<TsfDWriteDrawerEffectUnderline>() 
 		};
 		auto context = std::make_unique<TsfDWriteDrawerContext>(t, defaultEffect.Get());
