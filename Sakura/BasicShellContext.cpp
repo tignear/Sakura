@@ -120,10 +120,15 @@ void BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	auto info = new IOCPInfo{
 		{},
 		[s](DWORD readCnt) {
-		wchar_t pwcs[BUFFER_SIZE];
+#ifdef UNICODE
+		wchar_t cs[BUFFER_SIZE];
 #pragma warning(disable:4996)
-		mbstowcs(pwcs, s->m_outbuf, BUFFER_SIZE);
-		s->AddString(pwcs);
+		mbstowcs(cs, s->m_outbuf, BUFFER_SIZE);
+#pragma warning(default:4996)
+#else
+		char* cs = s->m_outbuf;
+#endif
+		s->AddString(cs);
 		s->OutputWorker(s);
 	}
 	};

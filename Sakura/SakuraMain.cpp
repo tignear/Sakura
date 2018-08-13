@@ -5,6 +5,7 @@
 #include "ConsoleWindow.h"
 #include "IOCPMgr.h"
 #include "BasicShellContext.h"
+#include <selene.h>
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
@@ -121,6 +122,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	return r;
 }
 int Sakura::Run() {
+
 	ComPtr<ITfKeystrokeMgr> keyMgr;
 	ComPtr<ITfMessagePump> msgPump;
 
