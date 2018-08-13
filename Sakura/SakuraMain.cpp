@@ -3,7 +3,8 @@
 #include "FailToThrow.h"
 #include "SakuraMain.h"
 #include "ConsoleWindow.h"
-
+#include "IOCPMgr.h"
+#include "BasicShellContext.h"
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
@@ -14,7 +15,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	int nCmdShow)
 {
 	CoInitialize(NULL);
-
 	auto r= Sakura::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 	CoUninitialize();
 	return r;
