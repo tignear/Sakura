@@ -59,6 +59,7 @@ int Sakura::Main(HINSTANCE hInstance,
 {
 	appInstance = hInstance;
 	WNDCLASS wc;
+	setlocale(LC_CTYPE, "JPN");
 
 	wc.style = 0;
 	wc.lpfnWndProc = WndProc;

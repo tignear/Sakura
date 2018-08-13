@@ -48,49 +48,41 @@ bool BasicShellContext::Init(tstring cmdstr) {
 
 	in_pipename += _T(".");
 	in_pipename += str_process_cnt;
-		m_process_count++;
-		m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND| FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
-		if (m_out_pipe == INVALID_HANDLE_VALUE) {
-			auto le = GetLastError();
-			return false;
-		}
-		auto m_out_client_pipe = CreateFile(out_pipename.c_str(),
-			GENERIC_WRITE,
-			0,
-			&sa,
-			OPEN_EXISTING,
-			FILE_FLAG_OVERLAPPED,
-			NULL);
-
-		if (m_out_client_pipe == INVALID_HANDLE_VALUE) {
-			auto le = GetLastError();
-			return false;
-		}
-
-		m_in_pipe = CreateNamedPipe(in_pipename.c_str(), PIPE_ACCESS_OUTBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
-		if (m_in_pipe == INVALID_HANDLE_VALUE) {
-			auto le = GetLastError();
-			return false;
-		}
-		auto m_in_client_pipe = CreateFile(in_pipename.c_str(),
-			GENERIC_READ,
-			0,
-			&sa,
-			OPEN_EXISTING,
-			FILE_FLAG_OVERLAPPED,
-			NULL);
-		if (m_in_client_pipe == INVALID_HANDLE_VALUE) {
-			auto le = GetLastError();
-			return false;
-		}
-	
-
-	/*//      パイプの作成
-	HANDLE m_out_client_pipe;
-	if (CreatePipe(&m_out_pipe, &m_out_client_pipe, &sa, 0) == 0) {
-		MessageBox(0, _TEXT("パイプが作成できませんでした"), _TEXT("エラー"), MB_OK);
+	m_process_count++;
+	m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND| FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
+	if (m_out_pipe == INVALID_HANDLE_VALUE) {
+		auto le = GetLastError();
 		return false;
-	}*/	
+	}
+	auto m_out_client_pipe = CreateFile(out_pipename.c_str(),
+		GENERIC_WRITE,
+		0,
+		&sa,
+		OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED,
+		NULL);
+
+	if (m_out_client_pipe == INVALID_HANDLE_VALUE) {
+		auto le = GetLastError();
+		return false;
+	}
+
+	m_in_pipe = CreateNamedPipe(in_pipename.c_str(), PIPE_ACCESS_OUTBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
+	if (m_in_pipe == INVALID_HANDLE_VALUE) {
+		auto le = GetLastError();
+		return false;
+	}
+	auto m_in_client_pipe = CreateFile(in_pipename.c_str(),
+		GENERIC_READ,
+		0,
+		&sa,
+		OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED,
+		NULL);
+	if (m_in_client_pipe == INVALID_HANDLE_VALUE) {
+		auto le = GetLastError();
+		return false;
+	}
 	PROCESS_INFORMATION pi{};
 	STARTUPINFO si{};
 	si.cb = sizeof(si);
@@ -128,7 +120,6 @@ void BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	auto info = new IOCPInfo{
 		{},
 		[s](DWORD readCnt) {
-		setlocale(LC_CTYPE, "JPN");
 		wchar_t pwcs[BUFFER_SIZE];
 #pragma warning(disable:4996)
 		mbstowcs(pwcs, s->m_outbuf, BUFFER_SIZE);

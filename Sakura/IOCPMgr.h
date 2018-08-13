@@ -45,7 +45,6 @@ namespace tignear::sakura::iocp {
 					delete pol;
 					return 0;
 				}
-				else 
 				info = (IOCPInfo*)CONTAINING_RECORD(pol, IOCPInfo, overlapped);
 
 				// コンテキストに応じた処理
@@ -79,6 +78,7 @@ namespace tignear::sakura::iocp {
 			for (auto i = 0U; i < m_thread_count; i++) {
 				PostQueuedCompletionStatus(m_iocp, 0, COMPKEY_EXIT,new OVERLAPPED());
 			}
+			CloseHandle(m_iocp);
 		}
 		HANDLE Attach(HANDLE handle) {
 			if (CreateIoCompletionPort(handle, m_iocp, NULL, 0)==m_iocp ){
@@ -88,7 +88,6 @@ namespace tignear::sakura::iocp {
 		}
 	private:
 		HANDLE m_iocp;
-
 		unsigned int m_thread_count;
 		static constexpr ULONG_PTR COMPKEY_EXIT = 1307418660UL;
 	};
