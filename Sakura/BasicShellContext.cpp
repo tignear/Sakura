@@ -38,14 +38,13 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	auto str_process_cnt = std::to_wstring(m_process_count);
 #else
 	auto str_thread_id = std::to_string(GetCurrentThreadId());
-
 	auto str_process_cnt = std::to_string(m_process_count);
 #endif
 	out_pipename += str_thread_id;
 	out_pipename += _T(".");
 	out_pipename += str_process_cnt;
-	in_pipename += str_thread_id;
 
+	in_pipename += str_thread_id;
 	in_pipename += _T(".");
 	in_pipename += str_process_cnt;
 	m_process_count++;
@@ -89,7 +88,7 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	si.dwFlags = STARTF_USESTDHANDLES;
 	si.hStdOutput = m_out_client_pipe;
 	si.hStdError = m_out_client_pipe;
-	si.hStdInput = NULL;
+	si.hStdInput = m_in_client_pipe;
 	si.wShowWindow = SW_HIDE;
 	auto len = cmdstr.length();
 	auto cmd = std::make_unique<TCHAR[]>(len+1);

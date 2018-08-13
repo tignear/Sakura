@@ -81,10 +81,7 @@ namespace tignear::sakura::iocp {
 			CloseHandle(m_iocp);
 		}
 		HANDLE Attach(HANDLE handle) {
-			if (CreateIoCompletionPort(handle, m_iocp, NULL, 0)==m_iocp ){
-				return m_iocp;
-			}
-			return NULL;
+			return CreateIoCompletionPort(handle, m_iocp, NULL, 0);
 		}
 	private:
 		HANDLE m_iocp;
