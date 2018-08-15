@@ -4,7 +4,6 @@
 #include "SakuraMain.h"
 #include "ConsoleWindow.h"
 #include "IOCPMgr.h"
-#include "ConsoleContext.h"
 #include "BasicShellContext.h"
 #include <selene.h>
 using tignear::sakura::Sakura;

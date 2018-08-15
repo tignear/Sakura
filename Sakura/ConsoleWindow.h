@@ -10,7 +10,7 @@
 #include <queue>
 #include <wrl.h>
 #include <chrono>
-#include "ConsoleContext.h"
+#include "ShellContext.h"
 #include "Direct2D.h"
 #include "TextBuilder.h"
 #include "TextStoreLock.h"
