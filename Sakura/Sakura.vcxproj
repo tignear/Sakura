@@ -199,7 +199,6 @@
     <ClInclude Include="BasicAttributeText.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="ConsoleWindow.h" />
-    <ClInclude Include="ConsoleContext.h" />
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />
