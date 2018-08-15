@@ -402,8 +402,20 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
+		std::wstring ftext;
 
-		auto layout = m_tbuilder->CreateTextLayout(m_string, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
+		if (m_shell) {
+			auto text = m_shell->GetText();
+			for (LineText line : text) {
+				for (auto elem : line) {
+					ftext += elem.text;
+				}
+				ftext += L"\n";
+			}
+		}
+
+		ftext += m_string;
+		auto layout = m_tbuilder->CreateTextLayout(ftext, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
 
 		//draw caret
 		//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
@@ -500,12 +512,16 @@ void ConsoleWindow::OnPaint() {
 		auto context = std::make_unique<TsfDWriteDrawerContext>(t, defaultEffect.Get());
 
 		FailToThrowHR(layout->Draw(context.get(), m_drawer.Get(), 0, 0));
+
+
 		FailToThrowHR(t->EndDraw());
 
 		EndPaint(m_hwnd, &pstruct);
 	});
 }
-
+void ConsoleWindow::SetContext(std::shared_ptr<tignear::sakura::ShellContext> shell) {
+	m_shell = shell;
+}
 void ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, ConsoleWindow** pr) {
 	auto r = new ConsoleWindow();
 	r->AddRef();

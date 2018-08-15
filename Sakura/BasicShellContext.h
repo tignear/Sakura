@@ -13,11 +13,14 @@ namespace tignear::sakura {
 		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
 		HANDLE m_in_pipe;
+		HWND m_hwnd;
 		bool m_close;
-		bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
-		void OutputWorker(std::shared_ptr<BasicShellContext>);
-		void AddString(tignear::stdex::tstring);
-		tignear::stdex::tstring buffer;
+		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
+		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
+		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
+		void AddString(std::wstring);
+		std::list<LineText> m_text;
+		bool Init(stdex::tstring);
 		//out pipe temp
 		char m_outbuf[BUFFER_SIZE]{};
 	public:
@@ -28,7 +31,13 @@ namespace tignear::sakura {
 			CloseHandle(m_childProcess);
 		}
 		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>);
-		bool Init(stdex::tstring);
+		void InputChar(WPARAM c) override;
+		void InputKey(WPARAM keycode) override;
+		void InputString(std::wstring) override;
+		std::list<LineText> GetText()override;
+		
+		unsigned int GetCursorX() override;
+		unsigned int GetCursorY() override;
 	};
 
 }

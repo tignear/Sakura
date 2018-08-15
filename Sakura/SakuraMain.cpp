@@ -9,7 +9,7 @@
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
-
+using tignear::sakura::iocp::IOCPMgr;
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPTSTR lpCmdLine,
@@ -114,10 +114,36 @@ int Sakura::Main(HINSTANCE hInstance,
 
 
 	ConsoleWindow::Create(m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),&m_console);
+	auto iocpmgr = std::make_shared<IOCPMgr>();
+	std::shared_ptr<tignear::sakura::ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("cmd.exe"), iocpmgr);
+	//shell->InputString(L"dir");
+		//shell->InputString("dir\br\r\n");
+
+	//shell->InputKey();
+	//shell->InputKey(0x75);
+	//shell->InputString("i");
+	//shell->InputString("\t");
+	//shell->InputKey(3);
+	//shell->InputKey('\b');
+
+	//shell->InputString("\r\n");
+	m_console->SetContext(shell);
+	shell->InputChar(L'c');
+	shell->InputChar(L'd');
+	shell->InputChar(L' ');
+	shell->InputChar(L'c');
+	shell->InputChar(L':');
+	shell->InputChar(L'\\');
+	shell->InputChar(L'‚Ù');
+	shell->InputChar(L'‚°');
+	shell->InputChar(L'‚Ù');
+	shell->InputChar(L'‚°');
+	//shell->InputKey(VK_TAB);
+	shell->InputKey(VK_RETURN);
+	//shell->InputString("cd ../\r\n");
 	ShowWindow(m_sakura, TRUE);
 	UpdateWindow(m_sakura);
 	auto r= Run();
-
 	m_thread_mgr->Deactivate();
 	return r;
 }

@@ -10,6 +10,7 @@
 #include <queue>
 #include <wrl.h>
 #include <chrono>
+#include "ShellContext.h"
 #include "Direct2D.h"
 #include "TextBuilder.h"
 #include "TextStoreLock.h"
@@ -281,6 +282,7 @@ namespace tignear::sakura {
 		/*
 		original functions
 		*/
+		void SetContext(std::shared_ptr<ShellContext> shell);
 		void RequestAsyncLock(DWORD);
 		void PushAsyncCallQueue(bool write, std::function<void()>);
 		template <class R>
@@ -314,6 +316,7 @@ namespace tignear::sakura {
 		ULONG m_selection_start = 0;
 		ULONG m_selection_end = 0;
 		tignear::tsf::TextStoreLock m_lock;
+		std::shared_ptr<ShellContext> m_shell;
 	private:
 		bool m_composition;
 	};

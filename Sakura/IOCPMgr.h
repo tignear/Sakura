@@ -33,8 +33,7 @@ namespace tignear::sakura::iocp {
 					INFINITE);
 
 				if (!bRet) {
-					//‚ ‚è‚¦‚È‚¢
-					//std::terminate();
+					continue;
 				}
 
 				//

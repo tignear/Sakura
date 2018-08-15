@@ -1,11 +1,14 @@
 #include "stdafx.h"
 #include <future>
+#include "split.h"
 #include "BasicShellContext.h"
+#include "GetHwndFromPid.h"
 using namespace tignear::sakura;
 using namespace tignear::stdex;
 using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
+using tignear::win32::GetHwndFromProcess;
 shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr) {
 	auto r = make_shared<BasicShellContext>(iocpmgr);
 	if (r->Init(cmdstr))
@@ -24,7 +27,6 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 
 }
 bool BasicShellContext::Init(tstring cmdstr) {
-#pragma warning(disable:4189)
 
 	//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 	SECURITY_ATTRIBUTES sa;
@@ -32,7 +34,6 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = NULL;
 	tstring out_pipename = _T("\\\\.\\pipe\\tignear.sakura.BasicShellContext.out.");
-	tstring in_pipename = _T("\\\\.\\pipe\\tignear.sakura.BasicShellContext.in.");
 #ifdef UNICODE
 	auto str_thread_id = std::to_wstring(GetCurrentThreadId());
 	auto str_process_cnt = std::to_wstring(m_process_count);
@@ -44,16 +45,13 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	out_pipename += _T(".");
 	out_pipename += str_process_cnt;
 
-	in_pipename += str_thread_id;
-	in_pipename += _T(".");
-	in_pipename += str_process_cnt;
 	m_process_count++;
 	m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND| FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
 	if (m_out_pipe == INVALID_HANDLE_VALUE) {
-		auto le = GetLastError();
+		//auto le = GetLastError();
 		return false;
 	}
-	auto m_out_client_pipe = CreateFile(out_pipename.c_str(),
+	auto out_client_pipe = CreateFile(out_pipename.c_str(),
 		GENERIC_WRITE,
 		0,
 		&sa,
@@ -61,34 +59,16 @@ bool BasicShellContext::Init(tstring cmdstr) {
 		FILE_FLAG_OVERLAPPED,
 		NULL);
 
-	if (m_out_client_pipe == INVALID_HANDLE_VALUE) {
-		auto le = GetLastError();
-		return false;
-	}
-
-	m_in_pipe = CreateNamedPipe(in_pipename.c_str(), PIPE_ACCESS_OUTBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
-	if (m_in_pipe == INVALID_HANDLE_VALUE) {
-		auto le = GetLastError();
-		return false;
-	}
-	auto m_in_client_pipe = CreateFile(in_pipename.c_str(),
-		GENERIC_READ,
-		0,
-		&sa,
-		OPEN_EXISTING,
-		FILE_FLAG_OVERLAPPED,
-		NULL);
-	if (m_in_client_pipe == INVALID_HANDLE_VALUE) {
-		auto le = GetLastError();
+	if (out_client_pipe == INVALID_HANDLE_VALUE) {
 		return false;
 	}
 	PROCESS_INFORMATION pi{};
 	STARTUPINFO si{};
 	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdOutput = m_out_client_pipe;
-	si.hStdError = m_out_client_pipe;
-	si.hStdInput = m_in_client_pipe;
+	si.dwFlags = STARTF_USESTDHANDLES| STARTF_USESHOWWINDOW;
+	si.hStdOutput = out_client_pipe;
+	si.hStdError = out_client_pipe;
+	si.hStdInput = NULL;
 	si.wShowWindow = SW_HIDE;
 	auto len = cmdstr.length();
 	auto cmd = std::make_unique<TCHAR[]>(len+1);
@@ -97,53 +77,93 @@ bool BasicShellContext::Init(tstring cmdstr) {
 #pragma warning(default:4996)
 	m_iocpmgr->Attach(m_out_pipe);
 
-	if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, 0, NULL, NULL, &si, &pi)) {
+	if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, NULL, _T("C:\\users\\tignear"), &si, &pi)) {
 		auto le=GetLastError();
-		
+		OutputDebugStringW(std::to_wstring(le).c_str());
 		return false;
 	}
+	CloseHandle(out_client_pipe);
 	CloseHandle(pi.hThread);
 	m_childProcess = pi.hProcess;
+	Sleep(2000);
+	m_hwnd=GetHwndFromProcess(pi.dwProcessId);
 	return true;
 }
-void BasicShellContext::AddString(tstring str) {
-	buffer += str;
-	OutputDebugString(buffer.c_str());
-	OutputDebugString(_T("\n"));
-}
+
 bool BasicShellContext::IOWorkerStart(shared_ptr<BasicShellContext> s) {
-	OutputWorker(s);
-	return true;
+	return OutputWorker(s);
 }
-void BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
+bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	auto info = new IOCPInfo{
 		{},
 		[s](DWORD readCnt) {
-#ifdef UNICODE
-		wchar_t cs[BUFFER_SIZE];
-#pragma warning(disable:4996)
-		mbstowcs(cs, s->m_outbuf, BUFFER_SIZE);
-#pragma warning(default:4996)
-#else
-		char* cs = s->m_outbuf;
-#endif
-		s->AddString(cs);
-		s->OutputWorker(s);
-	}
+			s->OutputWorkerHelper(readCnt,s);
+		}
 	};
-
-	auto ol2 = new OVERLAPPED{};
+	memset(s->m_outbuf, 0, sizeof(s->m_outbuf));
+	//DWORD cnt;
 	if(!ReadFile(
 		s->m_out_pipe,
 		s->m_outbuf, 
-		BUFFER_SIZE*sizeof(char), 
+		BUFFER_SIZE-1, 
 		NULL,
 		&info->overlapped
 	)){
 		auto le = GetLastError();
-		return;
+		if (le != ERROR_IO_PENDING) {
+			return false;
+		}
 	}
-	OutputDebugStringA(m_outbuf);
+	return true;
+}
+bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
+	wchar_t cs[BUFFER_SIZE];
+#pragma warning(disable:4996)
+	mbstowcs(cs, s->m_outbuf, BUFFER_SIZE);
+#pragma warning(default:4996)
+	OutputDebugStringW(cs);
+	OutputDebugString(_T("\n"));
+	s->AddString(cs);
+	return s->OutputWorker(s); ;
+}
+void BasicShellContext::InputKey(WPARAM keycode) {
+	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
+	//PostMessage(m_hwnd, WM_KEYUP, keycode, 0);
+}
+void BasicShellContext::InputChar(WPARAM charcode) {
+	PostMessage(m_hwnd, WM_CHAR, charcode, 0);
+}
+void BasicShellContext::InputString(std::wstring wstr) {
+	for (auto c : wstr) {
+		PostMessage(m_hwnd, WM_CHAR, c,0);
+	}
+}
+std::list<LineText> BasicShellContext::GetText() {
+	return m_text;
+}
+void BasicShellContext::AddString(std::wstring str) {
+	auto r=tignear::stdex::split<wchar_t,std::vector < std::wstring>> (str, L"\n");
+	if (m_text.empty()) {
+		AttributeText at;
+		at.text = r[0];
+		m_text.push_back({at});
+		m_text.push_back({ {} });
+	}
+	else
+	{
+		m_text.back().back().text += r[0];
+		m_text.push_back({ {} });
+	}
+	for (auto i = 1U; i < r.size(); i++) {
+		m_text.back().back().text += r[i];
+		m_text.push_back({ {} });
+	}
+}
+unsigned int BasicShellContext::GetCursorX() {
+	return 0U;
+}
+unsigned int BasicShellContext::GetCursorY() {
+	return 0U;
 }
 //static fiels
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;
