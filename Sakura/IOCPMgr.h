@@ -36,10 +36,7 @@ namespace tignear::sakura::iocp {
 					continue;
 				}
 
-				//
-				// OVERLAPPED 構造体のアドレスから、その OVERLAPPED データを
-				// IOCPInfo へのポインタを取得する
-				//
+
 				if (COMPKEY_EXIT == uCompletionKey) {
 					delete pol;
 					return 0;

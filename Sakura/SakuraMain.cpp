@@ -141,7 +141,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	//shell->InputKey(VK_TAB);
 	shell->InputKey(VK_RETURN);
 	//shell->InputString("cd ../\r\n");
-	ShowWindow(m_sakura, TRUE);
+	ShowWindow(m_sakura, SW_SHOWDEFAULT);
 	UpdateWindow(m_sakura);
 	auto r= Run();
 	m_thread_mgr->Deactivate();
