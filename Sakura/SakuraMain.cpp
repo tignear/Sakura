@@ -4,8 +4,10 @@
 #include "SakuraMain.h"
 #include "ConsoleWindow.h"
 #include "IOCPMgr.h"
+#include "ConsoleContext.h"
 #include "BasicShellContext.h"
 #include <selene.h>
+using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
@@ -115,7 +117,7 @@ int Sakura::Main(HINSTANCE hInstance,
 
 	ConsoleWindow::Create(m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),&m_console);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<tignear::sakura::ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("cmd.exe"), iocpmgr);
+	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("cmd.exe"), iocpmgr);
 	//shell->InputString(L"dir");
 		//shell->InputString("dir\br\r\n");
 
@@ -127,7 +129,9 @@ int Sakura::Main(HINSTANCE hInstance,
 	//shell->InputKey('\b');
 
 	//shell->InputString("\r\n");
-	m_console->SetContext(shell);
+	auto console = std::make_shared<ConsoleWindow::ConsoleContext>(shell);
+
+	m_console->SetConsoleContext(console);
 	shell->InputChar(L'c');
 	shell->InputChar(L'd');
 	shell->InputChar(L' ');
@@ -136,6 +140,8 @@ int Sakura::Main(HINSTANCE hInstance,
 	shell->InputChar(L'\\');
 	shell->InputChar(L'‚Ù');
 	shell->InputChar(L'‚°');
+	shell->InputChar(L'‚Ù');
+	shell->InputChar(L'\b');
 	shell->InputChar(L'‚Ù');
 	shell->InputChar(L'‚°');
 	//shell->InputKey(VK_TAB);

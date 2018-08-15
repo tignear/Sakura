@@ -1,7 +1,8 @@
 #include "stdafx.h"
-#include <future>
+#include "strconv.h"
 #include "split.h"
 #include "BasicShellContext.h"
+#include "BasicAttributeText.h"
 #include "GetHwndFromPid.h"
 using namespace tignear::sakura;
 using namespace tignear::stdex;
@@ -27,6 +28,7 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 
 }
 bool BasicShellContext::Init(tstring cmdstr) {
+
 
 	//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 	SECURITY_ATTRIBUTES sa;
@@ -100,12 +102,12 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 			s->OutputWorkerHelper(readCnt,s);
 		}
 	};
-	memset(s->m_outbuf, 0, sizeof(s->m_outbuf));
+	s->m_outbuf.assign(BUFFER_SIZE, '\0');
 	//DWORD cnt;
 	if(!ReadFile(
 		s->m_out_pipe,
-		s->m_outbuf, 
-		BUFFER_SIZE-1, 
+		s->m_outbuf.data(), 
+		BUFFER_SIZE, 
 		NULL,
 		&info->overlapped
 	)){
@@ -117,53 +119,72 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	wchar_t cs[BUFFER_SIZE];
-#pragma warning(disable:4996)
-	mbstowcs(cs, s->m_outbuf, BUFFER_SIZE);
-#pragma warning(default:4996)
-	OutputDebugStringW(cs);
-	OutputDebugString(_T("\n"));
-	s->AddString(cs);
+	//OutputDebugStringA(s->m_outbuf.c_str());
+	s->AddString(cp_to_wide(s->m_outbuf.c_str(),932,static_cast<int>(cnt)));
 	return s->OutputWorker(s); ;
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
-	//PostMessage(m_hwnd, WM_KEYUP, keycode, 0);
+	
 }
 void BasicShellContext::InputChar(WPARAM charcode) {
 	PostMessage(m_hwnd, WM_CHAR, charcode, 0);
 }
-void BasicShellContext::InputString(std::wstring wstr) {
+void BasicShellContext::InputString(std::wstring_view wstr) {
 	for (auto c : wstr) {
 		PostMessage(m_hwnd, WM_CHAR, c,0);
 	}
 }
-std::list<LineText> BasicShellContext::GetText() {
+const std::list<std::list<AttributeText*>>& BasicShellContext::GetText() const{
 	return m_text;
 }
 void BasicShellContext::AddString(std::wstring str) {
-	auto r=tignear::stdex::split<wchar_t,std::vector < std::wstring>> (str, L"\n");
-	if (m_text.empty()) {
-		AttributeText at;
-		at.text = r[0];
-		m_text.push_back({at});
-		m_text.push_back({ {} });
+	using tignear::stdex::split;
+	//m_buffer.reserve(str.length());
+	auto r = split < wchar_t, std::list < std::wstring >>( str , L"\r\n");
+	auto temp = r.back();
+	r.pop_back();
+	for (auto e : r) {
+		m_buffer += e;
+		m_buffer += L"\r\n";
+		auto atext = dynamic_cast<BasicAttributeText*>(m_text.back().back());
+		atext->length(atext->length()+e.length() + 2);
+		m_text.push_back({new BasicAttributeText(m_buffer,atext->startIndex()+atext->length(),0)});
+		//OutputDebugStringW(e.c_str());
 	}
-	else
-	{
-		m_text.back().back().text += r[0];
-		m_text.push_back({ {} });
+	if (temp.empty()) {
+		auto atext = m_text.back().back();
+		m_text.push_back({ new BasicAttributeText(m_buffer,atext->startIndex()+atext->length(),0)});
 	}
-	for (auto i = 1U; i < r.size(); i++) {
-		m_text.back().back().text += r[i];
-		m_text.push_back({ {} });
+	else {
+		m_buffer += temp;
+		//OutputDebugStringW(m_buffer.c_str());
+
+		//m_buffer += L"\r\n";
+		auto atext = dynamic_cast<BasicAttributeText*>(m_text.back().back());
+		auto len = atext->length();
+		auto len2=temp.length();
+		atext->length(len+len2);
 	}
+	//OutputDebugStringW(str.c_str());
 }
-unsigned int BasicShellContext::GetCursorX() {
-	return 0U;
+unsigned int BasicShellContext::GetCursorX()const {
+	return m_cursorX;
 }
-unsigned int BasicShellContext::GetCursorY() {
-	return 0U;
+unsigned int BasicShellContext::GetCursorY()const {
+	return m_cursorY;
 }
+uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellContext*)> f) const{
+	auto key = reinterpret_cast<uintptr_t>(&f);
+	m_text_change_listeners[key]=f;
+	return key;
+}
+void BasicShellContext::RemoveTextChangeListener(uintptr_t key)const {
+	m_text_change_listeners.erase(key);
+}
+uintptr_t BasicShellContext::AddCursorChangeListener(std::function<void(ShellContext*)>)const {
+	return 0;
+}
+void BasicShellContext::RemoveCursorChangeListener(uintptr_t)const{}
 //static fiels
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

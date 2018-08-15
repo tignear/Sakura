@@ -167,8 +167,8 @@ HRESULT ConsoleWindow::GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_A
 		return E_INVALIDARG;
 	}
 
-	pSelection[0].acpStart = m_selection_start;
-	pSelection[0].acpEnd = m_selection_end;
+	pSelection[0].acpStart = SelectionStart();
+	pSelection[0].acpEnd = SelectionEnd();
 	pSelection[0].style.fInterimChar = m_interimChar;
 	if (m_interimChar)
 	{
@@ -176,7 +176,7 @@ HRESULT ConsoleWindow::GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_A
 	}
 	else
 	{
-		pSelection[0].style.ase = m_active_sel_end;
+		pSelection[0].style.ase = ActiveSelEnd();
 	}
 	*pcFetched = 1;
 	return S_OK;
@@ -202,10 +202,10 @@ HRESULT ConsoleWindow::SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSele
 	if (static_cast<size_t>(pSelection->acpEnd) > m_string.length()) {
 		return E_INVALIDARG;
 	}
-	m_selection_start = pSelection->acpStart;
-	m_selection_end = pSelection->acpEnd;
+	SelectionStart() = pSelection->acpStart;
+	SelectionEnd()=pSelection->acpEnd;
 	m_interimChar = pSelection->style.fInterimChar;
-	m_active_sel_end = pSelection->style.ase;
+	ActiveSelEnd()= pSelection->style.ase;
 
 	//UpdateText();
 	return S_OK;
@@ -282,8 +282,8 @@ HRESULT ConsoleWindow::SetText(
 	pChange->acpStart = acpStart;
 	pChange->acpOldEnd = acpEnd;
 	pChange->acpNewEnd = acpStart + cch;
-	m_selection_start = acpStart;
-	m_selection_end = acpStart + cch;
+	SelectionStart() = acpStart;
+	SelectionEnd()=acpStart + cch;
 	
 	//UpdateText();
 	return S_OK;
@@ -297,7 +297,7 @@ HRESULT ConsoleWindow::GetEndACP(
 	if (!m_lock.IsLock(false)) {
 		return TS_E_NOLOCK;
 	}
-	*pacp=static_cast<LONG>(m_selection_end);
+	*pacp=SelectionEnd();
 	return S_OK;
 }
 HRESULT ConsoleWindow::FindNextAttrTransition(LONG acpStart, LONG acpHalt, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags, LONG *pacpNext, BOOL *pfFound, LONG *plFoundOffset)
@@ -343,10 +343,10 @@ HRESULT ConsoleWindow::GetTextExt(
 	GetClientRect(m_hwnd, &rc);
 	auto layout=m_tbuilder->CreateTextLayout(m_string,static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
 	UINT32 count;
-	layout->HitTestTextRange(m_selection_start, m_selection_end - m_selection_start, 0, 0, NULL, 0, &count);
+	layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
 
 	auto mats=std::make_unique<DWRITE_HIT_TEST_METRICS[]>(count);
-	FailToThrowHR(layout->HitTestTextRange(m_selection_start, m_selection_end - m_selection_start, 0, 0, mats.get(), count, &count));
+	FailToThrowHR(layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, mats.get(), count, &count));
 	LONG left=LONG_MAX, top=LONG_MAX, right=0, bottom=0;
 	for (auto i = 0UL; i < count; i++)
 	{
@@ -393,13 +393,13 @@ HRESULT ConsoleWindow::_InsertTextAtSelection(
 	if (dwFlags & TS_IAS_QUERYONLY)
 	{
 
-		*pacpStart = m_selection_start;
-		*pacpEnd = m_selection_end;
+		*pacpStart = SelectionStart();
+		*pacpEnd = SelectionEnd();
 	}
 	else
 	{
-		LONG acpStart = m_selection_start;
-		LONG acpEnd = m_selection_end;
+		LONG acpStart = SelectionStart();
+		LONG acpEnd = SelectionEnd();
 		LONG length = acpEnd - acpStart;
 		if (length != 0) {
 			m_string.erase(acpStart, length);
@@ -427,9 +427,8 @@ HRESULT ConsoleWindow::_InsertTextAtSelection(
 			pChange->acpOldEnd = acpEnd;
 			pChange->acpNewEnd = acpStart + cch;
 		}
-		m_selection_start = acpStart;
-		m_selection_end = acpStart + cch;
-		
+		SelectionStart() = acpStart;
+		SelectionEnd()= acpStart + cch;
 	}
 	return S_OK;
 

@@ -10,7 +10,7 @@
 #include <queue>
 #include <wrl.h>
 #include <chrono>
-#include "ShellContext.h"
+#include "ConsoleContext.h"
 #include "Direct2D.h"
 #include "TextBuilder.h"
 #include "TextStoreLock.h"
@@ -53,6 +53,9 @@ namespace tignear::sakura {
 		void OnKeyDown(WPARAM);
 		void UpdateText();
 		void CaretUpdate();
+		LONG& SelectionStart();
+		LONG& SelectionEnd();
+		TsActiveSelEnd& ActiveSelEnd();
 		HRESULT _InsertTextAtSelection(
 			DWORD         dwFlags,
 			const WCHAR   *pchText,
@@ -62,6 +65,25 @@ namespace tignear::sakura {
 			TS_TEXTCHANGE *pChange
 		);
 	public:
+		class ConsoleContext {
+			friend class ConsoleWindow;
+		public:
+			ConsoleContext(std::shared_ptr<ShellContext> shell) :
+				shell(std::move(shell)),
+				inputarea_selection_start(0),
+				inputarea_selection_end(0),
+				selend(TS_AE_NONE),
+				allarea_selection_start(0),
+				allarea_selection_end(0)
+			{}
+		private:
+			std::shared_ptr<ShellContext> shell;
+			LONG inputarea_selection_start;
+			LONG inputarea_selection_end;
+			TsActiveSelEnd selend;
+			LONG allarea_selection_start;
+			LONG allarea_selection_end;
+		};
 		// void OnSize(ConsoleWindow*, LPARAM);
 
 		const static bool GetRegisterStatus()
@@ -282,7 +304,7 @@ namespace tignear::sakura {
 		/*
 		original functions
 		*/
-		void SetContext(std::shared_ptr<ShellContext> shell);
+		void SetConsoleContext(std::shared_ptr<ConsoleContext> console);
 		void RequestAsyncLock(DWORD);
 		void PushAsyncCallQueue(bool write, std::function<void()>);
 		template <class R>
@@ -312,11 +334,8 @@ namespace tignear::sakura {
 		ULONG m_ref_cnt = 0;
 		std::wstring m_string;
 		BOOL m_interimChar = false;
-		TsActiveSelEnd m_active_sel_end;
-		ULONG m_selection_start = 0;
-		ULONG m_selection_end = 0;
 		tignear::tsf::TextStoreLock m_lock;
-		std::shared_ptr<ShellContext> m_shell;
+		std::shared_ptr<ConsoleContext> m_console;
 	private:
 		bool m_composition;
 	};

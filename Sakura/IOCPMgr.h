@@ -16,7 +16,6 @@ namespace tignear::sakura::iocp {
 	private:
 
 		static unsigned int STDMETHODCALLTYPE WorkerThreadFunc(PVOID arg) {
-
 			IOCPInfo* info;
 			IOCPMgr* self = static_cast<IOCPMgr*>(arg);
 			LPOVERLAPPED pol = NULL;
