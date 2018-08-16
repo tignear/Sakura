@@ -46,6 +46,7 @@ namespace tignear::sakura {
 		void InputKey(WPARAM keycode) override;
 		void InputString(std::wstring_view) override;
 		const std::list<std::list<AttributeText*>>& GetText()const override;
+		std::wstring_view GetString()const override;
 		unsigned int GetCursorX()const override;
 		unsigned int GetCursorY()const override;
 		uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const override;

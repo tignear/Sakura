@@ -62,7 +62,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		PostQuitMessage(0);
 		break;
 	case WM_LBUTTONDOWN:
-		OutputDebugStringW(self->m_string.c_str());
+		OutputDebugStringW(self->InputtingString().c_str());
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -115,7 +115,7 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 	CallWithAppLock(true, [this, wc]()->void {
 		switch (wc) {
 		case 0x08://back space
-			if (!m_string.empty())
+			if (!InputtingString().empty())
 			{
 				if (SelectionStart() == SelectionEnd())
 				{
@@ -125,11 +125,11 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 					}
 					SelectionStart()--;
 					SelectionEnd()--;
-					m_string.erase(SelectionStart(), 1);
+					InputtingString().erase(SelectionStart(), 1);
 				}
 				else
 				{
-					m_string.erase(SelectionStart(), SelectionEnd() - SelectionStart());
+					InputtingString().erase(SelectionStart(), SelectionEnd() - SelectionStart());
 					SelectionEnd()=SelectionStart();
 					ActiveSelEnd()=TS_AE_NONE;
 				}
@@ -138,13 +138,13 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 		default:
 			if (SelectionStart() == SelectionEnd())
 			{
-				m_string.insert(m_string.begin() + SelectionStart(), wc);
+				InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
 				SelectionStart()++;
 				SelectionEnd()++;
 			}
 			else
 			{
-				m_string.replace(m_string.begin() + SelectionStart(), m_string.begin() + SelectionEnd(), 1, wc);
+				InputtingString().replace(InputtingString().begin() + SelectionStart(), InputtingString().begin() + SelectionEnd(), 1, wc);
 				SelectionStart()++;
 				SelectionEnd()=SelectionStart();
 				ActiveSelEnd()=TS_AE_NONE;
@@ -195,6 +195,12 @@ LONG& ConsoleWindow::SelectionEnd() {
 }
 TsActiveSelEnd& ConsoleWindow::ActiveSelEnd() {
 	return m_console->selend;
+}
+std::wstring& ConsoleWindow::InputtingString() {
+	return m_console->input_string;
+}
+bool& ConsoleWindow::InterimChar() {
+	return m_console->interim_char;
 }
 void ConsoleWindow::OnKeyDown(WPARAM param) {
 	CallWithAppLock(true, [this]() {
@@ -266,7 +272,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			{
 				if (SelectionStart() == SelectionEnd())
 				{
-					if (SelectionEnd() == m_string.length())
+					if (SelectionEnd() == InputtingString().length())
 					{
 						return;
 					}
@@ -277,7 +283,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				{
 					switch (ActiveSelEnd()) {
 					case TS_AE_NONE:
-						if (m_string.length() == SelectionEnd())
+						if (InputtingString().length() == SelectionEnd())
 						{
 							return;
 						}
@@ -285,7 +291,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 						ActiveSelEnd()=TS_AE_END;
 						break;
 					case TS_AE_END:
-						if (SelectionEnd() == m_string.length())
+						if (SelectionEnd() == InputtingString().length())
 						{
 							return;
 						}
@@ -307,7 +313,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					SelectionStart()=SelectionEnd();
 					ActiveSelEnd()=TS_AE_NONE;
 				}
-				else if (SelectionEnd() == m_string.length())
+				else if (SelectionEnd() == InputtingString().length())
 				{
 					return;
 				}
@@ -322,21 +328,21 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_DELETE)&0x80) {
-			if (m_string.empty())
+			if (InputtingString().empty())
 			{
 				return;
 			}
 			if (SelectionStart() == SelectionEnd())
 			{
-				if (SelectionEnd() == m_string.length())
+				if (SelectionEnd() == InputtingString().length())
 				{
 					return;
 				}
-				m_string.erase(SelectionStart(), 1);
+				InputtingString().erase(SelectionStart(), 1);
 			}
 			else
 			{
-				m_string.erase(SelectionStart(), SelectionEnd() - SelectionStart());
+				InputtingString().erase(SelectionStart(), SelectionEnd() - SelectionStart());
 				SelectionEnd()=SelectionStart();
 				ActiveSelEnd()=TS_AE_NONE;
 			}
@@ -412,20 +418,12 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
+		auto shellstr = m_console->shell->GetString();
+		auto lengthShell = static_cast<UINT32>(shellstr.length());
 		std::wstring ftext;
-
-		if (m_console) {
-			auto text = m_console->shell->GetText();
-			for (auto line : text) {
-				for (auto elem : line) {
-					ftext += elem->text();
-				}
-				//ftext += L"\r\n";
-			}
-		}
-		//ftext.erase(ftext.end()- 2, ftext.end());
-		auto lengthShell=static_cast<UINT32>(ftext.length());
-		ftext += m_string;
+		ftext.reserve(shellstr.length() + InputtingString().length());
+		ftext += shellstr;
+		ftext += InputtingString();
 		auto layout = m_tbuilder->CreateTextLayout(ftext, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
 
 		//draw caret

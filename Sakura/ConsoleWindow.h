@@ -17,7 +17,6 @@
 #include "TSFDWriteDrawer.h"
 namespace tignear::sakura {
 	class ConsoleWindow :ITextStoreACP, ITfContextOwnerCompositionSink {
-
 	private:
 		static constexpr UINT_PTR CallAsyncTimerId = 0x01;
 		static constexpr LPCTSTR className = _T("ConsoleWindow");
@@ -56,6 +55,8 @@ namespace tignear::sakura {
 		LONG& SelectionStart();
 		LONG& SelectionEnd();
 		TsActiveSelEnd& ActiveSelEnd();
+		std::wstring& InputtingString();
+		bool& InterimChar();
 		HRESULT _InsertTextAtSelection(
 			DWORD         dwFlags,
 			const WCHAR   *pchText,
@@ -83,6 +84,8 @@ namespace tignear::sakura {
 			TsActiveSelEnd selend;
 			LONG allarea_selection_start;
 			LONG allarea_selection_end;
+			std::wstring input_string;
+			bool interim_char;
 		};
 		// void OnSize(ConsoleWindow*, LPARAM);
 
@@ -332,11 +335,7 @@ namespace tignear::sakura {
 		Microsoft::WRL::ComPtr<ITextStoreACPSink> m_sink;
 		DWORD m_sinkmask = 0;
 		ULONG m_ref_cnt = 0;
-		std::wstring m_string;
-		BOOL m_interimChar = false;
 		tignear::tsf::TextStoreLock m_lock;
 		std::shared_ptr<ConsoleContext> m_console;
-	private:
-		bool m_composition;
 	};
 }

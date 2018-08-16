@@ -133,7 +133,7 @@ HRESULT ConsoleWindow::QueryInsert(
 
 	if (acpTestStart < 0
 		|| acpTestStart > acpTestEnd
-		|| acpTestEnd   > static_cast<LONG>(m_string.length()))
+		|| acpTestEnd   > static_cast<LONG>(InputtingString().length()))
 	{
 		return  E_INVALIDARG;
 	}
@@ -169,8 +169,8 @@ HRESULT ConsoleWindow::GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_A
 
 	pSelection[0].acpStart = SelectionStart();
 	pSelection[0].acpEnd = SelectionEnd();
-	pSelection[0].style.fInterimChar = m_interimChar;
-	if (m_interimChar)
+	pSelection[0].style.fInterimChar = InterimChar();
+	if (InterimChar())
 	{
 		pSelection[0].style.ase = TS_AE_NONE;
 	}
@@ -199,12 +199,12 @@ HRESULT ConsoleWindow::SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSele
 		return E_INVALIDARG;
 
 	}
-	if (static_cast<size_t>(pSelection->acpEnd) > m_string.length()) {
+	if (static_cast<size_t>(pSelection->acpEnd) > InputtingString().length()) {
 		return E_INVALIDARG;
 	}
 	SelectionStart() = pSelection->acpStart;
 	SelectionEnd()=pSelection->acpEnd;
-	m_interimChar = pSelection->style.fInterimChar;
+	InterimChar() = pSelection->style.fInterimChar;
 	ActiveSelEnd()= pSelection->style.ase;
 
 	//UpdateText();
@@ -233,13 +233,13 @@ HRESULT ConsoleWindow::GetText(
 	}
 
 	if (acpEnd == -1)
-		acpEnd = static_cast<LONG>(m_string.length());
+		acpEnd = static_cast<LONG>(InputtingString().length());
 
 	acpEnd = std::min(acpEnd, acpStart + (int)cchPlainReq);
 	if (acpStart != acpEnd) {
 #pragma warning(push)
 #pragma warning(disable:4996)
-		m_string.copy(pchPlain, acpEnd - acpStart, acpStart);
+		InputtingString().copy(pchPlain, acpEnd - acpStart, acpStart);
 #pragma warning(pop)
 	}
 
@@ -272,13 +272,13 @@ HRESULT ConsoleWindow::SetText(
 	OutputDebugString(_T("\n"));
 	LONG acpRemovingEnd;
 
-	if (acpStart > (LONG)m_string.length())
+	if (acpStart > (LONG)InputtingString().length())
 		return E_INVALIDARG;
 
-	acpRemovingEnd = std::min(acpEnd, (LONG)m_string.length());
+	acpRemovingEnd = std::min(acpEnd, (LONG)InputtingString().length());
 	OutputDebugStringW((L"erase count:"+std::to_wstring(acpRemovingEnd- acpStart) + L"\n").c_str());
-	m_string.erase(acpStart, acpRemovingEnd - acpStart);
-	m_string.insert(acpStart, pchText, cch);
+	InputtingString().erase(acpStart, acpRemovingEnd - acpStart);
+	InputtingString().insert(acpStart, pchText, cch);
 	pChange->acpStart = acpStart;
 	pChange->acpOldEnd = acpEnd;
 	pChange->acpNewEnd = acpStart + cch;
@@ -341,7 +341,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	}
 	RECT rc;
 	GetClientRect(m_hwnd, &rc);
-	auto layout=m_tbuilder->CreateTextLayout(m_string,static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
+	auto layout=m_tbuilder->CreateTextLayout(InputtingString(),static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
 	UINT32 count;
 	layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
 
@@ -402,12 +402,12 @@ HRESULT ConsoleWindow::_InsertTextAtSelection(
 		LONG acpEnd = SelectionEnd();
 		LONG length = acpEnd - acpStart;
 		if (length != 0) {
-			m_string.erase(acpStart, length);
+			InputtingString().erase(acpStart, length);
 			acpStart -= length;
 			acpEnd -= length;
 		}
 		if (!pchText) {
-			m_string.insert(acpStart, pchText, cch);
+			InputtingString().insert(acpStart, pchText, cch);
 		}
 
 
