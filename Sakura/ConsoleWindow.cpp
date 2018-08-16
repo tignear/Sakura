@@ -45,6 +45,9 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		break;
 	case WM_KEYDOWN:
 		self->OnKeyDown(wParam);
+		if (lParam & 0x8000) {
+			OutputDebugString(_T("Ext101"));
+		}
 		break;
 	case WM_CHAR:
 		self->OnChar(wParam);
@@ -62,7 +65,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		PostQuitMessage(0);
 		break;
 	case WM_LBUTTONDOWN:
-		OutputDebugStringW(self->m_string.c_str());
+		OutputDebugStringW(self->InputtingString().c_str());
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -74,6 +77,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 	FailToThrowHR(m_threadmgr->CreateDocumentMgr(&m_docmgr));
 	FailToThrowHR(m_docmgr->CreateContext(m_clientId, 0, dynamic_cast<ITextStoreACP*>(this), &m_context, &m_edit_cookie));
 	FailToThrowHR(m_context->GetProperty(GUID_PROP_ATTRIBUTE, &m_attr_prop));
+	FailToThrowHR(m_context->GetProperty(GUID_PROP_COMPOSING, &m_composition_prop));
 	FailToThrowB(RegisterConsoleWindowClass(m_hinst));
 	m_hwnd = CreateWindowEx(0, className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, m_parentHwnd, m, m_hinst, this);
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_hwnd);
@@ -106,6 +110,8 @@ void ConsoleWindow::OnSize() {
 
 }
 void ConsoleWindow::OnChar(WPARAM wp) {
+	m_console->shell->InputChar(wp);
+
 	TCHAR c = static_cast<TCHAR>(wp);
 #ifdef UNICODE
 	wchar_t wc = c;
@@ -114,42 +120,23 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 #endif
 	CallWithAppLock(true, [this, wc]()->void {
 		switch (wc) {
-		case 0x08://back space
-			if (!m_string.empty())
-			{
-				if (m_selection_start == m_selection_end)
-				{
-					if (m_selection_start == 0)
-					{
-						return;
-					}
-					m_selection_start--;
-					m_selection_end--;
-					m_string.erase(m_selection_start, 1);
-				}
-				else
-				{
-					m_string.erase(m_selection_start, m_selection_end - m_selection_start);
-					m_selection_end = m_selection_start;
-					m_active_sel_end = TS_AE_NONE;
-				}
-			}
-			break;
+		case '\b'://back space
+		case VK_RETURN:
+			return;
 		default:
-			if (m_selection_start != m_selection_end)
+			if (SelectionStart() == SelectionEnd())
 			{
-				m_string.replace(m_string.begin() + m_selection_start, m_string.begin() + m_selection_end, 1, wc);
-				m_selection_start++;
-				m_selection_end = m_selection_start;
-				m_active_sel_end = TS_AE_NONE;
+				InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
+				SelectionStart()++;
+				SelectionEnd()++;
 			}
 			else
 			{
-				m_string.insert(m_string.begin() + m_selection_start, wc);
-				m_selection_end++;
-				m_selection_start++;
+				InputtingString().replace(InputtingString().begin() + SelectionStart(), InputtingString().begin() + SelectionEnd(), 1, wc);
+				SelectionStart()++;
+				SelectionEnd()=SelectionStart();
+				ActiveSelEnd()=TS_AE_NONE;
 			}
-
 		}
 		m_sink->OnSelectionChange();
 		UpdateText();
@@ -163,7 +150,7 @@ void ConsoleWindow::CaretUpdate()
 {
 	PushAsyncCallQueue(false, [this]() {
 		using namespace std::chrono;
-		if (m_selection_start != m_selection_end)
+		if (SelectionStart() != SelectionEnd())
 		{
 			if (m_caret_display)
 			{
@@ -187,44 +174,60 @@ void ConsoleWindow::CaretUpdate()
 		}
 	});
 }
+LONG& ConsoleWindow::SelectionStart() {
+	return m_console->inputarea_selection_start;
+}
+LONG& ConsoleWindow::SelectionEnd() {
+	return m_console->inputarea_selection_end;
+}
+TsActiveSelEnd& ConsoleWindow::ActiveSelEnd() {
+	return m_console->selend;
+}
+std::wstring& ConsoleWindow::InputtingString() {
+	return m_console->input_string;
+}
+bool& ConsoleWindow::InterimChar() {
+	return m_console->interim_char;
+}
 void ConsoleWindow::OnKeyDown(WPARAM param) {
-	CallWithAppLock(true, [this]() {
+
+	CallWithAppLock(true, [this,param]() {
 		if (GetKeyState(VK_LEFT) & 0x80) 
 		{
 			if (GetKeyState(VK_SHIFT) & 0x80)
 			{
-				if (m_selection_start == m_selection_end)
+				if (SelectionStart() == SelectionEnd())
 				{
-					if (m_selection_start == 0)
+					if (SelectionStart() == 0)
 					{
 						return;
 					}
-					m_selection_start--;
-					m_active_sel_end = TS_AE_START;
+					SelectionStart()--;
+					ActiveSelEnd()= TS_AE_START;
 				}
 				else
 				{
-					switch (m_active_sel_end) {
+					switch (ActiveSelEnd()) {
 					case TS_AE_NONE:
-						if (m_selection_start == 0)
+						if (SelectionStart() == 0)
 						{
 							return;
 						}
-						m_selection_start--;
-						m_active_sel_end = TS_AE_START;
+						SelectionStart() -- ;
+						ActiveSelEnd()=TS_AE_START;
 						break;
 					case TS_AE_START:
-						if (m_selection_start == 0)
+						if (SelectionStart() == 0)
 						{
 							return;
 						}
-						m_selection_start--;
+						SelectionStart()--;
 						break;
 					case TS_AE_END:
-						m_selection_end--;
-						if (m_selection_start == m_selection_end)
+						SelectionEnd()--;
+						if (SelectionStart() == SelectionEnd())
 						{
-							m_active_sel_end = TS_AE_NONE;
+							ActiveSelEnd()= TS_AE_NONE;
 						}
 						break;
 					}
@@ -232,19 +235,24 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			}
 			else
 			{
-				if (m_selection_start != m_selection_end) 
+				if (SelectionStart() != SelectionEnd()) 
 				{
-					m_selection_end = m_selection_start;
-					m_active_sel_end = TS_AE_NONE;
+					auto cnt = SelectionEnd() - SelectionStart();
+					if (ActiveSelEnd() == TS_AE_START) {
+						m_console->shell->InputKey(VK_LEFT, cnt);
+					}
+					SelectionEnd()=SelectionStart();
+					ActiveSelEnd()=TS_AE_NONE;
 				}
-				else if (m_selection_start == 0 || m_selection_end == 0)
+				else if (SelectionStart() == 0 || SelectionEnd() == 0)
 				{
 					return;
 				}
 				else
 				{
-					m_selection_start--;
-					m_selection_end--;
+					SelectionStart()--;
+					SelectionEnd() --;
+					m_console->shell->InputKey(VK_LEFT);
 				}
 			}
 			m_sink->OnSelectionChange();
@@ -255,89 +263,149 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 		{
 			if (GetKeyState(VK_SHIFT) & 0x80) 
 			{
-				if (m_selection_start == m_selection_end)
+				if (SelectionStart() == SelectionEnd())
 				{
-					if (m_selection_end == m_string.length())
+					if (SelectionEnd() == InputtingString().length())
 					{
 						return;
 					}
-					m_selection_end++;
-					m_active_sel_end = TS_AE_END;
+					SelectionEnd()++;
+					ActiveSelEnd()=TS_AE_END;
 				}
 				else
 				{
-					switch (m_active_sel_end) {
+					switch (ActiveSelEnd()) {
 					case TS_AE_NONE:
-						if (m_string.length() == m_selection_end) 
+						if (InputtingString().length() == SelectionEnd())
 						{
 							return;
 						}
-						m_selection_end++;
-						m_active_sel_end = TS_AE_END;
+						SelectionEnd()++;
+						ActiveSelEnd()=TS_AE_END;
 						break;
 					case TS_AE_END:
-						if (m_selection_end == m_string.length()) 
+						if (SelectionEnd() == InputtingString().length())
 						{
 							return;
 						}
-						m_selection_end++;
+						SelectionEnd()++;
 						break;
 					case TS_AE_START:
-						m_selection_start++;
-						if (m_selection_start == m_selection_end)
+						SelectionStart()++;
+						if (SelectionStart() == SelectionEnd())
 						{
-							m_active_sel_end = TS_AE_NONE;
+							ActiveSelEnd()=TS_AE_NONE;
 						}
 					}
 				}
 			}
 			else
 			{
-				if (m_selection_start != m_selection_end)
+				if (SelectionStart() != SelectionEnd())
 				{
-					m_selection_start = m_selection_end;
-					m_active_sel_end = TS_AE_NONE;
+					auto cnt = SelectionEnd() - SelectionStart();
+					if (ActiveSelEnd() == TS_AE_END) {
+						m_console->shell->InputKey(VK_RIGHT,cnt);
+					}
+					SelectionStart()=SelectionEnd();
+					ActiveSelEnd()=TS_AE_NONE;
+					//do not send key
 				}
-				else if (m_selection_end == m_string.length())
+				else if (SelectionEnd() == InputtingString().length())
 				{
+					//do not send key
 					return;
 				}
 				else
 				{
-					m_selection_start++;
-					m_selection_end++;
+					SelectionStart() ++; 
+					SelectionEnd() ++;
+					m_console->shell->InputKey(VK_RIGHT);
 				}
 			}
 			m_sink->OnSelectionChange();
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_DELETE)&0x80) {
-			if (m_string.empty())
+			if (InputtingString().empty())
 			{
 				return;
 			}
-			if (m_selection_start == m_selection_end)
+			if (SelectionStart() == SelectionEnd())
 			{
-				if (m_selection_end == m_string.length())
+				if (SelectionEnd() == InputtingString().length())
 				{
 					return;
 				}
-				m_string.erase(m_selection_start, 1);
+				InputtingString().erase(SelectionStart(), 1);
+				m_console->shell->InputKey(VK_RIGHT);
+				m_console->shell->InputKey(VK_BACK);
 			}
 			else
 			{
-				m_string.erase(m_selection_start, m_selection_end - m_selection_start);
-				m_selection_end = m_selection_start;
-				m_active_sel_end = TS_AE_NONE;
+				auto cnt = SelectionEnd() - SelectionStart();
+				InputtingString().erase(SelectionStart(), cnt);
+				if (ActiveSelEnd() == TS_AE_END) {
+					m_console->shell->InputKey(VK_RIGHT, cnt);
+				}
+				m_console->shell->InputKey(VK_BACK,cnt);
+
+				SelectionEnd()=SelectionStart();
+				ActiveSelEnd()=TS_AE_NONE;
 			}
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
+		else if (GetKeyState(VK_BACK) & 0x80) {
+			if (!InputtingString().empty())
+			{
+				if (SelectionStart() == SelectionEnd())
+				{
+					if (SelectionStart() == 0)
+					{
+						return;
+					}
+					SelectionStart()--;
+					SelectionEnd()--;
+					InputtingString().erase(SelectionStart(), 1);
+					m_console->shell->InputKey(VK_BACK);
+				}
+				else
+				{
+					auto cnt = SelectionEnd() - SelectionStart();
+					InputtingString().erase(SelectionStart(), cnt);
+					SelectionEnd() = SelectionStart();
+					if (ActiveSelEnd() == TS_AE_END) {
+						m_console->shell->InputKey(VK_RIGHT, cnt);
+					}
+					m_console->shell->InputKey(VK_BACK, cnt);
+					ActiveSelEnd() = TS_AE_NONE;
+				}
+			}
+		}
+		else if (GetKeyState(VK_RETURN)&0x80) {
+			InputtingString() += L'\n';
+			ConfirmCommand();
+			m_console->shell->InputKey(VK_RETURN);
+		}
+		else {
+			m_console->shell->InputKey(param);
+		}
 	});
+}
+void ConsoleWindow::ConfirmCommand() {
+	m_console->shell->ConfirmString(InputtingString());
+	SelectionStart() = 0;
+	SelectionEnd() = 0;
+	auto oldEnd = static_cast<LONG>(InputtingString().length());
+	InputtingString().clear();
+	TS_TEXTCHANGE change{ 0,oldEnd,0 };
+	m_sink->OnTextChange(0, &change);
 }
 void ConsoleWindow::UpdateText() {
 	InvalidateRect(m_hwnd, NULL, FALSE);
 	//OutputDebugStringW((std::wstring(L"length:")+std::to_wstring(m_string.length())+std::wstring(L",acpStart:")+std::to_wstring(m_selection_start)+ std::wstring(L",acpend:") + std::to_wstring(m_selection_end)+std::wstring(L",inherim:")+std::to_wstring(m_InterimChar)+L"\n").c_str());
 }
+
 static constexpr const inline LineStyle convertLineStyle(TF_DA_LINESTYLE ls) {
 	switch (ls) {
 	case TF_LS_SOLID:
@@ -402,8 +470,13 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
-
-		auto layout = m_tbuilder->CreateTextLayout(m_string, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
+		auto shellstr = m_console->shell->GetString();
+		auto lengthShell = static_cast<UINT32>(shellstr.length());
+		std::wstring ftext;
+		ftext.reserve(shellstr.length() + InputtingString().length());
+		ftext += shellstr;
+		ftext += InputtingString();
+		auto layout = m_tbuilder->CreateTextLayout(ftext, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
 
 		//draw caret
 		//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
@@ -412,7 +485,7 @@ void ConsoleWindow::OnPaint() {
 			bool isTrailingHit = false;
 			float caretX, caretY;
 			FailToThrowHR(layout->HitTestTextPosition(
-				m_selection_start,
+				lengthShell+SelectionStart(),
 				isTrailingHit,
 				&caretX,
 				&caretY,
@@ -429,13 +502,13 @@ void ConsoleWindow::OnPaint() {
 				hitTestMetrics.top + hitTestMetrics.height
 				}, red.Get());
 		}
-		else if (m_selection_start != m_selection_end)
+		else if (SelectionStart() != SelectionEnd())
 		{
 			UINT32 count;
-			layout->HitTestTextRange(m_selection_start, m_selection_end - m_selection_start, 0, 0, NULL, 0, &count);
+			layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
 
 			std::unique_ptr<DWRITE_HIT_TEST_METRICS[]> mats(new DWRITE_HIT_TEST_METRICS[count]);
-			FailToThrowHR(layout->HitTestTextRange(m_selection_start, m_selection_end - m_selection_start, 0, 0, mats.get(), count, &count));
+			FailToThrowHR(layout->HitTestTextRange(lengthShell+SelectionStart(), SelectionEnd() -SelectionStart(), 0, 0, mats.get(), count, &count));
 
 			for (auto i = 0UL; i < count; i++) 
 			{
@@ -480,7 +553,7 @@ void ConsoleWindow::OnPaint() {
 				if (FAILED(rangeAcp->GetExtent(&start, &length))) {
 					continue;
 				}
-				DWRITE_TEXT_RANGE write_range{ static_cast<UINT32>(start), static_cast<UINT32>(length) };
+				DWRITE_TEXT_RANGE write_range{ static_cast<UINT32>(start+lengthShell), static_cast<UINT32>(length) };
 				layout->SetDrawingEffect(effect.Get(), write_range);
 				layout->SetUnderline(effect->underline ? TRUE : FALSE, write_range);
 				VariantClear(&var);
@@ -500,12 +573,16 @@ void ConsoleWindow::OnPaint() {
 		auto context = std::make_unique<TsfDWriteDrawerContext>(t, defaultEffect.Get());
 
 		FailToThrowHR(layout->Draw(context.get(), m_drawer.Get(), 0, 0));
+
+
 		FailToThrowHR(t->EndDraw());
 
 		EndPaint(m_hwnd, &pstruct);
 	});
 }
-
+void ConsoleWindow::SetConsoleContext(std::shared_ptr<ConsoleContext> console) {
+	m_console = console;
+}
 void ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, ConsoleWindow** pr) {
 	auto r = new ConsoleWindow();
 	r->AddRef();
@@ -515,8 +592,6 @@ void ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int 
 	r->m_clientId = cid;
 	r->m_category_mgr = cate_mgr;
 	r->m_attribute_mgr = attr_mgr;
-	r->m_selection_start = 0;
-	r->m_selection_end = 0;
 	r->m_caret_update_time = std::chrono::steady_clock::now();
 	r->Init(x, y, w, h, hmenu, d2d_f, dwrite_f);
 	*pr = r;

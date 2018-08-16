@@ -16,7 +16,6 @@ namespace tignear::sakura::iocp {
 	private:
 
 		static unsigned int STDMETHODCALLTYPE WorkerThreadFunc(PVOID arg) {
-
 			IOCPInfo* info;
 			IOCPMgr* self = static_cast<IOCPMgr*>(arg);
 			LPOVERLAPPED pol = NULL;
@@ -33,19 +32,14 @@ namespace tignear::sakura::iocp {
 					INFINITE);
 
 				if (!bRet) {
-					//ありえない
-					//std::terminate();
+					continue;
 				}
 
-				//
-				// OVERLAPPED 構造体のアドレスから、その OVERLAPPED データを
-				// IOCPInfo へのポインタを取得する
-				//
+
 				if (COMPKEY_EXIT == uCompletionKey) {
 					delete pol;
 					return 0;
 				}
-				else 
 				info = (IOCPInfo*)CONTAINING_RECORD(pol, IOCPInfo, overlapped);
 
 				// コンテキストに応じた処理
@@ -79,16 +73,13 @@ namespace tignear::sakura::iocp {
 			for (auto i = 0U; i < m_thread_count; i++) {
 				PostQueuedCompletionStatus(m_iocp, 0, COMPKEY_EXIT,new OVERLAPPED());
 			}
+			CloseHandle(m_iocp);
 		}
 		HANDLE Attach(HANDLE handle) {
-			if (CreateIoCompletionPort(handle, m_iocp, NULL, 0)==m_iocp ){
-				return m_iocp;
-			}
-			return NULL;
+			return CreateIoCompletionPort(handle, m_iocp, NULL, 0);
 		}
 	private:
 		HANDLE m_iocp;
-
 		unsigned int m_thread_count;
 		static constexpr ULONG_PTR COMPKEY_EXIT = 1307418660UL;
 	};

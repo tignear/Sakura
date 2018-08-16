@@ -2,19 +2,17 @@
 #include <d2d1.h>
 #include <wrl.h>
 #include <functional>
-namespace {
-	using Microsoft::WRL::ComPtr;
-}
+
 namespace tignear::d2d {
 	class Line {
-		ComPtr<ID2D1Factory> m_d2d_factory;
-		ComPtr<ID2D1StrokeStyle> m_dot_style;
-		ComPtr<ID2D1StrokeStyle> m_dash_style;
+		Microsoft::WRL::ComPtr<ID2D1Factory> m_d2d_factory;
+		Microsoft::WRL::ComPtr<ID2D1StrokeStyle> m_dot_style;
+		Microsoft::WRL::ComPtr<ID2D1StrokeStyle> m_dash_style;
 	private:
 
 
 	public:
-		Line(ComPtr<ID2D1Factory> f):m_d2d_factory(f) {}
+		Line(Microsoft::WRL::ComPtr<ID2D1Factory> f):m_d2d_factory(f) {}
 		/*
 		solid
 		*/

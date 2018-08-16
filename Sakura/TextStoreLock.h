@@ -7,7 +7,7 @@ namespace tignear::tsf {
 	class TextStoreLock {
 	public:
 		TextStoreLock() {}
-		const bool IsLock(bool write) {
+		bool IsLock(bool write) const{
 			if (write) {
 				return m_ts_write_lock;
 			}

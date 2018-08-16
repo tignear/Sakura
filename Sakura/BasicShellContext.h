@@ -1,8 +1,10 @@
 #pragma once
 #include <memory>
+#include <unordered_map>
 #include <atomic>
 #include "IOCPMgr.h"
 #include "ShellContext.h"
+#include "BasicAttributeText.h"
 #include "tstring.h"
 namespace tignear::sakura {
 	class BasicShellContext:public ShellContext {
@@ -13,22 +15,47 @@ namespace tignear::sakura {
 		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
 		HANDLE m_in_pipe;
+		HWND m_hwnd;
 		bool m_close;
-		bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
-		void OutputWorker(std::shared_ptr<BasicShellContext>);
-		void AddString(tignear::stdex::tstring);
-		tignear::stdex::tstring buffer;
+		unsigned int m_cursorX, m_cursorY;
+		mutable std::unordered_map<std::uintptr_t,std::function<void(ShellContext*)>> m_text_change_listeners;
+		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
+		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
+		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
+		void AddString(std::wstring_view);
+		std::wstring m_buffer;
+		std::list<std::list<AttributeText*>> m_text;
+		bool Init(stdex::tstring);
 		//out pipe temp
-		char m_outbuf[BUFFER_SIZE]{};
+		std::string m_outbuf;
 	public:
-		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr) :m_close(false),m_iocpmgr(iocpmgr) {}
+		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr):
+			m_close(false), 
+			m_iocpmgr(iocpmgr),
+			m_outbuf(BUFFER_SIZE, '\0'),
+			m_text({ { new BasicAttributeText(m_buffer,0,0) } }),
+			m_cursorX(0),
+			m_cursorY(0){}
 		~BasicShellContext() {
 			CloseHandle(m_out_pipe);
 			CloseHandle(m_in_pipe);
 			CloseHandle(m_childProcess);
 		}
 		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>);
-		bool Init(stdex::tstring);
+		void InputChar(WPARAM c) override;
+		void InputKey(WPARAM keycode) override;
+		void InputKey(WPARAM keycode, unsigned int count) override;
+
+		void InputString(std::wstring_view) override;
+		void ConfirmString(std::wstring_view) override;
+		const std::list<std::list<AttributeText*>>& GetText()const override;
+		std::wstring_view GetString()const override;
+		unsigned int GetCursorX()const override;
+		unsigned int GetCursorY()const override;
+		uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const override;
+		void RemoveTextChangeListener(uintptr_t)const override;
+		uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const override;
+		void RemoveCursorChangeListener(uintptr_t)const override;
 	};
 
 }

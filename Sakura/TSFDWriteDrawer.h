@@ -13,12 +13,12 @@ namespace tignear::tsf {
 	struct TsfDWriteDrawerEffectUnderline {
 		const LineStyle lineStyle;
 		const bool boldLine;
-		const ComPtr<ID2D1Brush> lineColor;
+		const Microsoft::WRL::ComPtr<ID2D1Brush> lineColor;
 		TsfDWriteDrawerEffectUnderline(const LineStyle ls,const bool bold, ID2D1Brush* b):lineStyle(ls),boldLine(bold),lineColor(b) {}
 	};
 	struct TsfDWriteDrawerEffect :IUnknown {
-		const ComPtr<ID2D1Brush> backgroundColor;
-		const ComPtr<ID2D1Brush> textColor;
+		const Microsoft::WRL::ComPtr<ID2D1Brush> backgroundColor;
+		const Microsoft::WRL::ComPtr<ID2D1Brush> textColor;
 		std::unique_ptr<TsfDWriteDrawerEffectUnderline> underline;
 		TsfDWriteDrawerEffect(ID2D1Brush* bg, ID2D1Brush* fr, std::unique_ptr<TsfDWriteDrawerEffectUnderline> under) :backgroundColor(bg), textColor(fr), underline(std::move(under)), m_ref_cnt(0) {}
 		// IUnknown methods
@@ -32,7 +32,7 @@ namespace tignear::tsf {
 	struct TsfDWriteDrawerContext
 	{
 		ID2D1RenderTarget* renderTarget;
-		ComPtr<TsfDWriteDrawerEffect> dafaultEffect;
+		Microsoft::WRL::ComPtr<TsfDWriteDrawerEffect> dafaultEffect;
 		TsfDWriteDrawerContext(ID2D1RenderTarget* t, TsfDWriteDrawerEffect* e) :renderTarget(t), dafaultEffect(e) {}
 	};
 	class TsfDWriteDrawer:public IDWriteTextRenderer {

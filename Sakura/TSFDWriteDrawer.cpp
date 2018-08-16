@@ -195,9 +195,9 @@ HRESULT TsfDWriteDrawer::DrawUnderline(
 			}
 			else
 			{
-				ComPtr<ID2D1PathGeometry> pathGeometry;
+				Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
 				FailToThrowHR(m_factory->CreatePathGeometry(&pathGeometry));
-				ComPtr<ID2D1GeometrySink> geometrySink;
+				Microsoft::WRL::ComPtr<ID2D1GeometrySink> geometrySink;
 				FailToThrowHR(pathGeometry->Open(&geometrySink));
 				float amplitude = 1 * underline->thickness;
 				float period = 5 * underline->thickness;

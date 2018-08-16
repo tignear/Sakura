@@ -10,13 +10,36 @@
 #include <queue>
 #include <wrl.h>
 #include <chrono>
+#include "ShellContext.h"
 #include "Direct2D.h"
 #include "TextBuilder.h"
 #include "TextStoreLock.h"
 #include "TSFDWriteDrawer.h"
 namespace tignear::sakura {
 	class ConsoleWindow :ITextStoreACP, ITfContextOwnerCompositionSink {
-
+	public:
+	public:
+		class ConsoleContext {
+			friend class ConsoleWindow;
+		public:
+			ConsoleContext(std::shared_ptr<ShellContext> shell) :
+				shell(std::move(shell)),
+				inputarea_selection_start(0),
+				inputarea_selection_end(0),
+				selend(TS_AE_NONE),
+				allarea_selection_start(0),
+				allarea_selection_end(0)
+			{}
+		private:
+			std::shared_ptr<ShellContext> shell;
+			LONG inputarea_selection_start;
+			LONG inputarea_selection_end;
+			TsActiveSelEnd selend;
+			LONG allarea_selection_start;
+			LONG allarea_selection_end;
+			std::wstring input_string;
+			bool interim_char;
+		};
 	private:
 		static constexpr UINT_PTR CallAsyncTimerId = 0x01;
 		static constexpr LPCTSTR className = _T("ConsoleWindow");
@@ -26,9 +49,10 @@ namespace tignear::sakura {
 		Microsoft::WRL::ComPtr<tignear::tsf::TsfDWriteDrawer> m_drawer;
 		Microsoft::WRL::ComPtr<ITfDocumentMgr> m_docmgr;
 		Microsoft::WRL::ComPtr<ITfProperty> m_attr_prop;
+		Microsoft::WRL::ComPtr<ITfProperty> m_composition_prop;
 		TfEditCookie m_edit_cookie;
 		Microsoft::WRL::ComPtr<ITfCategoryMgr> m_category_mgr;
-		ComPtr<ITfDisplayAttributeMgr> m_attribute_mgr;
+		Microsoft::WRL::ComPtr<ITfDisplayAttributeMgr> m_attribute_mgr;
 		Microsoft::WRL::ComPtr<ITfContext> m_context;
 		Microsoft::WRL::ComPtr<ITfThreadMgr> m_threadmgr;
 		TfClientId m_clientId;
@@ -41,8 +65,16 @@ namespace tignear::sakura {
 		std::queue<std::function<void()>> m_read_queue;
 		bool m_caret_display;
 		std::chrono::steady_clock::time_point m_caret_update_time;
+		Microsoft::WRL::ComPtr<ITextStoreACPSink> m_sink;
+		DWORD m_sinkmask = 0;
+		ULONG m_ref_cnt = 0;
+		tignear::tsf::TextStoreLock m_lock;
+		std::shared_ptr<ConsoleContext> m_console;
+		LONG m_composition_start_pos;
+		std::wstring m_last_composition_string;
 		void Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+		ConsoleWindow() {}
 		void CallAsync();
 		void OnSetFocus();
 		void OnPaint();
@@ -52,6 +84,12 @@ namespace tignear::sakura {
 		void OnKeyDown(WPARAM);
 		void UpdateText();
 		void CaretUpdate();
+		void ConfirmCommand();
+		LONG& SelectionStart();
+		LONG& SelectionEnd();
+		TsActiveSelEnd& ActiveSelEnd();
+		std::wstring& InputtingString();
+		bool& InterimChar();
 		HRESULT _InsertTextAtSelection(
 			DWORD         dwFlags,
 			const WCHAR   *pchText,
@@ -60,6 +98,7 @@ namespace tignear::sakura {
 			LONG          *pacpEnd,
 			TS_TEXTCHANGE *pChange
 		);
+
 	public:
 		// void OnSize(ConsoleWindow*, LPARAM);
 
@@ -281,6 +320,7 @@ namespace tignear::sakura {
 		/*
 		original functions
 		*/
+		void SetConsoleContext(std::shared_ptr<ConsoleContext> console);
 		void RequestAsyncLock(DWORD);
 		void PushAsyncCallQueue(bool write, std::function<void()>);
 		template <class R>
@@ -303,18 +343,6 @@ namespace tignear::sakura {
 		~ConsoleWindow() {
 			m_docmgr->Pop(0);
 		}
-	private:
-		ConsoleWindow() {}
-		Microsoft::WRL::ComPtr<ITextStoreACPSink> m_sink;
-		DWORD m_sinkmask = 0;
-		ULONG m_ref_cnt = 0;
-		std::wstring m_string;
-		BOOL m_interimChar = false;
-		TsActiveSelEnd m_active_sel_end;
-		ULONG m_selection_start = 0;
-		ULONG m_selection_end = 0;
-		tignear::tsf::TextStoreLock m_lock;
-	private:
-		bool m_composition;
+
 	};
 }
