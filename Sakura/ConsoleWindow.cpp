@@ -45,6 +45,9 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		break;
 	case WM_KEYDOWN:
 		self->OnKeyDown(wParam);
+		if (lParam & 0x8000) {
+			OutputDebugString(_T("Ext101"));
+		}
 		break;
 	case WM_CHAR:
 		self->OnChar(wParam);
@@ -74,6 +77,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 	FailToThrowHR(m_threadmgr->CreateDocumentMgr(&m_docmgr));
 	FailToThrowHR(m_docmgr->CreateContext(m_clientId, 0, dynamic_cast<ITextStoreACP*>(this), &m_context, &m_edit_cookie));
 	FailToThrowHR(m_context->GetProperty(GUID_PROP_ATTRIBUTE, &m_attr_prop));
+	FailToThrowHR(m_context->GetProperty(GUID_PROP_COMPOSING, &m_composition_prop));
 	FailToThrowB(RegisterConsoleWindowClass(m_hinst));
 	m_hwnd = CreateWindowEx(0, className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, m_parentHwnd, m, m_hinst, this);
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_hwnd);
@@ -106,6 +110,8 @@ void ConsoleWindow::OnSize() {
 
 }
 void ConsoleWindow::OnChar(WPARAM wp) {
+	m_console->shell->InputChar(wp);
+
 	TCHAR c = static_cast<TCHAR>(wp);
 #ifdef UNICODE
 	wchar_t wc = c;
@@ -114,27 +120,9 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 #endif
 	CallWithAppLock(true, [this, wc]()->void {
 		switch (wc) {
-		case 0x08://back space
-			if (!InputtingString().empty())
-			{
-				if (SelectionStart() == SelectionEnd())
-				{
-					if (SelectionStart() == 0)
-					{
-						return;
-					}
-					SelectionStart()--;
-					SelectionEnd()--;
-					InputtingString().erase(SelectionStart(), 1);
-				}
-				else
-				{
-					InputtingString().erase(SelectionStart(), SelectionEnd() - SelectionStart());
-					SelectionEnd()=SelectionStart();
-					ActiveSelEnd()=TS_AE_NONE;
-				}
-			}
-			break;
+		case '\b'://back space
+		case VK_RETURN:
+			return;
 		default:
 			if (SelectionStart() == SelectionEnd())
 			{
@@ -149,7 +137,6 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 				SelectionEnd()=SelectionStart();
 				ActiveSelEnd()=TS_AE_NONE;
 			}
-
 		}
 		m_sink->OnSelectionChange();
 		UpdateText();
@@ -203,7 +190,8 @@ bool& ConsoleWindow::InterimChar() {
 	return m_console->interim_char;
 }
 void ConsoleWindow::OnKeyDown(WPARAM param) {
-	CallWithAppLock(true, [this]() {
+
+	CallWithAppLock(true, [this,param]() {
 		if (GetKeyState(VK_LEFT) & 0x80) 
 		{
 			if (GetKeyState(VK_SHIFT) & 0x80)
@@ -249,6 +237,10 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			{
 				if (SelectionStart() != SelectionEnd()) 
 				{
+					auto cnt = SelectionEnd() - SelectionStart();
+					if (ActiveSelEnd() == TS_AE_START) {
+						m_console->shell->InputKey(VK_LEFT, cnt);
+					}
 					SelectionEnd()=SelectionStart();
 					ActiveSelEnd()=TS_AE_NONE;
 				}
@@ -260,6 +252,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				{
 					SelectionStart()--;
 					SelectionEnd() --;
+					m_console->shell->InputKey(VK_LEFT);
 				}
 			}
 			m_sink->OnSelectionChange();
@@ -310,18 +303,24 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			{
 				if (SelectionStart() != SelectionEnd())
 				{
+					auto cnt = SelectionEnd() - SelectionStart();
+					if (ActiveSelEnd() == TS_AE_END) {
+						m_console->shell->InputKey(VK_RIGHT,cnt);
+					}
 					SelectionStart()=SelectionEnd();
 					ActiveSelEnd()=TS_AE_NONE;
+					//do not send key
 				}
 				else if (SelectionEnd() == InputtingString().length())
 				{
+					//do not send key
 					return;
 				}
 				else
 				{
 					SelectionStart() ++; 
 					SelectionEnd() ++;
-
+					m_console->shell->InputKey(VK_RIGHT);
 				}
 			}
 			m_sink->OnSelectionChange();
@@ -339,21 +338,74 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					return;
 				}
 				InputtingString().erase(SelectionStart(), 1);
+				m_console->shell->InputKey(VK_RIGHT);
+				m_console->shell->InputKey(VK_BACK);
 			}
 			else
 			{
-				InputtingString().erase(SelectionStart(), SelectionEnd() - SelectionStart());
+				auto cnt = SelectionEnd() - SelectionStart();
+				InputtingString().erase(SelectionStart(), cnt);
+				if (ActiveSelEnd() == TS_AE_END) {
+					m_console->shell->InputKey(VK_RIGHT, cnt);
+				}
+				m_console->shell->InputKey(VK_BACK,cnt);
+
 				SelectionEnd()=SelectionStart();
 				ActiveSelEnd()=TS_AE_NONE;
 			}
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
+		else if (GetKeyState(VK_BACK) & 0x80) {
+			if (!InputtingString().empty())
+			{
+				if (SelectionStart() == SelectionEnd())
+				{
+					if (SelectionStart() == 0)
+					{
+						return;
+					}
+					SelectionStart()--;
+					SelectionEnd()--;
+					InputtingString().erase(SelectionStart(), 1);
+					m_console->shell->InputKey(VK_BACK);
+				}
+				else
+				{
+					auto cnt = SelectionEnd() - SelectionStart();
+					InputtingString().erase(SelectionStart(), cnt);
+					SelectionEnd() = SelectionStart();
+					if (ActiveSelEnd() == TS_AE_END) {
+						m_console->shell->InputKey(VK_RIGHT, cnt);
+					}
+					m_console->shell->InputKey(VK_BACK, cnt);
+					ActiveSelEnd() = TS_AE_NONE;
+				}
+			}
+		}
+		else if (GetKeyState(VK_RETURN)&0x80) {
+			InputtingString() += L'\n';
+			ConfirmCommand();
+			m_console->shell->InputKey(VK_RETURN);
+		}
+		else {
+			m_console->shell->InputKey(param);
+		}
 	});
+}
+void ConsoleWindow::ConfirmCommand() {
+	m_console->shell->ConfirmString(InputtingString());
+	SelectionStart() = 0;
+	SelectionEnd() = 0;
+	auto oldEnd = static_cast<LONG>(InputtingString().length());
+	InputtingString().clear();
+	TS_TEXTCHANGE change{ 0,oldEnd,0 };
+	m_sink->OnTextChange(0, &change);
 }
 void ConsoleWindow::UpdateText() {
 	InvalidateRect(m_hwnd, NULL, FALSE);
 	//OutputDebugStringW((std::wstring(L"length:")+std::to_wstring(m_string.length())+std::wstring(L",acpStart:")+std::to_wstring(m_selection_start)+ std::wstring(L",acpend:") + std::to_wstring(m_selection_end)+std::wstring(L",inherim:")+std::to_wstring(m_InterimChar)+L"\n").c_str());
 }
+
 static constexpr const inline LineStyle convertLineStyle(TF_DA_LINESTYLE ls) {
 	switch (ls) {
 	case TF_LS_SOLID:

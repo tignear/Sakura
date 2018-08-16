@@ -339,14 +339,15 @@ HRESULT ConsoleWindow::GetTextExt(
 	{
 		std::swap(acpStart, acpEnd);
 	}
+	std::wstring shellstr = std::wstring(m_console->shell->GetString());
+	auto shelllen=static_cast<UINT32>(shellstr.length());
 	RECT rc;
 	GetClientRect(m_hwnd, &rc);
-	auto layout=m_tbuilder->CreateTextLayout(InputtingString(),static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
+	auto layout = m_tbuilder->CreateTextLayout(shellstr+InputtingString(), static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
 	UINT32 count;
-	layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
-
+	layout->HitTestTextRange(shelllen+ SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
 	auto mats=std::make_unique<DWRITE_HIT_TEST_METRICS[]>(count);
-	FailToThrowHR(layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, mats.get(), count, &count));
+	FailToThrowHR(layout->HitTestTextRange(shelllen+ SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, mats.get(), count, &count));
 	LONG left=LONG_MAX, top=LONG_MAX, right=0, bottom=0;
 	for (auto i = 0UL; i < count; i++)
 	{
@@ -374,9 +375,7 @@ HRESULT ConsoleWindow::InsertTextAtSelection(
 	OutputDebugString(_T("TSF:InsertTextAtSelection"));
 
 
-	if (!m_lock.IsLock(true)) {
-		return TS_E_NOLOCK;
-	}
+
 	auto r = _InsertTextAtSelection(dwFlags, pchText, cch, pacpStart, pacpEnd, pChange);
 	//UpdateText();
 	return r;
@@ -392,15 +391,35 @@ HRESULT ConsoleWindow::_InsertTextAtSelection(
 
 	if (dwFlags & TS_IAS_QUERYONLY)
 	{
-
+		if (!m_lock.IsLock(false)) {
+			return TS_E_NOLOCK;
+		}
 		*pacpStart = SelectionStart();
 		*pacpEnd = SelectionEnd();
+		if (pChange) {
+			pChange->acpStart = SelectionStart();
+			pChange->acpOldEnd = SelectionEnd();
+			pChange->acpNewEnd = SelectionStart() + cch;
+		}
 	}
 	else
 	{
+		if (!m_lock.IsLock(true)) {
+			return TS_E_NOLOCK;
+		}
 		LONG acpStart = SelectionStart();
 		LONG acpEnd = SelectionEnd();
 		LONG length = acpEnd - acpStart;
+		if (pChange)
+		{
+			pChange->acpStart = acpStart;
+			pChange->acpOldEnd = acpEnd;
+			pChange->acpNewEnd = acpStart + cch;
+		}
+		else {
+			return E_INVALIDARG;
+		}
+
 		if (length != 0) {
 			InputtingString().erase(acpStart, length);
 			acpStart -= length;
@@ -421,12 +440,7 @@ HRESULT ConsoleWindow::_InsertTextAtSelection(
 			*pacpEnd = acpStart + cch;
 		}
 
-		if (pChange)
-		{
-			pChange->acpStart = acpStart;
-			pChange->acpOldEnd = acpEnd;
-			pChange->acpNewEnd = acpStart + cch;
-		}
+
 		SelectionStart() = acpStart;
 		SelectionEnd()= acpStart + cch;
 	}

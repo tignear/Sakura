@@ -125,15 +125,23 @@ bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContex
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
-	
+}
+void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
+	for (auto i = 0U; i < count; i++) {
+		InputKey(keycode);
+	}
 }
 void BasicShellContext::InputChar(WPARAM charcode) {
-	PostMessage(m_hwnd, WM_CHAR, charcode, 0);
+	// do nothing
+	//PostMessage(m_hwnd, WM_CHAR, charcode, 0);
 }
 void BasicShellContext::InputString(std::wstring_view wstr) {
 	for (auto c : wstr) {
 		PostMessage(m_hwnd, WM_CHAR, c,0);
 	}
+}
+void BasicShellContext::ConfirmString(std::wstring_view view) {
+	AddString(view);
 }
 const std::list<std::list<AttributeText*>>& BasicShellContext::GetText() const{
 	return m_text;
@@ -141,7 +149,7 @@ const std::list<std::list<AttributeText*>>& BasicShellContext::GetText() const{
 std::wstring_view BasicShellContext::GetString()const {
 	return m_buffer;
 }
-void BasicShellContext::AddString(std::wstring str) {
+void BasicShellContext::AddString(std::wstring_view str) {
 	using tignear::stdex::split;
 	//m_buffer.reserve(str.length());
 	auto r = split < wchar_t, std::list < std::wstring_view >>(std::wstring_view{ str }, L"\r\n");
@@ -161,7 +169,6 @@ void BasicShellContext::AddString(std::wstring str) {
 	}
 	else {
 		m_buffer += temp;
-
 		auto atext = dynamic_cast<BasicAttributeText*>(m_text.back().back());
 		auto len = atext->length();
 		auto len2=temp.length();

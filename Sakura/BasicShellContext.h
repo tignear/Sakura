@@ -22,7 +22,7 @@ namespace tignear::sakura {
 		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
-		void AddString(std::wstring);
+		void AddString(std::wstring_view);
 		std::wstring m_buffer;
 		std::list<std::list<AttributeText*>> m_text;
 		bool Init(stdex::tstring);
@@ -44,7 +44,10 @@ namespace tignear::sakura {
 		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>);
 		void InputChar(WPARAM c) override;
 		void InputKey(WPARAM keycode) override;
+		void InputKey(WPARAM keycode, unsigned int count) override;
+
 		void InputString(std::wstring_view) override;
+		void ConfirmString(std::wstring_view) override;
 		const std::list<std::list<AttributeText*>>& GetText()const override;
 		std::wstring_view GetString()const override;
 		unsigned int GetCursorX()const override;

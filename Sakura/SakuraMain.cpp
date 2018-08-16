@@ -131,7 +131,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	auto console = std::make_shared<ConsoleWindow::ConsoleContext>(shell);
 
 	m_console->SetConsoleContext(console);
-	shell->InputChar(L'c');
+	/*shell->InputChar(L'c');
 	shell->InputChar(L'd');
 	shell->InputChar(L' ');
 	shell->InputChar(L'c');
@@ -144,7 +144,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	shell->InputChar(L'‚Ù');
 	shell->InputChar(L'‚°');
 	//shell->InputKey(VK_TAB);
-	shell->InputKey(VK_RETURN);
+	shell->InputKey(VK_RETURN);*/
 	//shell->InputString("cd ../\r\n");
 	ShowWindow(m_sakura, SW_SHOWDEFAULT);
 	UpdateWindow(m_sakura);
