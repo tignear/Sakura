@@ -45,9 +45,6 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		break;
 	case WM_KEYDOWN:
 		self->OnKeyDown(wParam);
-		if (lParam & 0x8000) {
-			OutputDebugString(_T("Ext101"));
-		}
 		break;
 	case WM_CHAR:
 		self->OnChar(wParam);
@@ -380,14 +377,17 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					ActiveSelEnd() = TS_AE_NONE;
 				}
 			}
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_RETURN)&0x80) {
 			InputtingString() += L'\n';
 			ConfirmCommand();
 			m_console->shell->InputKey(VK_RETURN);
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else {
 			m_console->shell->InputKey(param);
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	});
 }
