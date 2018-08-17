@@ -257,7 +257,6 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			}
 			m_sink->OnSelectionChange();
 			InvalidateRect(m_hwnd, NULL, FALSE);
-
 		}
 		else if (GetKeyState(VK_RIGHT) & 0x80)
 		{

@@ -1,6 +1,6 @@
 #pragma once
 #include <Windows.h>
-#include "AttributeText.h"
+#include "ansi/AttributeText.h"
 namespace tignear::sakura {
 	class ShellContext {
 	public:
@@ -9,7 +9,7 @@ namespace tignear::sakura {
 		virtual void InputChar(WPARAM charcode) = 0;
 		virtual void InputString(std::wstring_view wstr) = 0;
 		virtual void ConfirmString(std::wstring_view)=0;
-		const virtual std::list<std::list<AttributeText*>>& GetText()const = 0;
+		const virtual std::list<std::list<ansi::AttributeText*>>& GetText()const = 0;
 		virtual std::wstring_view GetString()const=0;
 		virtual unsigned int GetCursorX()const=0;
 		virtual unsigned int GetCursorY()const=0;

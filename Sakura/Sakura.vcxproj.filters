@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ヘッダー ファイル\ansi">
+      <UniqueIdentifier>{1e8ad8e2-b666-44ca-b941-66a6bf97738c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\ansi">
+      <UniqueIdentifier>{a09cc6e4-f8b5-471e-9f38-c6bdf1357953}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -60,20 +66,26 @@
     <ClInclude Include="IOCPMgr.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="AttributeText.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="split.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="GetHwndFromPid.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="BasicAttributeText.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="strconv.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ansi\AttributeText.h">
+      <Filter>ヘッダー ファイル\ansi</Filter>
+    </ClInclude>
+    <ClInclude Include="ansi\BasicAttributeText.h">
+      <Filter>ヘッダー ファイル\ansi</Filter>
+    </ClInclude>
+    <ClInclude Include="ansi\stdafx.h">
+      <Filter>ヘッダー ファイル\ansi</Filter>
+    </ClInclude>
+    <ClInclude Include="ansi\AnsiParser.h">
+      <Filter>ヘッダー ファイル\ansi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -102,6 +114,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="BasicShellContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="BasicShellContextAnsiParserSink.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

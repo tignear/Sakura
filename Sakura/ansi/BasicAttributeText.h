@@ -1,6 +1,6 @@
 #pragma once
 #include "AttributeText.h"
-namespace tignear::sakura {
+namespace tignear::ansi {
 	struct BasicAttributeText:public AttributeText {
 		BasicAttributeText(std::wstring& parenttext,size_t start,size_t length):m_parenttext(parenttext),
 		m_startIndex(start),
