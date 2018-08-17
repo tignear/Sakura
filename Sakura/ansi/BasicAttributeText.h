@@ -2,11 +2,12 @@
 #include "AttributeText.h"
 namespace tignear::ansi {
 	struct BasicAttributeText:public AttributeText {
-		BasicAttributeText(std::wstring& parenttext,size_t start,size_t length):m_parenttext(parenttext),
-		m_startIndex(start),
-		m_length(length){}
+		BasicAttributeText(std::wstring text,std::wstring raw,size_t start):
+			m_text(text),
+			m_rawtext(raw),
+			m_startIndex(start){}
 		std::wstring_view text()const override{
-			return std::wstring_view{ m_parenttext }.substr(startIndex(),length());
+			return m_text;
 		}
 
 		std::wstring_view rawText()const override {
@@ -19,7 +20,7 @@ namespace tignear::ansi {
 			return m_startIndex;
 		}
 		size_t length()const override {
-			return m_length;
+			return m_text.length();
 		}
 		std::uint32_t textColor()const  override {
 			return m_textColor;
@@ -51,6 +52,12 @@ namespace tignear::ansi {
 		unsigned int font()const  override {
 			return m_font;
 		}//0-9
+		void text(std::wstring& text) {
+			m_text = text;
+		}
+		void text(std::wstring&& text) {
+			m_text = text;
+		}
 		void rawText(std::wstring& rawtext) {
 			m_rawtext = rawtext;
 		}
@@ -60,9 +67,7 @@ namespace tignear::ansi {
 		void startIndex(size_t index) {
 			m_startIndex = index;
 		}
-		void length(size_t length) {
-			m_length = length;
-		}
+
 		void textColor(std::uint32_t color) {
 			m_textColor = color;
 		}
@@ -94,10 +99,9 @@ namespace tignear::ansi {
 			m_font = font;
 		}
 	private:
-		std::wstring& m_parenttext;
+		std::wstring m_text;
 		std::wstring m_rawtext;
-		size_t m_startIndex;
-		size_t m_length;
+		std::wstring::size_type m_startIndex;
 		std::uint32_t m_textColor;
 		std::uint32_t m_backgroundColor;
 		bool m_bold;

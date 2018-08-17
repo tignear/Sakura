@@ -153,30 +153,6 @@ std::wstring_view BasicShellContext::GetString()const {
 }
 void BasicShellContext::AddString(std::wstring_view str) {
 	ansi::parse(str, *this);
-	using tignear::stdex::split;
-	//m_buffer.reserve(str.length());
-	auto r = split < wchar_t, std::list < std::wstring_view >>(std::wstring_view{ str }, L"\r\n");
-	auto temp = r.back();
-	r.pop_back();
-	for (auto e : r) {
-		m_buffer += e;
-		m_buffer += L"\r\n";
-		auto atext = dynamic_cast<BasicAttributeText*>(m_text.back().back());
-		atext->length(atext->length()+e.length() + 2);
-		m_text.push_back({new BasicAttributeText(m_buffer,atext->startIndex()+atext->length(),0)});
-		//OutputDebugStringW(e.c_str());
-	}
-	if (temp.empty()) {
-		auto atext = m_text.back().back();
-		m_text.push_back({ new BasicAttributeText(m_buffer,atext->startIndex()+atext->length(),0)});
-	}
-	else {
-		m_buffer += temp;
-		auto atext = dynamic_cast<BasicAttributeText*>(m_text.back().back());
-		auto len = atext->length();
-		auto len2=temp.length();
-		atext->length(len+len2);
-	}
 }
 unsigned int BasicShellContext::GetCursorX()const {
 	return m_cursorX;
