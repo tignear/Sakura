@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <cstdint>
-namespace tignear::sakura {
+namespace tignear::ansi {
 	enum Blink {
 		None,Slow,Fast
 	};

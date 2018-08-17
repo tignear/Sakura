@@ -2,10 +2,12 @@
 #include "strconv.h"
 #include "split.h"
 #include "BasicShellContext.h"
-#include "BasicAttributeText.h"
+#include "ansi/BasicAttributeText.h"
 #include "GetHwndFromPid.h"
-using namespace tignear::sakura;
-using namespace tignear::stdex;
+using namespace tignear;
+using namespace sakura;
+using namespace stdex;
+using namespace ansi;
 using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
@@ -150,6 +152,7 @@ std::wstring_view BasicShellContext::GetString()const {
 	return m_buffer;
 }
 void BasicShellContext::AddString(std::wstring_view str) {
+	ansi::parse(str, *this);
 	using tignear::stdex::split;
 	//m_buffer.reserve(str.length());
 	auto r = split < wchar_t, std::list < std::wstring_view >>(std::wstring_view{ str }, L"\r\n");

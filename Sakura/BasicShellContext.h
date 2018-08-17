@@ -4,11 +4,17 @@
 #include <atomic>
 #include "IOCPMgr.h"
 #include "ShellContext.h"
-#include "BasicAttributeText.h"
+#include "ansi/BasicAttributeText.h"
+#include "ansi/AnsiParser.h"
 #include "tstring.h"
 namespace tignear::sakura {
 	class BasicShellContext:public ShellContext {
+		friend BasicShellContext& ansi::parse<BasicShellContext>(std::wstring_view,BasicShellContext&);
 	private:
+		//ansi parser call backs
+		void FindCSI(std::wstring_view);
+		void FindString(std::wstring_view);
+		void FindBackSpace();
 		constexpr static unsigned int BUFFER_SIZE = 4096;
 		static std::atomic_uintmax_t m_process_count;
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
@@ -24,7 +30,7 @@ namespace tignear::sakura {
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
 		void AddString(std::wstring_view);
 		std::wstring m_buffer;
-		std::list<std::list<AttributeText*>> m_text;
+		std::list<std::list<ansi::AttributeText*>> m_text;
 		bool Init(stdex::tstring);
 		//out pipe temp
 		std::string m_outbuf;
@@ -33,7 +39,7 @@ namespace tignear::sakura {
 			m_close(false), 
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
-			m_text({ { new BasicAttributeText(m_buffer,0,0) } }),
+			m_text({ { new ansi::BasicAttributeText(m_buffer,0,0) } }),
 			m_cursorX(0),
 			m_cursorY(0){}
 		~BasicShellContext() {
@@ -48,7 +54,7 @@ namespace tignear::sakura {
 
 		void InputString(std::wstring_view) override;
 		void ConfirmString(std::wstring_view) override;
-		const std::list<std::list<AttributeText*>>& GetText()const override;
+		const std::list<std::list<ansi::AttributeText*>>& GetText()const override;
 		std::wstring_view GetString()const override;
 		unsigned int GetCursorX()const override;
 		unsigned int GetCursorY()const override;
@@ -56,6 +62,7 @@ namespace tignear::sakura {
 		void RemoveTextChangeListener(uintptr_t)const override;
 		uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const override;
 		void RemoveCursorChangeListener(uintptr_t)const override;
+
 	};
 
 }

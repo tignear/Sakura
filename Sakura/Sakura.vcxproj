@@ -195,8 +195,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AttributeText.h" />
-    <ClInclude Include="BasicAttributeText.h" />
+    <ClInclude Include="ansi\AnsiParser.h" />
+    <ClInclude Include="ansi\AttributeText.h" />
+    <ClInclude Include="ansi\BasicAttributeText.h" />
+    <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="Direct2D.h" />
@@ -218,6 +220,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicShellContext.cpp" />
+    <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowCompositionSink.cpp" />
     <ClCompile Include="ConsoleWindowTextStore.cpp" />
