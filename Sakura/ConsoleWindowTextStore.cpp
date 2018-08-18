@@ -339,7 +339,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	{
 		std::swap(acpStart, acpEnd);
 	}
-	std::wstring shellstr = std::wstring(m_console->shell->GetString());
+	std::wstring shellstr = std::wstring(m_console->shell->GetViewString());
 	auto shelllen=static_cast<UINT32>(shellstr.length());
 	RECT rc;
 	GetClientRect(m_hwnd, &rc);

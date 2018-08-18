@@ -2,7 +2,7 @@
 #include "strconv.h"
 #include "split.h"
 #include "BasicShellContext.h"
-#include "ansi/BasicAttributeText.h"
+#include "ansi/AttributeText.h"
 #include "GetHwndFromPid.h"
 using namespace tignear;
 using namespace sakura;
@@ -145,21 +145,16 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 void BasicShellContext::ConfirmString(std::wstring_view view) {
 	AddString(view);
 }
-const std::list<std::list<AttributeText*>>& BasicShellContext::GetText() const{
+const std::list<std::list<AttributeText>>& BasicShellContext::GetViewText() const{
 	return m_text;
 }
-std::wstring_view BasicShellContext::GetString()const {
+std::wstring_view BasicShellContext::GetViewString()const {
 	return m_buffer;
 }
 void BasicShellContext::AddString(std::wstring_view str) {
 	ansi::parse(str, *this);
 }
-unsigned int BasicShellContext::GetCursorX()const {
-	return m_cursorX;
-}
-unsigned int BasicShellContext::GetCursorY()const {
-	return m_cursorY;
-}
+
 uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellContext*)> f) const{
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_text_change_listeners[key]=f;
@@ -172,5 +167,11 @@ uintptr_t BasicShellContext::AddCursorChangeListener(std::function<void(ShellCon
 	return 0;
 }
 void BasicShellContext::RemoveCursorChangeListener(uintptr_t)const{}
+std::wstring::size_type BasicShellContext::GetViewLineCount()const {
+	return m_viewline_count;
+}
+void BasicShellContext::SetViewLineCount(std::wstring::size_type count) {
+	m_viewline_count = count;
+}
 //static fiels
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

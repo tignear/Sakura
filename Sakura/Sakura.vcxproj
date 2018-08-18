@@ -197,7 +197,6 @@
   <ItemGroup>
     <ClInclude Include="ansi\AnsiParser.h" />
     <ClInclude Include="ansi\AttributeText.h" />
-    <ClInclude Include="ansi\BasicAttributeText.h" />
     <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="ConsoleWindow.h" />

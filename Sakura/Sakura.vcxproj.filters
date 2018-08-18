@@ -75,16 +75,13 @@
     <ClInclude Include="strconv.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ansi\AttributeText.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\BasicAttributeText.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
     <ClInclude Include="ansi\stdafx.h">
       <Filter>ヘッダー ファイル\ansi</Filter>
     </ClInclude>
     <ClInclude Include="ansi\AnsiParser.h">
+      <Filter>ヘッダー ファイル\ansi</Filter>
+    </ClInclude>
+    <ClInclude Include="ansi\AttributeText.h">
       <Filter>ヘッダー ファイル\ansi</Filter>
     </ClInclude>
   </ItemGroup>

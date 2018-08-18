@@ -469,7 +469,7 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
-		auto shellstr = m_console->shell->GetString();
+		auto shellstr = m_console->shell->GetViewString();
 		auto lengthShell = static_cast<UINT32>(shellstr.length());
 		std::wstring ftext;
 		ftext.reserve(shellstr.length() + InputtingString().length());
