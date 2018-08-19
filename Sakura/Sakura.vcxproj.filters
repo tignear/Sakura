@@ -16,9 +16,6 @@
     <Filter Include="ヘッダー ファイル\ansi">
       <UniqueIdentifier>{1e8ad8e2-b666-44ca-b941-66a6bf97738c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\ansi">
-      <UniqueIdentifier>{a09cc6e4-f8b5-471e-9f38-c6bdf1357953}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

@@ -93,14 +93,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>false</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
       <ExceptionHandling>Async</ExceptionHandling>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
@@ -118,13 +115,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>false</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -145,13 +139,10 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>false</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -174,13 +165,10 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>false</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>

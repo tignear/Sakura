@@ -5,17 +5,33 @@ namespace tignear::ansi {
 		None, Slow, Fast
 	};
 	struct AttributeText {
-		AttributeText(std::wstring text,size_t start):
+		AttributeText(std::wstring text):
 			m_text(text),
-			m_startIndex(start){}
+			m_textColor(0x000000),
+			m_backgroundColor(0xffffff),
+			m_bold(false),
+			m_faint(false),
+			m_italic(false),
+			m_underline(false),
+			m_blink(None),
+			m_conceal(false),
+			m_font(0){}
+		AttributeText(std::wstring text, std::uint32_t textcolor, std::uint32_t bgcolor,bool bold,bool faint,bool italic,bool underline, Blink blink,bool conceal,unsigned int font) :
+			m_text(text),
+			m_textColor(textcolor),
+			m_backgroundColor(bgcolor),
+			m_bold(bold),
+			m_faint(faint),
+			m_italic(italic),
+			m_underline(underline),
+			m_blink(blink),
+			m_conceal(conceal),
+			m_font(font) {}
 		std::wstring_view text()const{
 			return m_text;
 		}
 		std::wstring& text() {
 			return m_text;
-		}
-		std::wstring::size_type startIndex()const {
-			return m_startIndex;
 		}
 		std::wstring::size_type length()const {
 			return m_text.length();
@@ -56,9 +72,6 @@ namespace tignear::ansi {
 		void text(std::wstring&& text) {
 			m_text = text;
 		}
-		void startIndex(size_t index) {
-			m_startIndex = index;
-		}
 
 		void textColor(std::uint32_t color) {
 			m_textColor = color;
@@ -92,7 +105,6 @@ namespace tignear::ansi {
 		}
 	private:
 		std::wstring m_text;
-		std::wstring::size_type m_startIndex;
 		std::uint32_t m_textColor;
 		std::uint32_t m_backgroundColor;
 		bool m_bold;

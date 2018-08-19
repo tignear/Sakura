@@ -9,10 +9,11 @@ namespace tignear::sakura {
 		virtual void InputChar(WPARAM charcode) = 0;
 		virtual void InputString(std::wstring_view wstr) = 0;
 		virtual void ConfirmString(std::wstring_view)=0;
-		const virtual std::list<std::list<ansi::AttributeText>>& GetViewText()const = 0;
-		virtual std::wstring_view GetViewString()const=0;
-		virtual size_t GetViewLineCount()const=0;
-		virtual void SetViewLineCount(size_t count)=0;
+		virtual std::list<std::list<ansi::AttributeText>>::const_iterator GetViewTextBegin()const = 0;
+		virtual std::list<std::list<ansi::AttributeText>>::const_iterator GetViewTextEnd()const = 0;
+		virtual std::list<std::list<ansi::AttributeText>>::size_type GetViewLineCount()const=0;
+		virtual std::wstring_view GetTitle()const =0;
+		virtual void SetViewLineCount(std::list<std::list<ansi::AttributeText>>::size_type count)=0;
 		virtual uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const=0;
 		virtual void RemoveTextChangeListener(uintptr_t)const = 0;
 		virtual uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const = 0;

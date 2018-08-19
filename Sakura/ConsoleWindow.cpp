@@ -80,7 +80,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_hwnd);
 	tignear::tsf::TsfDWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
-		L"ƒƒCƒŠƒI",
+		L"Cica",
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_SEMI_EXPANDED,
@@ -469,7 +469,13 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
-		auto shellstr = m_console->shell->GetViewString();
+		std::wstring shellstr;
+		auto end = m_console->shell->GetViewTextEnd();
+		for (auto itr = m_console->shell->GetViewTextBegin(); itr !=end; itr++) {
+			for (auto elem:(*itr)) {
+				shellstr += elem.text();
+			}
+		}
 		auto lengthShell = static_cast<UINT32>(shellstr.length());
 		std::wstring ftext;
 		ftext.reserve(shellstr.length() + InputtingString().length());

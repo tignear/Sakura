@@ -10,6 +10,13 @@ using tignear::stdex::split;
 m_viewstartY_itrより後ろの要素とm_viewstartY_itrがさす要素のstartIndexの書き換えが必要になることはあってはならない。
 またm_viewstartY_itrより後ろの要素のtextを書き換えてはならない。(m_viewstartY_itrのtextは書き換えても良い)
 */
+
+AttributeText BasicShellContext::CreateAttrText(std::wstring& str, const Attribute& attr) {
+	return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+}
+AttributeText BasicShellContext::CreateAttrText(std::wstring&& str, const Attribute& attr) {
+	return AttributeText(std::move(str), attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+}
 void BasicShellContext::MoveCurosorYUp(std::wstring::size_type count) {
 	for (auto i = 0U; i < count&&m_cursorY_itr!=m_text.begin(); i++) {
 		m_cursorY_itr--;
@@ -20,23 +27,24 @@ void BasicShellContext::MoveCurosorYDown(std::wstring::size_type count) {
 		m_cursorY_itr++;
 	}
 }
-void BasicShellContext::RemoveRows(size_t count) {
+void BasicShellContext::RemoveRows(std::list<std::list<AttributeText>>::size_type count) {
 	auto copy_itr = m_cursorY_itr;
 	for (auto i = 0U; i < count; i++) {
 		copy_itr->clear();
 	}
 	copy_itr++;
-	m_buffer_rebuild = true;
 }
-void BasicShellContext::RemoveRowsR(size_t count) {
+void BasicShellContext::RemoveRowsR(std::list<std::list<AttributeText>>::size_type count) {
 	auto copy = m_cursorY_itr;
 	auto ritr=std::reverse_iterator(copy);
 	for (auto i = 0U; i < count; i++) {
 		(--(ritr.base()))->clear();
 	}
-	m_buffer_rebuild = true;
 }
 void BasicShellContext::RemoveColumns(std::wstring::size_type count) {
+	if (m_cursorY_itr == m_text.end()) {
+		return;
+	}
 	auto& elem = (*m_cursorY_itr);
 	auto itr= elem.begin();//copy iterator
 	std::wstring::size_type removed = 0;
@@ -51,9 +59,11 @@ void BasicShellContext::RemoveColumns(std::wstring::size_type count) {
 			continue;
 		}
 	}
-	m_buffer_rebuild = true;
 }
 void BasicShellContext::RemoveColumnsR(std::wstring::size_type count) {
+	if (m_cursorY_itr == m_text.end()) {
+		return;
+	}
 	auto& elem = (*m_cursorY_itr);
 	std::wstring::size_type removed = 0;
 	while (removed < count) {
@@ -68,7 +78,6 @@ void BasicShellContext::RemoveColumnsR(std::wstring::size_type count) {
 			continue;
 		}
 	}
-	m_buffer_rebuild = true;
 }
 void BasicShellContext::RemoveCursorBefore() {
 	auto prev=std::prev(m_cursorY_itr);
@@ -76,7 +85,6 @@ void BasicShellContext::RemoveCursorBefore() {
 		e.clear();
 	});
 	RemoveColumns(m_cursorX);
-	m_buffer_rebuild = true;
 }
 void BasicShellContext::RemoveCursorAfter() {
 	auto next = std::next(m_cursorY_itr);
@@ -84,7 +92,6 @@ void BasicShellContext::RemoveCursorAfter() {
 		e.clear();
 	});
 	RemoveColumnsR(CurosorLineLength() - m_cursorX);
-	m_buffer_rebuild = true;
 }
 std::wstring::size_type BasicShellContext::CurosorLineLength() {
 	std::wstring::size_type cnt=0;
@@ -92,6 +99,22 @@ std::wstring::size_type BasicShellContext::CurosorLineLength() {
 		cnt += itr->length();
 	}
 	return cnt;
+}
+void BasicShellContext::InsertCursorPos(std::wstring&& str) {
+	std::wstring::size_type i=0;
+	if (m_cursorY_itr == m_text.end()) {
+		m_text.push_back({ CreateAttrText(std::move(str), m_current_attr) });
+		return;
+	}
+	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end();itr++) {
+		auto l=itr->length();
+		if (i+l >= m_cursorX) {
+			itr->text().insert(m_cursorX - i, str);
+			return;
+		}
+		i += l;
+	}
+	m_cursorY_itr->back().text()+=str;
 }
 void BasicShellContext::ParseColor(std::wstring_view sv) {
 	auto elems=split<wchar_t, std::vector<std::wstring>>(std::wstring(sv), L";");
@@ -167,7 +190,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			case 5:
 			{
 				itr++;
-				m_current_attr.textColor=m_256_color_table.at(std::stoul(std::wstring(*itr)));
+				//m_current_attr.textColor=m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
@@ -198,7 +221,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			case 5:
 			{
 				itr++;
-				m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
+				//m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
@@ -227,12 +250,12 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.font = num - 10;
 			continue;
 		}
-		if (num >= 30 && num <= 37) {
+		/*if (num >= 30 && num <= 37) {
 			m_current_attr.textColor =m_system_color_table.at(num);
 			continue;
 		}
 		if (num >= 40 && num <= 47) {
-			m_current_attr.backgroundColor = m_system_color_table.at( num );
+			m_current_attr.backgroundColor = m_system_color_table.at(num);
 			continue;
 		}
 		if (num >= 90 && num <= 97) {
@@ -242,10 +265,20 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 		if (num >= 100 && num <= 107) {
 			m_current_attr.backgroundColor = m_system_color_table.at(num);
 			continue;
-		}
+		}*/
 	}
 }
-void BasicShellContext::FindString(std::wstring_view) {
+void BasicShellContext::FindString(std::wstring_view str) {
+	auto r=split<wchar_t, std::vector<std::wstring>>(std::wstring(str), L"\n");
+	auto back=r.back();
+	r.pop_back();
+	for (auto e : r) {
+		e += L"\r\n";
+		InsertCursorPos(std::move(e));
+		m_cursorX = 0;
+		MoveCurosorYDown(1);
+	}
+	InsertCursorPos(std::move(back));
 
 }
 void BasicShellContext::FindCSI(std::wstring_view sv) {
@@ -339,13 +372,16 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		{
 		case 0:
 			RemoveCursorBefore();
+			break;
 		case 1:
 			RemoveCursorAfter();
+			break;
 		case 2:
 		{
 			m_text.erase(m_viewstartY_itr, m_text.end());
 			m_viewstartY_itr = m_text.end();
 			m_cursorY_itr = m_text.end();
+			break;
 		}
 
 		case 3:
@@ -354,6 +390,7 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		default:
 			break;
 		}
+		break;
 	}
 	case L'K':
 		sv.remove_suffix(1);
@@ -368,10 +405,13 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		{
 		case 0:
 			RemoveColumns(m_cursorX);
+			break;
 		case 1:
 			RemoveColumnsR(CurosorLineLength() - m_cursorX);
+			break;
 		case 2:
 			m_cursorY_itr->clear();
+			break;
 		default:
 			break;
 		}
@@ -382,6 +422,17 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 	case L'm':
 		sv.remove_suffix(1);
 		ParseColor(sv);
+		break;
+	default:
+		break;
+	}
+}
+void BasicShellContext::FindOSC(std::wstring_view sv) {
+	auto r = split<wchar_t, std::vector<std::wstring>>(std::wstring(sv), L";");
+	switch (std::stoul(r[0]))
+	{
+	case 0:
+		m_title = r[1];
 		break;
 	default:
 		break;

@@ -23,19 +23,23 @@ namespace tignear::sakura {
 			unsigned int font;//0-9
 			bool reverse;
 		};
-		static ansi::AttributeText CreateAttrText(std::wstring str,const Attribute& attr,std::wstring::size_type startIndex);
+		static ansi::AttributeText CreateAttrText(std::wstring& str,const Attribute& attr);
+		static ansi::AttributeText CreateAttrText(std::wstring&& str, const Attribute& attr);
+
 		//ansi parser call backs
 		friend BasicShellContext& ansi::parse<BasicShellContext>(std::wstring_view,BasicShellContext&);
 		void FindCSI(std::wstring_view);
 		void FindString(std::wstring_view);
+		void FindOSC(std::wstring_view);
 		//ansi parser work helpers
-		void RemoveRows(size_t count);
-		void RemoveRowsR(size_t count);
+		void RemoveRows(std::list<std::list<ansi::AttributeText>>::size_type count);
+		void RemoveRowsR(std::list<std::list<ansi::AttributeText>>::size_type count);
 		void RemoveColumns(std::wstring::size_type count);
 		void RemoveColumnsR(std::wstring::size_type count);
 		void RemoveCursorBefore();
 		void RemoveCursorAfter();
 		void ParseColor(std::wstring_view);
+		void InsertCursorPos(std::wstring&&);
 		std::wstring::size_type CurosorLineLength();
 		//class members
 		constexpr static unsigned int BUFFER_SIZE = 4096;
@@ -45,14 +49,13 @@ namespace tignear::sakura {
 		HANDLE m_out_pipe;
 		HANDLE m_in_pipe;
 		HWND m_hwnd;
-		bool m_buffer_rebuild;
-		std::wstring m_buffer;
 		std::list<std::list<ansi::AttributeText>> m_text;
 		std::list<std::list<ansi::AttributeText>>::iterator m_viewstartY_itr;
 		std::list<std::list<ansi::AttributeText>>::iterator m_cursorY_itr;
-		size_t m_cursorX;
-		size_t m_viewline_count;//âÊñ Ç…âfÇÈçsÇÃêî
+		std::wstring::size_type m_cursorX;
+		std::list<std::list<ansi::AttributeText>>::size_type m_viewline_count;//âÊñ Ç…âfÇÈçsÇÃêî
 		mutable std::unordered_map<std::uintptr_t,std::function<void(ShellContext*)>> m_text_change_listeners;
+		std::wstring m_title;
 		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
@@ -68,12 +71,17 @@ namespace tignear::sakura {
 		std::string m_outbuf;
 	public:
 		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr):
-			m_buffer_rebuild(false),
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
-			m_text(),
-			m_current_attr()
-		{}
+			m_text{ {ansi::AttributeText(L"")} },
+			m_current_attr(),
+			m_def_attr()
+		{
+			m_viewstartY_itr = m_text.begin();
+			m_cursorY_itr = m_text.begin();
+			m_viewline_count = 20;
+			m_cursorX = 0;
+		}
 		~BasicShellContext() {
 			CloseHandle(m_out_pipe);
 			CloseHandle(m_in_pipe);
@@ -85,10 +93,11 @@ namespace tignear::sakura {
 		void InputKey(WPARAM keycode, unsigned int count) override;
 		void InputString(std::wstring_view) override;
 		void ConfirmString(std::wstring_view) override;
-		const std::list<std::list<ansi::AttributeText>>& GetViewText()const override;
-		std::wstring_view GetViewString()const override;
-		virtual std::wstring::size_type GetViewLineCount()const override;
-		virtual void SetViewLineCount(std::wstring::size_type count)override;
+		std::list<std::list<ansi::AttributeText>>::const_iterator GetViewTextBegin()const override;
+		std::list<std::list<ansi::AttributeText>>::const_iterator GetViewTextEnd()const override;
+		std::wstring_view GetTitle()const override;
+		std::wstring::size_type GetViewLineCount()const override;
+		void SetViewLineCount(std::wstring::size_type count)override;
 		uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const override;
 		void RemoveTextChangeListener(uintptr_t)const override;
 		uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const override;

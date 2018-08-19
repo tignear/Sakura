@@ -6,7 +6,7 @@ namespace tignear::ansi {
 	R& parse(std::wstring_view wstr,R& r) {
 		std::string::size_type nowpos = 0;
 		while (nowpos<wstr.length()) {
-			auto elmpos = wstr.find(L'\03', nowpos);
+			auto elmpos = wstr.find(L'\x1b', nowpos);
 			if (elmpos == std::wstring::npos) {
 				auto sv = std::wstring_view{ wstr };
 				sv.remove_prefix(nowpos);
@@ -15,18 +15,24 @@ namespace tignear::ansi {
 				}
 				break;
 			}
-			auto normalstr=std::wstring_view{ wstr }.substr(nowpos, elmpos);
+			auto normalstr=std::wstring_view{ wstr }.substr(nowpos, elmpos-nowpos);
 			if (!normalstr.empty()) {
 				r.FindString(normalstr);
 			}
 			if (wstr[elmpos + 1] == L'[') {
 				auto csiendpos = wstr.find_first_not_of(csi_chars, elmpos+2);
-				auto sv = std::wstring_view{ wstr }.substr(elmpos+2, csiendpos +1);
+				auto sv = std::wstring_view{ wstr }.substr(elmpos+2, csiendpos +1-(elmpos+2));
 				r.FindCSI(sv);
-				nowpos = csiendpos + 2;
+				nowpos = csiendpos + 1;
 				continue;
 			}
-			throw "Parse Error";
+			else if(wstr[elmpos+1]==L']'){
+				auto oscendpos = wstr.find(L'\x07', elmpos + 2);
+				auto sv = std::wstring_view{ wstr }.substr(elmpos + 2, oscendpos- (elmpos + 2));
+				r.FindOSC(sv);
+				nowpos = oscendpos + 1;
+				continue;
+			}
 		}
 		return r;
 	}
