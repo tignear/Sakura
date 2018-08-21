@@ -20,6 +20,7 @@ namespace tignear::sakura {
 			bool fluktur;
 			ansi::Blink blink;
 			bool conceal;//‰B‚·
+			bool crossed_out;
 			unsigned int font;//0-9
 			bool reverse;
 		};
@@ -70,8 +71,8 @@ namespace tignear::sakura {
 
 		Attribute m_current_attr;
 		Attribute m_def_attr;
-		const std::unordered_map<unsigned int, std::uint32_t> m_system_color_table;
-		const std::unordered_map<unsigned int, std::uint32_t> m_256_color_table;
+		std::unordered_map<unsigned int, std::uint32_t> m_system_color_table;
+		std::unordered_map<unsigned int, std::uint32_t> m_256_color_table;
 		bool Init(stdex::tstring);
 		//out pipe temp
 		std::string m_outbuf;

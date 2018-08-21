@@ -14,10 +14,20 @@ using icu::UnicodeString;
 using tignear::icuex::EastAsianWidth;
 
 AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString& str,const Attribute& attr) {
-	return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+	if (attr.reverse) {
+		return AttributeText(str,  attr.backgroundColor, attr.textColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
+	else {
+		return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
 }
 AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString&& str, const Attribute& attr) {
-	return AttributeText(std::move(str),attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+	if (attr.reverse) {
+		return AttributeText(str, attr.backgroundColor, attr.textColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
+	else {
+		return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
 }
 void BasicShellContext::MoveCurosorYUp(std::wstring::size_type count) {
 	for (auto i = 0U; i < count&&m_cursorY_itr!=m_text.begin(); i++) {
@@ -250,7 +260,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.conceal = true;
 			continue;
 		case 9:
-			//deprecated
+			m_current_attr.crossed_out=true;
 			continue;
 		case 20:
 			m_current_attr.fluktur = true;
@@ -279,7 +289,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.conceal = false;
 			continue;
 		case 29:
-			//deprecated
+			m_current_attr.crossed_out = false;
 			continue;
 		case 38:
 		{
@@ -290,7 +300,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			case 5:
 			{
 				itr++;
-				//m_current_attr.textColor=m_256_color_table.at(std::stoul(std::wstring(*itr)));
+				m_current_attr.textColor=m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
@@ -321,7 +331,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			case 5:
 			{
 				itr++;
-				//m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
+				m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
@@ -350,7 +360,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.font = num - 10;
 			continue;
 		}
-		/*if (num >= 30 && num <= 37) {
+		if (num >= 30 && num <= 37) {
 			m_current_attr.textColor =m_system_color_table.at(num);
 			continue;
 		}
@@ -365,7 +375,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 		if (num >= 100 && num <= 107) {
 			m_current_attr.backgroundColor = m_system_color_table.at(num);
 			continue;
-		}*/
+		}
 	}
 }
 void BasicShellContext::FindString(std::wstring_view str) {

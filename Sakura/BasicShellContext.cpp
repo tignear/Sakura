@@ -159,7 +159,7 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 void BasicShellContext::ConfirmString(std::wstring_view view) {
 	AddString(view);
 }
-std::list<std::list<AttributeText>>::const_iterator BasicShellContext::GetViewTextBegin() const{
+std::list<std::list<ansi::AttributeText>>::const_iterator BasicShellContext::GetViewTextBegin()const{
 	return m_viewstartY_itr;
 }
 std::list<std::list<AttributeText>>::const_iterator BasicShellContext::GetViewTextEnd() const {
