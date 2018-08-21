@@ -23,26 +23,37 @@ namespace tignear::sakura {
 			unsigned int font;//0-9
 			bool reverse;
 		};
-		static ansi::AttributeText CreateAttrText(std::wstring& str,const Attribute& attr);
-		static ansi::AttributeText CreateAttrText(std::wstring&& str, const Attribute& attr);
+		static ansi::AttributeText CreateAttrText(icu::UnicodeString& str,const Attribute& attr);
+		static ansi::AttributeText CreateAttrText(icu::UnicodeString&& str,const Attribute& attr);
 
 		//ansi parser call backs
-		friend BasicShellContext& ansi::parse<BasicShellContext>(std::wstring_view,BasicShellContext&);
+		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
 		void FindCSI(std::wstring_view);
 		void FindString(std::wstring_view);
 		void FindOSC(std::wstring_view);
+		void FindBS();
+		void FindFF();
 		//ansi parser work helpers
 		void RemoveRows(std::list<std::list<ansi::AttributeText>>::size_type count);
 		void RemoveRowsR(std::list<std::list<ansi::AttributeText>>::size_type count);
-		void RemoveColumns(std::wstring::size_type count);
-		void RemoveColumnsR(std::wstring::size_type count);
+		void RemoveColumns();
+		void RemoveColumnsR();
 		void RemoveCursorBefore();
 		void RemoveCursorAfter();
 		void ParseColor(std::wstring_view);
-		void InsertCursorPos(std::wstring&&);
-		std::wstring::size_type CurosorLineLength();
-		//class members
+		void InsertCursorPos(const std::wstring&);
+		int32_t CurosorLineLength();
+		//class fields
+		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
+		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
+		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
+		void AddString(std::wstring_view);
+		void MoveCurosorYUp(std::list<std::list<ansi::AttributeText>>::size_type count);
+		void MoveCurosorYDown(std::list<std::list<ansi::AttributeText>>::size_type count);
+		void NotifyUpdateText();
+		void NotifyUpdateString();
 		constexpr static unsigned int BUFFER_SIZE = 4096;
+		const unsigned int m_codepage;
 		static std::atomic_uintmax_t m_process_count;
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
 		HANDLE m_childProcess;
@@ -52,16 +63,11 @@ namespace tignear::sakura {
 		std::list<std::list<ansi::AttributeText>> m_text;
 		std::list<std::list<ansi::AttributeText>>::iterator m_viewstartY_itr;
 		std::list<std::list<ansi::AttributeText>>::iterator m_cursorY_itr;
-		std::wstring::size_type m_cursorX;
+		int32_t m_cursorX;
 		std::list<std::list<ansi::AttributeText>>::size_type m_viewline_count;//âÊñ Ç…âfÇÈçsÇÃêî
 		mutable std::unordered_map<std::uintptr_t,std::function<void(ShellContext*)>> m_text_change_listeners;
 		std::wstring m_title;
-		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
-		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
-		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
-		void AddString(std::wstring_view);
-		void MoveCurosorYUp(std::list<std::list<ansi::AttributeText>>::size_type count);
-		void MoveCurosorYDown(std::list<std::list<ansi::AttributeText>>::size_type count);
+
 		Attribute m_current_attr;
 		Attribute m_def_attr;
 		const std::unordered_map<unsigned int, std::uint32_t> m_system_color_table;
@@ -70,12 +76,13 @@ namespace tignear::sakura {
 		//out pipe temp
 		std::string m_outbuf;
 	public:
-		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr):
+		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage):
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
-			m_text{ {ansi::AttributeText(L"")} },
+			m_text{ {ansi::AttributeText(icu::UnicodeString())} },
 			m_current_attr(),
-			m_def_attr()
+			m_def_attr(),
+			m_codepage(codepage)
 		{
 			m_viewstartY_itr = m_text.begin();
 			m_cursorY_itr = m_text.begin();
@@ -87,7 +94,7 @@ namespace tignear::sakura {
 			CloseHandle(m_in_pipe);
 			CloseHandle(m_childProcess);
 		}
-		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>);
+		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage);
 		void InputChar(WPARAM c) override;
 		void InputKey(WPARAM keycode) override;
 		void InputKey(WPARAM keycode, unsigned int count) override;

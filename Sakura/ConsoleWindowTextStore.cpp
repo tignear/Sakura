@@ -342,7 +342,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	std::wstring shellstr;
 	for (auto itr = m_console->shell->GetViewTextBegin(); itr != m_console->shell->GetViewTextEnd(); itr++) {
 		for (auto elem : (*itr)) {
-			shellstr += elem.text();
+			shellstr += elem.textW();
 		}
 		shellstr += L"\r\n";
 	}

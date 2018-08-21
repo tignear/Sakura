@@ -55,6 +55,17 @@ HRESULT ConsoleWindow::OnEndComposition(ITfCompositionView *pComposition) {
 	rangeAcp->GetExtent(&start, &len);
 	if (start != m_composition_start_pos||len!=0) {
 		m_console->shell->InputString(m_last_composition_string);
+		if (!UseTerminalEchoBack()) {
+			PushAsyncCallQueue(true, [this]() {
+				auto oldend = static_cast<LONG>(InputtingString().length());
+				InputtingString().clear();
+				SelectionStart() = 0;
+				SelectionEnd() = 0;
+				TS_TEXTCHANGE tc = { 0,oldend,0 };
+				m_sink->OnTextChange(0,&tc);
+			});
+		}
+
 	}
 	m_last_composition_string.clear();
 	return S_OK;

@@ -12,8 +12,8 @@ using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
-shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr) {
-	auto r = make_shared<BasicShellContext>(iocpmgr);
+shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage) {
+	auto r = make_shared<BasicShellContext>(iocpmgr,codepage);
 	if (r->Init(cmdstr))
 	{
 		if (!r->IOWorkerStart(r)) {
@@ -122,10 +122,22 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
 	//OutputDebugStringA(s->m_outbuf.c_str());
-	s->AddString(cp_to_wide(s->m_outbuf.c_str(),65001,static_cast<int>(cnt)));
-	return s->OutputWorker(s); ;
+	s->AddString(cp_to_wide(s->m_outbuf.c_str(),s->m_codepage,cnt));
+	return s->OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
+	if (keycode >= 65 && keycode <= 90) {//alphabet
+		return;
+	}
+	if (keycode >= 48 && keycode <= 57) {
+		return;
+	}
+	if (keycode >= 96 && keycode <= 105) {
+		return;
+	}
+	if (keycode == VK_RETURN) {
+		return;
+	}
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
@@ -134,12 +146,14 @@ void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
 	}
 }
 void BasicShellContext::InputChar(WPARAM charcode) {
-	// do nothing
-	//PostMessage(m_hwnd, WM_CHAR, charcode, 0);
+	/*if (0x08 == charcode) {
+		return;
+	}*/
+	PostMessage(m_hwnd, WM_CHAR, charcode, 0);
 }
 void BasicShellContext::InputString(std::wstring_view wstr) {
 	for (auto c : wstr) {
-		PostMessage(m_hwnd, WM_CHAR, c,0);
+		InputChar(c);
 	}
 }
 void BasicShellContext::ConfirmString(std::wstring_view view) {
@@ -156,7 +170,7 @@ std::list<std::list<AttributeText>>::const_iterator BasicShellContext::GetViewTe
 	return r_itr;
 }
 void BasicShellContext::AddString(std::wstring_view str) {
-	ansi::parse(str, *this);
+	ansi::parseW(str, *this);
 }
 
 uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellContext*)> f) const{

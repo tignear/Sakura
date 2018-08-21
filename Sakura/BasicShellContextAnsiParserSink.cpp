@@ -1,21 +1,23 @@
 #include "stdafx.h"
+#include <unicode/ubrk.h>
+#include <unicode/brkiter.h>
+#include <unicode/locid.h>
 #include <numeric>
 #include <algorithm>
 #include "BasicShellContext.h"
 #include "split.h"
+#include "EastAsianWidth.h"
 using tignear::sakura::BasicShellContext;
 using tignear::ansi::AttributeText;
 using tignear::stdex::split;
-/*
-m_viewstartY_itrより後ろの要素とm_viewstartY_itrがさす要素のstartIndexの書き換えが必要になることはあってはならない。
-またm_viewstartY_itrより後ろの要素のtextを書き換えてはならない。(m_viewstartY_itrのtextは書き換えても良い)
-*/
+using icu::UnicodeString;
+using tignear::icuex::EastAsianWidth;
 
-AttributeText BasicShellContext::CreateAttrText(std::wstring& str, const Attribute& attr) {
+AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString& str,const Attribute& attr) {
 	return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
 }
-AttributeText BasicShellContext::CreateAttrText(std::wstring&& str, const Attribute& attr) {
-	return AttributeText(std::move(str), attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString&& str, const Attribute& attr) {
+	return AttributeText(std::move(str),attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
 }
 void BasicShellContext::MoveCurosorYUp(std::wstring::size_type count) {
 	for (auto i = 0U; i < count&&m_cursorY_itr!=m_text.begin(); i++) {
@@ -31,8 +33,8 @@ void BasicShellContext::RemoveRows(std::list<std::list<AttributeText>>::size_typ
 	auto copy_itr = m_cursorY_itr;
 	for (auto i = 0U; i < count; i++) {
 		copy_itr->clear();
+		copy_itr++;
 	}
-	copy_itr++;
 }
 void BasicShellContext::RemoveRowsR(std::list<std::list<AttributeText>>::size_type count) {
 	auto copy = m_cursorY_itr;
@@ -41,80 +43,178 @@ void BasicShellContext::RemoveRowsR(std::list<std::list<AttributeText>>::size_ty
 		(--(ritr.base()))->clear();
 	}
 }
-void BasicShellContext::RemoveColumns(std::wstring::size_type count) {
+void BasicShellContext::RemoveColumns() {
 	if (m_cursorY_itr == m_text.end()) {
 		return;
 	}
 	auto& elem = (*m_cursorY_itr);
 	auto itr= elem.begin();//copy iterator
-	std::wstring::size_type removed = 0;
-	while (itr != elem.end() && removed < count) {
-		if (itr->length() >= count - removed) {
-			itr->text().erase(0,count-removed);
+	int32_t removed = 0;
+	while (itr != elem.end() && removed < m_cursorX) {
+		if(static_cast<int32_t>(itr->lengthEAW()) > m_cursorX - removed) {
+			itr->textE(
+				[this, &removed](auto self, auto e) {
+				UErrorCode status = U_ZERO_ERROR;
+				int32_t previous;
+				int32_t current;
+				icu::BreakIterator *it = icu::BreakIterator::createCharacterInstance(
+					icu::Locale::getDefault(), status
+				);
+				it->setText(e);
+				for (
+					previous = it->first(), current = it->next();
+					current != icu::BreakIterator::DONE&&removed < m_cursorX;
+					previous = current, current = it->next()
+					) {
+					auto size = current - previous;
+					auto count32 = e.countChar32(previous, size);
+					if (count32 == 1) {
+						auto eaw = EastAsianWidth(e.char32At(previous));
+						removed += eaw;
+					}
+					else {
+						removed += 2;//書記素クラスタがUTF32で1文字で表されない場合は文字幅2(要検証)
+					}
+				}
+				e.removeBetween(0,current);
+				m_cursorX = 0;
+				return true;
+			});
 			break;
 		}
 		else {
-			removed += itr->length();
+			removed += itr->lengthEAW();
 			itr=elem.erase(itr);
 			continue;
 		}
 	}
 }
-void BasicShellContext::RemoveColumnsR(std::wstring::size_type count) {
+void BasicShellContext::RemoveColumnsR() {
 	if (m_cursorY_itr == m_text.end()) {
 		return;
 	}
 	auto& elem = (*m_cursorY_itr);
-	std::wstring::size_type removed = 0;
-	while (removed < count) {
-		auto& e = elem.back();
-		if (e.length()>=count-removed) {
-			e.text().erase(e.length()-(count-removed), count - removed);
+	int32_t skip = 0;
+	auto itr = elem.begin();
+	for (; itr != elem.end() && skip <= m_cursorX;itr++) {
+		if (itr->lengthEAW() >static_cast<uint32_t>(m_cursorX-skip)) {
+			//https://qiita.com/masakielastic/items/a3387817afb0a03def2b#unicodestring
+			itr->textE([this,&skip](auto self, icu::UnicodeString& e2) {
+				UErrorCode status = U_ZERO_ERROR;
+				int32_t previous;
+				int32_t current;
+				icu::BreakIterator *it = icu::BreakIterator::createCharacterInstance(
+					icu::Locale::getDefault(), status
+				);
+				it->setText(e2);
+				for (
+					previous = it->first(), current = it->next();
+					current != icu::BreakIterator::DONE&&skip<m_cursorX;
+					previous = current, current = it->next()
+					) {
+					auto size = current - previous;
+					auto count32=e2.countChar32(previous, size);
+					if (count32 == 1) {
+						auto eaw=EastAsianWidth(e2.char32At(previous));
+						skip += eaw;
+					}
+					else {
+						skip += 2;//書記素クラスタがUTF32で1文字で表されない場合は文字幅2(要検証)
+					}
+				}
+				e2.removeBetween(current);
+				m_cursorX = skip;
+				return true;
+			});
+			itr++;
 			break;
 		}
 		else {
-			removed += e.length();
-			elem.pop_back();
+			skip += itr->lengthEAW();
 			continue;
 		}
 	}
+	elem.erase(itr,elem.end());
 }
 void BasicShellContext::RemoveCursorBefore() {
 	auto prev=std::prev(m_cursorY_itr);
 	std::for_each(m_viewstartY_itr, prev, [] (std::list<ansi::AttributeText>& e){
 		e.clear();
 	});
-	RemoveColumns(m_cursorX);
+	RemoveColumns();
 }
 void BasicShellContext::RemoveCursorAfter() {
 	auto next = std::next(m_cursorY_itr);
 	std::for_each(next, m_text.end(), [](std::list<ansi::AttributeText>& e) {
 		e.clear();
 	});
-	RemoveColumnsR(CurosorLineLength() - m_cursorX);
+	RemoveColumnsR();
 }
-std::wstring::size_type BasicShellContext::CurosorLineLength() {
-	std::wstring::size_type cnt=0;
+int32_t BasicShellContext::CurosorLineLength() {
+	int32_t cnt=0;
 	for (auto itr = m_cursorY_itr->cbegin(); itr != m_cursorY_itr->cend();itr++) {
 		cnt += itr->length();
 	}
 	return cnt;
 }
-void BasicShellContext::InsertCursorPos(std::wstring&& str) {
-	std::wstring::size_type i=0;
+void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
+	int32_t i=0;
+	auto ustr = UnicodeString(wstr.c_str());
 	if (m_cursorY_itr == m_text.end()) {
-		m_text.push_back({ CreateAttrText(std::move(str), m_current_attr) });
+		m_cursorX = EastAsianWidth(ustr);
+		m_text.push_back({ CreateAttrText(std::move(ustr), m_current_attr) });
+		m_cursorY_itr = m_text.end();
+		m_cursorY_itr--;
 		return;
 	}
 	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end();itr++) {
-		auto l=itr->length();
-		if (i+l >= m_cursorX) {
-			itr->text().insert(m_cursorX - i, str);
+		int32_t l=static_cast<int32_t>(itr->lengthEAW());
+		if (i+l > m_cursorX) {
+			auto ustrlen = EastAsianWidth(ustr);
+			itr->textE(
+				[this, &ustr, &i](auto& self, auto& e) {
+				UErrorCode status = U_ZERO_ERROR;
+				int32_t previous;
+				int32_t current;
+				icu::BreakIterator *it = icu::BreakIterator::createCharacterInstance(
+					icu::Locale::getDefault(), status
+				);
+				it->setText(e);
+				for (
+					previous = it->first(), current = it->next();
+					current != icu::BreakIterator::DONE&&i < m_cursorX;
+					previous = current, current = it->next()
+					) {
+					auto size = current - previous;
+					auto count32 = e.countChar32(previous, size);
+					if (count32 == 1) {
+						auto eaw = EastAsianWidth(e.char32At(previous));
+						i += eaw;
+					}
+					else {
+						i += 2;
+					}
+				}
+				if (-1 == current) {
+					e.append(ustr);
+				}
+				else {
+					e.insert(current, ustr);
+				}
+				//e.insert(m_cursorX - i, ustr); 
+				return true;
+			});
+			m_cursorX +=ustrlen;
 			return;
 		}
 		i += l;
 	}
-	m_cursorY_itr->back().text()+=str;
+	m_cursorX += EastAsianWidth(ustr);
+	m_cursorY_itr->back().textE([&ustr](auto& self, auto& e) {
+		e+= ustr;
+		return true;
+	});
+
 }
 void BasicShellContext::ParseColor(std::wstring_view sv) {
 	auto elems=split<wchar_t, std::vector<std::wstring>>(std::wstring(sv), L";");
@@ -273,7 +373,7 @@ void BasicShellContext::FindString(std::wstring_view str) {
 	auto back=r.back();
 	r.pop_back();
 	for (auto e : r) {
-		e += L"\r\n";
+		e +=L"\n";
 		InsertCursorPos(std::move(e));
 		m_cursorX = 0;
 		MoveCurosorYDown(1);
@@ -371,10 +471,10 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		switch (prop)
 		{
 		case 0:
-			RemoveCursorBefore();
+			RemoveCursorAfter();
 			break;
 		case 1:
-			RemoveCursorAfter();
+			RemoveCursorBefore();
 			break;
 		case 2:
 		{
@@ -404,10 +504,11 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		switch (prop)
 		{
 		case 0:
-			RemoveColumns(m_cursorX);
+			RemoveColumnsR();
+
 			break;
 		case 1:
-			RemoveColumnsR(CurosorLineLength() - m_cursorX);
+			RemoveColumns();
 			break;
 		case 2:
 			m_cursorY_itr->clear();
@@ -437,4 +538,28 @@ void BasicShellContext::FindOSC(std::wstring_view sv) {
 	default:
 		break;
 	}
+}
+void BasicShellContext::FindBS() {
+	int32_t i = 0;
+	if (m_cursorY_itr == m_text.end()) {
+		return;
+	}
+	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end(); itr++) {
+		auto l = itr->length();
+		if (i + l >= m_cursorX) {
+			itr->textE([this, i](auto& self, auto& e) {e.remove(m_cursorX - i, 1); return true; });
+			m_cursorX -= 1;
+			return;
+		}
+		i += l;
+	}
+	m_cursorY_itr->back().textE
+	([len = m_cursorY_itr->back().length()](auto& self, auto& e)
+	{
+		e.remove(len - 1, 1);
+		return true; 
+	});
+}
+void BasicShellContext::FindFF() {
+
 }

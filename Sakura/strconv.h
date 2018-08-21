@@ -25,19 +25,31 @@ static inline std::string wide_to_cp(const std::wstring &s, UINT codepage)
 	if (out_length) WideCharToMultiByte(codepage, 0, s.c_str(), in_length, &result[0], out_length, 0, 0);
 	return result;
 }
-static inline std::wstring cp_to_wide(const std::string &s, UINT codepage,int in_length)
+static inline std::wstring cp_to_wide(const std::string &s, UINT codepage, std::string::size_type in_length)
 {
-	int out_length = MultiByteToWideChar(codepage, 0, s.c_str(), in_length, 0, 0);
+	auto out_length = MultiByteToWideChar(codepage, 0, s.c_str(), static_cast<int>(in_length), 0, 0);
 	std::wstring result(out_length, L'\0');
-	if (out_length) MultiByteToWideChar(codepage, 0, s.c_str(), in_length, &result[0], out_length);
+	if (out_length) MultiByteToWideChar(codepage, 0, s.c_str(), static_cast<int>(in_length), &result[0], out_length);
 	return result;
 }
-static inline std::string wide_to_cp(const std::wstring &s, UINT codepage,int in_length)
+static inline std::string wide_to_cp(const std::wstring &s, UINT codepage, std::wstring::size_type in_length)
 {
-	int out_length = WideCharToMultiByte(codepage, 0, s.c_str(), in_length, 0, 0, 0, 0);
+	auto out_length = WideCharToMultiByte(codepage, 0, s.c_str(), static_cast<int>(in_length), 0, 0, 0, 0);
 	std::string result(out_length, '\0');
-	if (out_length) WideCharToMultiByte(codepage, 0, s.c_str(), in_length, &result[0], out_length, 0, 0);
+	if (out_length) WideCharToMultiByte(codepage, 0, s.c_str(), static_cast<int>(in_length), &result[0], out_length, 0, 0);
 	return result;
+}
+static inline void cp_to_wide(const std::string &s, UINT codepage, std::string::size_type in_length,std::wstring& out)
+{
+	auto out_length = MultiByteToWideChar(codepage, 0, s.c_str(), static_cast<int>(in_length), 0, 0);
+	out.assign(out_length, L'\0');
+	if (out_length) MultiByteToWideChar(codepage, 0, s.c_str(), static_cast<int>(in_length), &out[0], out_length);
+}
+static inline void wide_to_cp(const std::wstring &s, UINT codepage, std::wstring::size_type in_length, std::string& out)
+{
+	auto out_length = WideCharToMultiByte(codepage, 0, s.c_str(), static_cast<int>(in_length), 0, 0, 0, 0);
+	out.assign(out_length, '\0');
+	if (out_length) WideCharToMultiByte(codepage, 0, s.c_str(), static_cast<int>(in_length), &out[0], out_length, 0, 0);
 }
 #else /* __cplusplus < 201103L */
 static inline std::wstring cp_to_wide(const std::string &s, UINT codepage)

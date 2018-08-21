@@ -123,9 +123,12 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 		default:
 			if (SelectionStart() == SelectionEnd())
 			{
-				InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
-				SelectionStart()++;
-				SelectionEnd()++;
+				if (UseTerminalEchoBack()) {
+					InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
+					SelectionStart()++;
+					SelectionEnd()++;
+				}
+
 			}
 			else
 			{
@@ -185,6 +188,9 @@ std::wstring& ConsoleWindow::InputtingString() {
 }
 bool& ConsoleWindow::InterimChar() {
 	return m_console->interim_char;
+}
+bool ConsoleWindow::UseTerminalEchoBack() {
+	return m_console->use_terminal_echoback;
 }
 void ConsoleWindow::OnKeyDown(WPARAM param) {
 
@@ -333,9 +339,12 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				{
 					return;
 				}
-				InputtingString().erase(SelectionStart(), 1);
-				m_console->shell->InputKey(VK_RIGHT);
-				m_console->shell->InputKey(VK_BACK);
+				if (UseTerminalEchoBack()) {
+					InputtingString().erase(SelectionStart(), 1);
+					m_console->shell->InputKey(VK_RIGHT);
+					m_console->shell->InputKey(VK_BACK);
+				}
+
 			}
 			else
 			{
@@ -360,10 +369,13 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					{
 						return;
 					}
-					SelectionStart()--;
-					SelectionEnd()--;
-					InputtingString().erase(SelectionStart(), 1);
-					m_console->shell->InputKey(VK_BACK);
+					if (UseTerminalEchoBack()) {
+						SelectionStart()--;
+						SelectionEnd()--;
+						InputtingString().erase(SelectionStart(), 1);
+						m_console->shell->InputKey(VK_BACK);
+					}
+
 				}
 				else
 				{
@@ -380,7 +392,9 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_RETURN)&0x80) {
-			InputtingString() += L'\n';
+			if (UseTerminalEchoBack()) {
+				InputtingString() += L'\n';
+			}
 			ConfirmCommand();
 			m_console->shell->InputKey(VK_RETURN);
 			InvalidateRect(m_hwnd, NULL, FALSE);
@@ -392,7 +406,9 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 	});
 }
 void ConsoleWindow::ConfirmCommand() {
-	m_console->shell->ConfirmString(InputtingString());
+	if (UseTerminalEchoBack()) {
+		m_console->shell->ConfirmString(InputtingString());
+	}
 	SelectionStart() = 0;
 	SelectionEnd() = 0;
 	auto oldEnd = static_cast<LONG>(InputtingString().length());
@@ -471,11 +487,16 @@ void ConsoleWindow::OnPaint() {
 		t->Clear(clearColor);
 		std::wstring shellstr;
 		auto end = m_console->shell->GetViewTextEnd();
+		auto endb = end;
+		endb--;
 		for (auto itr = m_console->shell->GetViewTextBegin(); itr !=end; itr++) {
 			for (auto elem:(*itr)) {
-				shellstr += elem.text();
+				shellstr += elem.textW();
+				auto w= elem.textW();
+				OutputDebugStringW(std::wstring(w).c_str());
 			}
 		}
+
 		auto lengthShell = static_cast<UINT32>(shellstr.length());
 		std::wstring ftext;
 		ftext.reserve(shellstr.length() + InputtingString().length());

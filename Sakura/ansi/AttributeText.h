@@ -1,12 +1,16 @@
 #pragma once
 #include <string>
+#include "../EastAsianWidth.h"
+#include <unicode/unistr.h>
+#include <functional>
 namespace tignear::ansi {
 	enum Blink {
 		None, Slow, Fast
 	};
 	struct AttributeText {
-		AttributeText(std::wstring text):
+		AttributeText(icu::UnicodeString text):
 			m_text(text),
+			m_update_length_eaw(true),
 			m_textColor(0x000000),
 			m_backgroundColor(0xffffff),
 			m_bold(false),
@@ -16,7 +20,7 @@ namespace tignear::ansi {
 			m_blink(None),
 			m_conceal(false),
 			m_font(0){}
-		AttributeText(std::wstring text, std::uint32_t textcolor, std::uint32_t bgcolor,bool bold,bool faint,bool italic,bool underline, Blink blink,bool conceal,unsigned int font) :
+		AttributeText(icu::UnicodeString text, std::uint32_t textcolor, std::uint32_t bgcolor,bool bold,bool faint,bool italic,bool underline, Blink blink,bool conceal,unsigned int font) :
 			m_text(text),
 			m_textColor(textcolor),
 			m_backgroundColor(bgcolor),
@@ -27,14 +31,29 @@ namespace tignear::ansi {
 			m_blink(blink),
 			m_conceal(conceal),
 			m_font(font) {}
-		std::wstring_view text()const{
+		const icu::UnicodeString& text()const{
 			return m_text;
 		}
-		std::wstring& text() {
-			return m_text;
+		void textE(std::function<bool(AttributeText&,icu::UnicodeString&)> fn) {
+			if (fn(*this,m_text)) {
+				m_update_length_eaw=true;
+			}
 		}
-		std::wstring::size_type length()const {
+#if U_SIZEOF_WCHAR_T==2
+		std::wstring_view textW()const {
+			return std::wstring_view(reinterpret_cast<const wchar_t*>(m_text.getTerminatedBuffer()),length());
+		}
+#endif
+
+		int32_t length()const {
 			return m_text.length();
+		}
+		uint32_t lengthEAW() const{
+			if (m_update_length_eaw) {
+				m_length_eaw = tignear::icuex::EastAsianWidth(text());
+				m_update_length_eaw = false;
+			}
+			return m_length_eaw;
 		}
 		std::uint32_t textColor()const  {
 			return m_textColor;
@@ -66,12 +85,6 @@ namespace tignear::ansi {
 		unsigned int font()const  {
 			return m_font;
 		}//0-9
-		void text(std::wstring& text) {
-			m_text = text;
-		}
-		void text(std::wstring&& text) {
-			m_text = text;
-		}
 
 		void textColor(std::uint32_t color) {
 			m_textColor = color;
@@ -104,9 +117,11 @@ namespace tignear::ansi {
 			m_font = font;
 		}
 	private:
-		std::wstring m_text;
+		mutable icu::UnicodeString m_text;
 		std::uint32_t m_textColor;
 		std::uint32_t m_backgroundColor;
+		mutable bool m_update_length_eaw;
+		mutable uint32_t m_length_eaw;
 		bool m_bold;
 		bool m_faint;
 		bool m_italic;

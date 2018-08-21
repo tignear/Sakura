@@ -22,13 +22,15 @@ namespace tignear::sakura {
 		class ConsoleContext {
 			friend class ConsoleWindow;
 		public:
-			ConsoleContext(std::shared_ptr<ShellContext> shell) :
+			ConsoleContext(std::shared_ptr<ShellContext> shell,bool use_terminal_echoback) :
 				shell(std::move(shell)),
 				inputarea_selection_start(0),
 				inputarea_selection_end(0),
 				selend(TS_AE_NONE),
 				allarea_selection_start(0),
-				allarea_selection_end(0)
+				allarea_selection_end(0),
+				interim_char(false),
+				use_terminal_echoback(use_terminal_echoback)
 			{}
 		private:
 			std::shared_ptr<ShellContext> shell;
@@ -39,6 +41,7 @@ namespace tignear::sakura {
 			LONG allarea_selection_end;
 			std::wstring input_string;
 			bool interim_char;
+			bool use_terminal_echoback;
 		};
 	private:
 		static constexpr UINT_PTR CallAsyncTimerId = 0x01;
@@ -85,6 +88,7 @@ namespace tignear::sakura {
 		void UpdateText();
 		void CaretUpdate();
 		void ConfirmCommand();
+		bool UseTerminalEchoBack();
 		LONG& SelectionStart();
 		LONG& SelectionEnd();
 		TsActiveSelEnd& ActiveSelEnd();

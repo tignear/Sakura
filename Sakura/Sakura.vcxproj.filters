@@ -81,6 +81,9 @@
     <ClInclude Include="ansi\AttributeText.h">
       <Filter>ヘッダー ファイル\ansi</Filter>
     </ClInclude>
+    <ClInclude Include="EastAsianWidth.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
