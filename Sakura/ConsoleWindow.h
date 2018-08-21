@@ -14,7 +14,7 @@
 #include "Direct2D.h"
 #include "TextBuilder.h"
 #include "TextStoreLock.h"
-#include "TSFDWriteDrawer.h"
+#include "TextDrawer.h"
 namespace tignear::sakura {
 	class ConsoleWindow :ITextStoreACP, ITfContextOwnerCompositionSink {
 	public:
@@ -49,7 +49,7 @@ namespace tignear::sakura {
 		static bool m_registerState;
 		std::unique_ptr<Direct2DWithHWnd> m_d2d;
 		std::unique_ptr<tignear::dwrite::TextBuilder> m_tbuilder;
-		Microsoft::WRL::ComPtr<tignear::tsf::TsfDWriteDrawer> m_drawer;
+		Microsoft::WRL::ComPtr<tignear::dwrite::DWriteDrawer> m_drawer;
 		Microsoft::WRL::ComPtr<ITfDocumentMgr> m_docmgr;
 		Microsoft::WRL::ComPtr<ITfProperty> m_attr_prop;
 		Microsoft::WRL::ComPtr<ITfProperty> m_composition_prop;

@@ -4,7 +4,8 @@
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::dwrite::TextBuilder;
-using namespace tignear::tsf;
+using namespace tignear::dwrite;
+
 bool ConsoleWindow::RegisterConsoleWindowClass(HINSTANCE hinst) {
 	if (m_registerState) return true;
 	WNDCLASSEX wcex;
@@ -78,7 +79,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 	FailToThrowB(RegisterConsoleWindowClass(m_hinst));
 	m_hwnd = CreateWindowEx(0, className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, m_parentHwnd, m, m_hinst, this);
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_hwnd);
-	tignear::tsf::TsfDWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
+	tignear::dwrite::DWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
 		L"Cica",
 		DWRITE_FONT_WEIGHT_NORMAL,
@@ -566,10 +567,10 @@ void ConsoleWindow::OnPaint() {
 				TF_DISPLAYATTRIBUTE attr;
 				dispattrinfo->GetAttributeInfo(&attr);
 				//attr‚É‘®«‚ª“ü‚Á‚Ä‚¢‚é‚Ì‚Å‘®«‚ÉŠî‚Ã‚¢‚Ä•`‰æ‚³‚¹‚é
-				ComPtr<TsfDWriteDrawerEffect> effect = new TsfDWriteDrawerEffect(
+				ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
 					convertColor(attr.crBk, t, transparency.Get()).Get(),
 					convertColor(attr.crText, t, textColor.Get()).Get(),
-					attr.lsStyle == TF_LS_NONE ? std::unique_ptr<TsfDWriteDrawerEffectUnderline>() : std::make_unique<TsfDWriteDrawerEffectUnderline>(convertLineStyle(attr.lsStyle),
+					attr.lsStyle == TF_LS_NONE ? std::unique_ptr<DWriteDrawerEffectUnderline>() : std::make_unique<DWriteDrawerEffectUnderline>(convertLineStyle(attr.lsStyle),
 					static_cast<bool>(attr.fBoldLine), 
 					convertColor(attr.crLine, t, textColor.Get()).Get())
 				);
@@ -591,12 +592,12 @@ void ConsoleWindow::OnPaint() {
 			}
 		}
 
-		ComPtr<TsfDWriteDrawerEffect> defaultEffect = new TsfDWriteDrawerEffect{
+		ComPtr<DWriteDrawerEffect> defaultEffect = new DWriteDrawerEffect{
 			transparency.Get(), 
 			textColor.Get(),
-			std::unique_ptr<TsfDWriteDrawerEffectUnderline>() 
+			std::unique_ptr<DWriteDrawerEffectUnderline>() 
 		};
-		auto context = std::make_unique<TsfDWriteDrawerContext>(t, defaultEffect.Get());
+		auto context = std::make_unique<DWriteDrawerContext>(t, defaultEffect.Get());
 
 		FailToThrowHR(layout->Draw(context.get(), m_drawer.Get(), 0, 0));
 
