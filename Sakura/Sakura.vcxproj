@@ -72,19 +72,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,10 +97,8 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
       <ExceptionHandling>Async</ExceptionHandling>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
@@ -122,9 +120,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -132,8 +128,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -149,9 +145,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -178,9 +172,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DisableSpecificWarnings>4100</DisableSpecificWarnings>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -190,16 +182,18 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AttributeText.h" />
-    <ClInclude Include="BasicAttributeText.h" />
+    <ClInclude Include="ansi\AnsiParser.h" />
+    <ClInclude Include="ansi\AttributeText.h" />
+    <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="Direct2D.h" />
+    <ClInclude Include="EastAsianWidth.h" />
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />
     <ClInclude Include="IOCPMgr.h" />
@@ -218,6 +212,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicShellContext.cpp" />
+    <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowCompositionSink.cpp" />
     <ClCompile Include="ConsoleWindowTextStore.cpp" />

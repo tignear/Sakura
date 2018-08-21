@@ -45,9 +45,6 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		break;
 	case WM_KEYDOWN:
 		self->OnKeyDown(wParam);
-		if (lParam & 0x8000) {
-			OutputDebugString(_T("Ext101"));
-		}
 		break;
 	case WM_CHAR:
 		self->OnChar(wParam);
@@ -83,7 +80,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_hwnd);
 	tignear::tsf::TsfDWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
-		L"ƒƒCƒŠƒI",
+		L"Cica",
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_SEMI_EXPANDED,
@@ -126,9 +123,12 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 		default:
 			if (SelectionStart() == SelectionEnd())
 			{
-				InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
-				SelectionStart()++;
-				SelectionEnd()++;
+				if (UseTerminalEchoBack()) {
+					InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
+					SelectionStart()++;
+					SelectionEnd()++;
+				}
+
 			}
 			else
 			{
@@ -188,6 +188,9 @@ std::wstring& ConsoleWindow::InputtingString() {
 }
 bool& ConsoleWindow::InterimChar() {
 	return m_console->interim_char;
+}
+bool ConsoleWindow::UseTerminalEchoBack() {
+	return m_console->use_terminal_echoback;
 }
 void ConsoleWindow::OnKeyDown(WPARAM param) {
 
@@ -257,7 +260,6 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			}
 			m_sink->OnSelectionChange();
 			InvalidateRect(m_hwnd, NULL, FALSE);
-
 		}
 		else if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -337,9 +339,12 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				{
 					return;
 				}
-				InputtingString().erase(SelectionStart(), 1);
-				m_console->shell->InputKey(VK_RIGHT);
-				m_console->shell->InputKey(VK_BACK);
+				if (UseTerminalEchoBack()) {
+					InputtingString().erase(SelectionStart(), 1);
+					m_console->shell->InputKey(VK_RIGHT);
+					m_console->shell->InputKey(VK_BACK);
+				}
+
 			}
 			else
 			{
@@ -364,10 +369,13 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					{
 						return;
 					}
-					SelectionStart()--;
-					SelectionEnd()--;
-					InputtingString().erase(SelectionStart(), 1);
-					m_console->shell->InputKey(VK_BACK);
+					if (UseTerminalEchoBack()) {
+						SelectionStart()--;
+						SelectionEnd()--;
+						InputtingString().erase(SelectionStart(), 1);
+						m_console->shell->InputKey(VK_BACK);
+					}
+
 				}
 				else
 				{
@@ -381,19 +389,26 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					ActiveSelEnd() = TS_AE_NONE;
 				}
 			}
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_RETURN)&0x80) {
-			InputtingString() += L'\n';
+			if (UseTerminalEchoBack()) {
+				InputtingString() += L'\n';
+			}
 			ConfirmCommand();
 			m_console->shell->InputKey(VK_RETURN);
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 		else {
 			m_console->shell->InputKey(param);
+			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	});
 }
 void ConsoleWindow::ConfirmCommand() {
-	m_console->shell->ConfirmString(InputtingString());
+	if (UseTerminalEchoBack()) {
+		m_console->shell->ConfirmString(InputtingString());
+	}
 	SelectionStart() = 0;
 	SelectionEnd() = 0;
 	auto oldEnd = static_cast<LONG>(InputtingString().length());
@@ -470,7 +485,18 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
-		auto shellstr = m_console->shell->GetString();
+		std::wstring shellstr;
+		auto end = m_console->shell->GetViewTextEnd();
+		auto endb = end;
+		endb--;
+		for (auto itr = m_console->shell->GetViewTextBegin(); itr !=end; itr++) {
+			for (auto elem:(*itr)) {
+				shellstr += elem.textW();
+				auto w= elem.textW();
+				OutputDebugStringW(std::wstring(w).c_str());
+			}
+		}
+
 		auto lengthShell = static_cast<UINT32>(shellstr.length());
 		std::wstring ftext;
 		ftext.reserve(shellstr.length() + InputtingString().length());
