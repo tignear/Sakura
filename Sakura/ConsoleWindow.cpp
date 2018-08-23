@@ -486,25 +486,21 @@ void ConsoleWindow::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
-		std::wstring shellstr;
-		auto end = m_console->shell->GetViewTextEnd();
-		auto endb = end;
-		endb--;
-		for (auto itr = m_console->shell->GetViewTextBegin(); itr !=end; itr++) {
-			for (auto elem:(*itr)) {
-				shellstr += elem.textW();
-				auto w= elem.textW();
-				OutputDebugStringW(std::wstring(w).c_str());
+		std::wstring ftext;
+		{
+			auto end = m_console->shell->GetViewTextEnd();
+			auto endb = end;
+			endb--;
+			for (auto itr = m_console->shell->GetViewTextBegin(); itr !=end; itr++) {
+				for (auto elem:(*itr)) {
+					ftext += elem.textW();
+				}
 			}
 		}
-
-		auto lengthShell = static_cast<UINT32>(shellstr.length());
-		std::wstring ftext;
-		ftext.reserve(shellstr.length() + InputtingString().length());
-		ftext += shellstr;
+		auto lengthShell = static_cast<UINT32>(ftext.length());
 		ftext += InputtingString();
 		auto layout = m_tbuilder->CreateTextLayout(ftext, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
-
+		
 		//draw caret
 		//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
 		if (m_caret_display) {
@@ -548,8 +544,46 @@ void ConsoleWindow::OnPaint() {
 			}
 
 		}
+		{
+			//draw string
+			//shell string
+			auto end = m_console->shell->GetViewTextEnd();
+			int32_t strcnt = 0;
+			for (auto itr = m_console->shell->GetViewTextBegin(); itr != end; itr++) {
+				for (auto itr2 = itr->cbegin(); itr2 != itr->cend();itr2++) {
+					auto nstrcnt =strcnt+itr2->length();
+					DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(nstrcnt) };
+					if (itr2->bold()) {
+						layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
+					}
+					if (itr2->italic()) {
+						layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
+					}
+					if (itr2->underline()) {
+						layout->SetUnderline(true, range);
+					}
+					if (itr2->crossed_out()) {
+						layout->SetStrikethrough(true, range);
+					}
+					ComPtr<ID2D1SolidColorBrush> bgbrush;
+					t->CreateSolidColorBrush(D2D1::ColorF(itr2->backgroundColor()),&bgbrush);
+					ComPtr<ID2D1SolidColorBrush> frbrush;
+					t->CreateSolidColorBrush(D2D1::ColorF(itr2->textColor(),itr2->faint()?0.75f:1.0f), &frbrush);
+					ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
+						bgbrush.Get(),
+						frbrush.Get(),
+						itr2->underline() ?  std::make_unique<DWriteDrawerEffectUnderline>(
+							LineStyle_Solid,
+							false,
+							frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
+					);
+					strcnt = nstrcnt;
+				}
+			}
+		}
 
-		//draw string
+
+		//inputting string
 		ComPtr<IEnumTfRanges> enumRanges;
 		FailToThrowHR(m_attr_prop->EnumRanges(m_edit_cookie, &enumRanges, NULL));
 		ComPtr<ITfRange> range;

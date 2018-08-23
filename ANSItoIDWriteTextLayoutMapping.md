@@ -8,4 +8,4 @@
 | CSI6m | is not its job |
 | CSI7m | is not its job |
 | CSI8m | is not its job |
-| CSI9m(crossed-OUT) | SetStrikethrough |
+| CSI9m(crossed-out) | SetStrikethrough |

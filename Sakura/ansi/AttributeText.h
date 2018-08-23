@@ -84,6 +84,9 @@ namespace tignear::ansi {
 		bool conceal() const {
 			return m_conceal;
 		}//‰B‚·
+		bool crossed_out()const {
+			return m_crossed_out;
+		}
 		unsigned int font()const  {
 			return m_font;
 		}//0-9
@@ -115,9 +118,13 @@ namespace tignear::ansi {
 		void conceal(bool conceal) {
 			m_conceal = conceal;
 		}
+		void crossed_out(bool crossed_out) {
+			m_crossed_out = crossed_out;
+		}
 		void font(unsigned int font) {
 			m_font = font;
 		}
+
 	private:
 		mutable icu::UnicodeString m_text;
 		std::uint32_t m_textColor;
