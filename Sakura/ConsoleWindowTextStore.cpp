@@ -380,9 +380,6 @@ HRESULT ConsoleWindow::InsertTextAtSelection(
 	TS_TEXTCHANGE *pChange
 ) {
 	OutputDebugString(_T("TSF:InsertTextAtSelection"));
-
-
-
 	auto r = _InsertTextAtSelection(dwFlags, pchText, cch, pacpStart, pacpEnd, pChange);
 	//UpdateText();
 	return r;

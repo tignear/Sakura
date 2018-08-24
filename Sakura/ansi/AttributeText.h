@@ -8,6 +8,19 @@ namespace tignear::ansi {
 		None, Slow, Fast
 	};
 	struct AttributeText {
+		AttributeText() :
+			m_text(u""),
+			m_update_length_eaw(true),
+			m_textColor(0x000000),
+			m_backgroundColor(0xffffff),
+			m_bold(false),
+			m_faint(false),
+			m_italic(false),
+			m_underline(false),
+			m_blink(None),
+			m_conceal(false),
+			m_crossed_out(false),
+			m_font(0) {}
 		AttributeText(icu::UnicodeString text):
 			m_text(text),
 			m_update_length_eaw(true),

@@ -552,7 +552,7 @@ void ConsoleWindow::OnPaint() {
 			for (auto itr = m_console->shell->GetViewTextBegin(); itr != end; itr++) {
 				for (auto itr2 = itr->cbegin(); itr2 != itr->cend();itr2++) {
 					auto nstrcnt =strcnt+itr2->length();
-					DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(nstrcnt) };
+					DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr2->length()) };
 					if (itr2->bold()) {
 						layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
 					}
@@ -577,6 +577,7 @@ void ConsoleWindow::OnPaint() {
 							false,
 							frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
 					);
+					layout->SetDrawingEffect(effect.Get(),range);
 					strcnt = nstrcnt;
 				}
 			}

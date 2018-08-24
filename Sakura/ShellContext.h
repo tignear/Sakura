@@ -18,6 +18,11 @@ namespace tignear::sakura {
 		virtual void RemoveTextChangeListener(uintptr_t)const = 0;
 		virtual uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const = 0;
 		virtual void RemoveCursorChangeListener(uintptr_t)const = 0;
+		virtual void Set256Color(const std::unordered_map<unsigned int,uint32_t>&)=0;
+		virtual void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)=0;
+		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&)=0;
+		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)=0;
+
 	};
 
 }

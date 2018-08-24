@@ -12,8 +12,10 @@ using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
-shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage) {
+shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256) {
 	auto r = make_shared<BasicShellContext>(iocpmgr,codepage);
+	r->SetSystemColor(colorsys);
+	r->Set256Color(color256);
 	if (r->Init(cmdstr))
 	{
 		if (!r->IOWorkerStart(r)) {
@@ -30,8 +32,6 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 
 }
 bool BasicShellContext::Init(tstring cmdstr) {
-
-
 	//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(sa);
@@ -194,5 +194,17 @@ void BasicShellContext::SetViewLineCount(std::wstring::size_type count) {
 std::wstring_view BasicShellContext::GetTitle()const {
 	return m_title;
 }
-//static fiels
+void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>& table256) {
+	m_256_color_table = table256;
+}
+void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>&& table256) {
+	m_256_color_table = std::move(table256);
+}
+void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>& tablesys) {
+	m_system_color_table = tablesys;
+}
+void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&& tablesys) {
+	m_system_color_table = std::move(tablesys);
+}
+//static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

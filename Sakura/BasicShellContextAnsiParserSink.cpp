@@ -219,7 +219,7 @@ void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
 		}
 		i += l;
 	}
-	m_cursorX += EastAsianWidth(ustr);
+	m_cursorX =i+ EastAsianWidth(ustr);
 	m_cursorY_itr->back().textE([&ustr](auto& self, auto& e) {
 		e+= ustr;
 		return true;
@@ -379,19 +379,24 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 	}
 }
 void BasicShellContext::FindString(std::wstring_view str) {
+	if (m_attr_updated) {
+		m_text.back().push_back(CreateAttrText(u"",m_current_attr));
+		m_attr_updated = false;
+	}
 	auto r=split<wchar_t, std::vector<std::wstring>>(std::wstring(str), L"\n");
 	auto back=r.back();
 	r.pop_back();
 	for (auto e : r) {
 		e +=L"\n";
 		InsertCursorPos(std::move(e));
-		m_cursorX = 0;
+		m_cursorX++;
 		MoveCurosorYDown(1);
 	}
 	InsertCursorPos(std::move(back));
 
 }
 void BasicShellContext::FindCSI(std::wstring_view sv) {
+	m_attr_updated = true;
 	switch (sv.back())
 	{
 	case L'A'://cursor up
@@ -571,5 +576,5 @@ void BasicShellContext::FindBS() {
 	});
 }
 void BasicShellContext::FindFF() {
-
+	m_attr_updated = true;
 }

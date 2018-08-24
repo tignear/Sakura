@@ -44,7 +44,7 @@ namespace tignear::sakura {
 		void ParseColor(std::wstring_view);
 		void InsertCursorPos(const std::wstring&);
 		int32_t CurosorLineLength();
-		//class fields
+		//other class members
 		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
@@ -68,9 +68,9 @@ namespace tignear::sakura {
 		std::list<std::list<ansi::AttributeText>>::size_type m_viewline_count;//âÊñ Ç…âfÇÈçsÇÃêî
 		mutable std::unordered_map<std::uintptr_t,std::function<void(ShellContext*)>> m_text_change_listeners;
 		std::wstring m_title;
-
 		Attribute m_current_attr;
 		Attribute m_def_attr;
+		bool m_attr_updated;
 		std::unordered_map<unsigned int, std::uint32_t> m_system_color_table;
 		std::unordered_map<unsigned int, std::uint32_t> m_256_color_table;
 		bool Init(stdex::tstring);
@@ -81,8 +81,8 @@ namespace tignear::sakura {
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
 			m_text{ {ansi::AttributeText(icu::UnicodeString())} },
-			m_current_attr(),
-			m_def_attr(),
+			m_current_attr{ 0,0xFFB6C1,false,false,false,false,false,ansi::Blink::None,false,false,0,false },
+			m_def_attr{ 0,0xFFB6C1,false,false,false,false,false,ansi::Blink::None,false,false,0,false },
 			m_codepage(codepage)
 		{
 			m_viewstartY_itr = m_text.begin();
@@ -95,7 +95,7 @@ namespace tignear::sakura {
 			CloseHandle(m_in_pipe);
 			CloseHandle(m_childProcess);
 		}
-		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage);
+		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage, std::unordered_map<unsigned int, uint32_t>, std::unordered_map<unsigned int, uint32_t>);
 		void InputChar(WPARAM c) override;
 		void InputKey(WPARAM keycode) override;
 		void InputKey(WPARAM keycode, unsigned int count) override;
@@ -110,7 +110,10 @@ namespace tignear::sakura {
 		void RemoveTextChangeListener(uintptr_t)const override;
 		uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const override;
 		void RemoveCursorChangeListener(uintptr_t)const override;
-
+		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
+		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
+		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
 	};
 
 }

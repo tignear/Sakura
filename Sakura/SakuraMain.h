@@ -5,7 +5,6 @@
 namespace tignear::sakura {
 	class Sakura {
 	public:
-
 		static constexpr const TCHAR* className = _T("Sakura");
 		static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 		static int Main(HINSTANCE hInstance,
