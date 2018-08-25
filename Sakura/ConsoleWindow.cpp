@@ -412,7 +412,10 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 }
 void ConsoleWindow::ConfirmCommand() {
 	if (UseTerminalEchoBack()) {
+		m_console->shell->Lock();
 		m_console->shell->ConfirmString(InputtingString());
+		m_console->shell->Unlock();
+
 	}
 	SelectionStart() = 0;
 	SelectionEnd() = 0;
@@ -492,6 +495,7 @@ void ConsoleWindow::OnPaint() {
 		t->Clear(clearColor);
 		std::wstring ftext;
 		{
+			m_console->shell->Lock();
 			auto end = m_console->shell->GetViewTextEnd();
 			auto endb = end;
 			endb--;
@@ -500,6 +504,7 @@ void ConsoleWindow::OnPaint() {
 					ftext += elem.textW();
 				}
 			}
+			m_console->shell->Unlock();
 		}
 		auto lengthShell = static_cast<UINT32>(ftext.length());
 		ftext += InputtingString();
@@ -552,6 +557,7 @@ void ConsoleWindow::OnPaint() {
 		{
 			//draw string
 			//shell string
+			m_console->shell->Lock();
 			auto end = m_console->shell->GetViewTextEnd();
 			int32_t strcnt = 0;
 			for (auto itr = m_console->shell->GetViewTextBegin(); itr != end; itr++) {
@@ -586,6 +592,7 @@ void ConsoleWindow::OnPaint() {
 					strcnt = nstrcnt;
 				}
 			}
+			m_console->shell->Unlock();
 		}
 
 

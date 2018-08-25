@@ -199,5 +199,11 @@ void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, ui
 void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&& tablesys) {
 	m_system_color_table = std::move(tablesys);
 }
+void BasicShellContext::Lock() {
+	m_lock.lock();
+}
+void BasicShellContext::Unlock() {
+	m_lock.unlock();
+}
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

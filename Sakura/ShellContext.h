@@ -22,7 +22,8 @@ namespace tignear::sakura {
 		virtual void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)=0;
 		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&)=0;
 		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)=0;
-
+		virtual void Lock()=0;
+		virtual void Unlock()=0;
 	};
 
 }

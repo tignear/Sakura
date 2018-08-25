@@ -2,6 +2,7 @@
 #include <memory>
 #include <unordered_map>
 #include <atomic>
+#include <mutex>
 #include "IOCPMgr.h"
 #include "ShellContext.h"
 #include "ansi/AttributeText.h"
@@ -26,7 +27,6 @@ namespace tignear::sakura {
 		};
 		static ansi::AttributeText CreateAttrText(icu::UnicodeString& str,const Attribute& attr);
 		static ansi::AttributeText CreateAttrText(icu::UnicodeString&& str,const Attribute& attr);
-		//static bool EqAttr(const ansi::AttributeText&,const Attribute&);
 		//ansi parser call backs
 		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
 		void FindCSI(std::wstring_view);
@@ -70,6 +70,7 @@ namespace tignear::sakura {
 		Attribute m_current_attr;
 		Attribute m_def_attr;
 		bool m_attr_updated;
+		std::recursive_mutex m_lock;
 		std::unordered_map<unsigned int, std::uint32_t> m_system_color_table;
 		std::unordered_map<unsigned int, std::uint32_t> m_256_color_table;
 		bool Init(stdex::tstring);
@@ -112,6 +113,8 @@ namespace tignear::sakura {
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		void Lock()override;
+		void Unlock()override;
 	};
 
 }
