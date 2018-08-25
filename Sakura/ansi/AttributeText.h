@@ -4,7 +4,8 @@
 #include <unicode/unistr.h>
 #include <functional>
 namespace tignear::ansi {
-	enum Blink {
+
+	enum class Blink {
 		None, Slow, Fast
 	};
 	struct AttributeText {
@@ -17,7 +18,7 @@ namespace tignear::ansi {
 			m_faint(false),
 			m_italic(false),
 			m_underline(false),
-			m_blink(None),
+			m_blink(Blink::None),
 			m_conceal(false),
 			m_crossed_out(false),
 			m_font(0) {}
@@ -30,7 +31,7 @@ namespace tignear::ansi {
 			m_faint(false),
 			m_italic(false),
 			m_underline(false),
-			m_blink(None),
+			m_blink(Blink::None),
 			m_conceal(false),
 			m_crossed_out(false),
 			m_font(0){}
@@ -154,4 +155,18 @@ namespace tignear::ansi {
 		bool m_crossed_out;
 		unsigned int m_font;//0-9
 	};
+#pragma warning(disable:4505)
+	static bool EqAttr(AttributeText& a, AttributeText& b) {
+		return a.bold() == b.bold() &&
+			a.faint() == b.faint() &&
+			a.italic() == b.italic() &&
+			a.underline() == b.underline() &&
+			a.fluktur() == b.fluktur() &&
+			a.blink() == b.blink() &&
+			a.conceal() == b.conceal() &&
+			a.crossed_out() == b.crossed_out() &&
+			a.font() == b.font();
+	}
+#pragma warning(default:4505)
+
 }

@@ -86,22 +86,21 @@ HRESULT DWriteDrawer::DrawGlyphRun(
 	ID2D1Brush* backgroundBrush = effect->backgroundColor.Get();
 	if (backgroundBrush != nullptr)
 	{
-		float totalWidth = 0;
+		DOUBLE totalWidth = 0;
 
 		for (UINT32 index = 0; index < glyphRun->glyphCount; index++)
 		{
 			totalWidth += glyphRun->glyphAdvances[index];
 		}
-
 		DWRITE_FONT_METRICS fontMetrics;
 		glyphRun->fontFace->GetMetrics(&fontMetrics);
-		float adjust = glyphRun->fontEmSize / fontMetrics.designUnitsPerEm;
-		float ascent = adjust * fontMetrics.ascent;
-		float descent = adjust * fontMetrics.descent;
+		auto adjust = static_cast<DOUBLE>(glyphRun->fontEmSize)/ fontMetrics.designUnitsPerEm;
+		auto ascent = adjust * fontMetrics.ascent;
+		auto descent = adjust * fontMetrics.descent;
 		D2D1_RECT_F rect{ baselineOriginX,
-			baselineOriginY - ascent,
-			baselineOriginX + totalWidth,
-			baselineOriginY + descent };
+			static_cast<FLOAT>(baselineOriginY - ascent),
+			static_cast<FLOAT>(baselineOriginX + totalWidth),
+			static_cast<FLOAT>(baselineOriginY + descent) };
 
 		target->FillRectangle(rect, backgroundBrush);
 	}

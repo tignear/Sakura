@@ -26,7 +26,7 @@ namespace tignear::sakura {
 		};
 		static ansi::AttributeText CreateAttrText(icu::UnicodeString& str,const Attribute& attr);
 		static ansi::AttributeText CreateAttrText(icu::UnicodeString&& str,const Attribute& attr);
-
+		//static bool EqAttr(const ansi::AttributeText&,const Attribute&);
 		//ansi parser call backs
 		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
 		void FindCSI(std::wstring_view);
@@ -59,7 +59,6 @@ namespace tignear::sakura {
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
 		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
-		HANDLE m_in_pipe;
 		HWND m_hwnd;
 		std::list<std::list<ansi::AttributeText>> m_text;
 		std::list<std::list<ansi::AttributeText>>::iterator m_viewstartY_itr;
@@ -92,7 +91,6 @@ namespace tignear::sakura {
 		}
 		~BasicShellContext() {
 			CloseHandle(m_out_pipe);
-			CloseHandle(m_in_pipe);
 			CloseHandle(m_childProcess);
 		}
 		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage, std::unordered_map<unsigned int, uint32_t>, std::unordered_map<unsigned int, uint32_t>);

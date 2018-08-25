@@ -24,7 +24,7 @@ namespace tignear::dwrite {
 		void UpdateFontStretch(DWRITE_FONT_STRETCH);
 		void UpdateFontSize(FLOAT);
 		void UpdateLocale(LPCWSTR);
-		Microsoft::WRL::ComPtr<IDWriteTextLayout> CreateTextLayout(const std::wstring&,FLOAT maxWidth,FLOAT maxHeight);
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> CreateTextLayout(const std::wstring&,FLOAT maxWidth,FLOAT maxHeight);
 		~TextBuilder();
 	private:
 		IDWriteFactory * m_factory;

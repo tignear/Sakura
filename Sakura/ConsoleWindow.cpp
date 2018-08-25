@@ -84,7 +84,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 		L"Cica",
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
-		DWRITE_FONT_STRETCH_SEMI_EXPANDED,
+		DWRITE_FONT_STRETCH_NORMAL,
 		static_cast<FLOAT>(16),
 		L"ja-jp");
 	FailToThrowHR(m_docmgr->Push(m_context.Get()));
@@ -332,6 +332,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 		else if (GetKeyState(VK_DELETE)&0x80) {
 			if (InputtingString().empty())
 			{
+				m_console->shell->InputKey(VK_DELETE);
 				return;
 			}
 			if (SelectionStart() == SelectionEnd())
@@ -389,6 +390,9 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					m_console->shell->InputKey(VK_BACK, cnt);
 					ActiveSelEnd() = TS_AE_NONE;
 				}
+			}
+			else {
+				m_console->shell->InputKey(VK_BACK);
 			}
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
@@ -500,7 +504,8 @@ void ConsoleWindow::OnPaint() {
 		auto lengthShell = static_cast<UINT32>(ftext.length());
 		ftext += InputtingString();
 		auto layout = m_tbuilder->CreateTextLayout(ftext, static_cast<FLOAT>(rc.right - rc.left), static_cast<FLOAT>(rc.bottom - rc.top));
-		
+		layout->SetCharacterSpacing(0, 0, 0, { 0,static_cast<UINT32>(ftext.length()) });
+		layout->SetPairKerning(false, { 0,static_cast<UINT32>(ftext.length()) });
 		//draw caret
 		//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
 		if (m_caret_display) {
