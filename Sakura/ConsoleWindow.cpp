@@ -32,6 +32,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 	static ConsoleWindow* self;
 	if (self) {
 		self->CaretUpdate();
+		self->BlinkUpdate();
 	}
 	switch (message)
 	{
@@ -174,6 +175,22 @@ void ConsoleWindow::CaretUpdate()
 			InvalidateRect(m_hwnd, NULL, FALSE);
 		}
 	});
+}
+void ConsoleWindow::BlinkUpdate() {
+	using namespace std::chrono;
+	auto now = steady_clock::now();
+	{
+	auto time = duration_cast<milliseconds>(now - m_slow_blink_update_time);
+	if (time.count() >= 800) {
+		m_slow_blink_display = !m_slow_blink_display;
+		m_slow_blink_update_time = now;
+	}
+	}
+	auto time = duration_cast<milliseconds>(now - m_fast_blink_update_time);
+	if (time.count() >= 300) {
+		m_fast_blink_display = !m_fast_blink_display;
+		m_fast_blink_update_time = now;
+	}
 }
 LONG& ConsoleWindow::SelectionStart() {
 	return m_console->inputarea_selection_start;
@@ -579,7 +596,15 @@ void ConsoleWindow::OnPaint() {
 					ComPtr<ID2D1SolidColorBrush> bgbrush;
 					t->CreateSolidColorBrush(D2D1::ColorF(itr2->backgroundColor()),&bgbrush);
 					ComPtr<ID2D1SolidColorBrush> frbrush;
-					t->CreateSolidColorBrush(D2D1::ColorF(itr2->textColor(),itr2->faint()?0.75f:1.0f), &frbrush);
+					auto fralpha = 1.0f;
+
+					if ((itr2->blink == ansi::Blink::Fast&&!m_fast_blink_display)|| (itr2->blink == ansi::Blink::Slow && !m_slow_blink_display)) {
+						fralpha = 0;
+					}
+					else if (itr2->faint()) {
+						fralpha = 0.75f;
+					}
+					t->CreateSolidColorBrush(D2D1::ColorF(itr2->textColor(),fralpha), &frbrush);
 					ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
 						bgbrush.Get(),
 						frbrush.Get(),

@@ -67,7 +67,11 @@ namespace tignear::sakura {
 		std::queue<std::function<void()>> m_write_queue;
 		std::queue<std::function<void()>> m_read_queue;
 		bool m_caret_display;
+		bool m_fast_blink_display;
+		bool m_slow_blink_display;
 		std::chrono::steady_clock::time_point m_caret_update_time;
+		std::chrono::steady_clock::time_point m_fast_blink_update_time;
+		std::chrono::steady_clock::time_point m_slow_blink_update_time;
 		Microsoft::WRL::ComPtr<ITextStoreACPSink> m_sink;
 		DWORD m_sinkmask = 0;
 		ULONG m_ref_cnt = 0;
@@ -87,6 +91,7 @@ namespace tignear::sakura {
 		void OnKeyDown(WPARAM);
 		void UpdateText();
 		void CaretUpdate();
+		void BlinkUpdate();
 		void ConfirmCommand();
 		bool UseTerminalEchoBack();
 		LONG& SelectionStart();
