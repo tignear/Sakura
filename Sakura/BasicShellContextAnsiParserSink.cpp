@@ -3,6 +3,7 @@
 #include <unicode/brkiter.h>
 #include <unicode/locid.h>
 #include <numeric>
+#include <cassert>
 #include <algorithm>
 #include "BasicShellContext.h"
 #include "split.h"
@@ -14,11 +15,38 @@ using icu::UnicodeString;
 using tignear::icuex::EastAsianWidth;
 
 AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString& str,const Attribute& attr) {
-	return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+	if (attr.reverse) {
+		return AttributeText(str,  attr.backgroundColor, attr.textColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
+	else {
+		return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
 }
 AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString&& str, const Attribute& attr) {
-	return AttributeText(std::move(str),attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.font);
+	if (attr.reverse) {
+		return AttributeText(str, attr.backgroundColor, attr.textColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
+	else {
+		return AttributeText(str, attr.textColor, attr.backgroundColor, attr.bold, attr.faint, attr.italic, attr.underline, attr.blink, attr.conceal, attr.crossed_out, attr.font);
+	}
 }
+/*bool BasicShellContext::EqAttr(const AttributeText& a,const Attribute& b) {
+	auto cp = b;
+	if (cp.reverse) {
+		std::swap(cp.textColor,cp.backgroundColor);
+	}
+	return a.backgroundColor() == cp.backgroundColor&&
+		a.blink() == cp.blink&&
+		a.bold() == cp.bold&&
+		a.conceal() == cp.conceal&&
+		a.crossed_out() == cp.crossed_out&&
+		a.faint() == cp.faint&&
+		a.fluktur() == cp.fluktur&&
+		a.font() == cp.font&&
+		a.italic() == cp.italic&&
+		a.textColor() == cp.textColor&&
+		a.underline() == cp.underline;
+}*/
 void BasicShellContext::MoveCurosorYUp(std::wstring::size_type count) {
 	for (auto i = 0U; i < count&&m_cursorY_itr!=m_text.begin(); i++) {
 		m_cursorY_itr--;
@@ -122,7 +150,7 @@ void BasicShellContext::RemoveColumnsR() {
 						skip += 2;//書記素クラスタがUTF32で1文字で表されない場合は文字幅2(要検証)
 					}
 				}
-				e2.removeBetween(current);
+				e2.removeBetween(previous,e2.length());
 				m_cursorX = skip;
 				return true;
 			});
@@ -158,6 +186,7 @@ int32_t BasicShellContext::CurosorLineLength() {
 	return cnt;
 }
 void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
+	assert(!wstr.empty());
 	int32_t i=0;
 	auto ustr = UnicodeString(wstr.c_str());
 	if (m_cursorY_itr == m_text.end()) {
@@ -171,45 +200,84 @@ void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
 		int32_t l=static_cast<int32_t>(itr->lengthEAW());
 		if (i+l > m_cursorX) {
 			auto ustrlen = EastAsianWidth(ustr);
-			itr->textE(
-				[this, &ustr, &i](auto& self, auto& e) {
-				UErrorCode status = U_ZERO_ERROR;
-				int32_t previous;
-				int32_t current;
-				icu::BreakIterator *it = icu::BreakIterator::createCharacterInstance(
-					icu::Locale::getDefault(), status
-				);
-				it->setText(e);
-				for (
-					previous = it->first(), current = it->next();
-					current != icu::BreakIterator::DONE&&i < m_cursorX;
-					previous = current, current = it->next()
-					) {
-					auto size = current - previous;
-					auto count32 = e.countChar32(previous, size);
-					if (count32 == 1) {
-						auto eaw = EastAsianWidth(e.char32At(previous));
-						i += eaw;
+			auto titr = itr;
+			if (m_attr_updated) {
+				itr->textE([nitr = std::next(itr),itr,this,&ustr,&i](auto& self,auto& e){
+					UErrorCode status = U_ZERO_ERROR;
+					int32_t previous;
+					int32_t current;
+					icu::BreakIterator *it = icu::BreakIterator::createCharacterInstance(
+						icu::Locale::getDefault(), status
+					);
+					it->setText(e);
+					for (
+						previous = it->first(), current = it->next();
+						current != icu::BreakIterator::DONE&&i < m_cursorX;
+						previous = current, current = it->next()
+						) {
+						auto size = current - previous;
+						auto count32 = e.countChar32(previous, size);
+						if (count32 == 1) {
+							auto eaw = EastAsianWidth(e.char32At(previous));
+							i += eaw;
+						}
+						else {
+							i += 2;
+						}
+					}
+					if (-1 == current) {
+						m_cursorY_itr->insert(nitr,CreateAttrText(ustr,m_current_attr));
+						return false;
 					}
 					else {
-						i += 2;
+						auto afustr = UnicodeString(e,current);
+						e.remove(0, current);
+						m_cursorY_itr->insert(nitr, { CreateAttrText(ustr, m_current_attr),AttributeText(afustr,itr->textColor(),itr->backgroundColor(),itr->bold(),itr->faint(),itr->italic(),itr->underline(),itr->blink(),itr->conceal(),itr->crossed_out(),itr->font()) });
+						return true;
 					}
-				}
-				if (-1 == current) {
-					e.append(ustr);
-				}
-				else {
-					e.insert(current, ustr);
-				}
-				//e.insert(m_cursorX - i, ustr); 
-				return true;
-			});
-			m_cursorX +=ustrlen;
-			return;
+				});
+			}
+			else {
+				titr->textE(
+					[this, &ustr, &i](auto& self, auto& e) {
+					UErrorCode status = U_ZERO_ERROR;
+					int32_t previous;
+					int32_t current;
+					icu::BreakIterator *it = icu::BreakIterator::createCharacterInstance(
+						icu::Locale::getDefault(), status
+					);
+					it->setText(e);
+					for (
+						previous = it->first(), current = it->next();
+						current != icu::BreakIterator::DONE&&i < m_cursorX;
+						previous = current, current = it->next()
+						) {
+						auto size = current - previous;
+						auto count32 = e.countChar32(previous, size);
+						if (count32 == 1) {
+							auto eaw = EastAsianWidth(e.char32At(previous));
+							i += eaw;
+						}
+						else {
+							i += 2;
+						}
+					}
+					if (-1 == current) {
+						e.append(ustr);
+					}
+					else {
+						e.insert(previous, ustr);
+					}
+					//e.insert(m_cursorX - i, ustr); 
+					return true;
+				});
+				m_cursorX += ustrlen;
+				return;
+			}
 		}
 		i += l;
 	}
-	m_cursorX += EastAsianWidth(ustr);
+	m_cursorX =i+ EastAsianWidth(ustr);
 	m_cursorY_itr->back().textE([&ustr](auto& self, auto& e) {
 		e+= ustr;
 		return true;
@@ -250,7 +318,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.conceal = true;
 			continue;
 		case 9:
-			//deprecated
+			m_current_attr.crossed_out=true;
 			continue;
 		case 20:
 			m_current_attr.fluktur = true;
@@ -279,7 +347,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.conceal = false;
 			continue;
 		case 29:
-			//deprecated
+			m_current_attr.crossed_out = false;
 			continue;
 		case 38:
 		{
@@ -290,7 +358,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			case 5:
 			{
 				itr++;
-				//m_current_attr.textColor=m_256_color_table.at(std::stoul(std::wstring(*itr)));
+				m_current_attr.textColor=m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
@@ -321,7 +389,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			case 5:
 			{
 				itr++;
-				//m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
+				m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
@@ -350,7 +418,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			m_current_attr.font = num - 10;
 			continue;
 		}
-		/*if (num >= 30 && num <= 37) {
+		if (num >= 30 && num <= 37) {
 			m_current_attr.textColor =m_system_color_table.at(num);
 			continue;
 		}
@@ -365,23 +433,30 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 		if (num >= 100 && num <= 107) {
 			m_current_attr.backgroundColor = m_system_color_table.at(num);
 			continue;
-		}*/
+		}
 	}
 }
 void BasicShellContext::FindString(std::wstring_view str) {
+	if (m_attr_updated) {
+		m_text.back().push_back(CreateAttrText(u"",m_current_attr));
+		m_attr_updated = false;
+	}
 	auto r=split<wchar_t, std::vector<std::wstring>>(std::wstring(str), L"\n");
 	auto back=r.back();
 	r.pop_back();
 	for (auto e : r) {
 		e +=L"\n";
 		InsertCursorPos(std::move(e));
-		m_cursorX = 0;
+		m_cursorX++;
 		MoveCurosorYDown(1);
 	}
-	InsertCursorPos(std::move(back));
+	if (!back.empty()) {
+		InsertCursorPos(std::move(back));
+	}
 
 }
 void BasicShellContext::FindCSI(std::wstring_view sv) {
+	m_attr_updated = true;
 	switch (sv.back())
 	{
 	case L'A'://cursor up
@@ -540,6 +615,7 @@ void BasicShellContext::FindOSC(std::wstring_view sv) {
 	}
 }
 void BasicShellContext::FindBS() {
+	OutputDebugString(_T("BackSpace\n"));
 	int32_t i = 0;
 	if (m_cursorY_itr == m_text.end()) {
 		return;
@@ -549,17 +625,22 @@ void BasicShellContext::FindBS() {
 		if (i + l >= m_cursorX) {
 			itr->textE([this, i](auto& self, auto& e) {e.remove(m_cursorX - i, 1); return true; });
 			m_cursorX -= 1;
+			if (l == 1) {
+				m_cursorY_itr->erase(itr);
+			}
 			return;
 		}
 		i += l;
 	}
-	m_cursorY_itr->back().textE
-	([len = m_cursorY_itr->back().length()](auto& self, auto& e)
+	m_cursorY_itr->back().textE([len = m_cursorY_itr->back().length()](auto& self, auto& e)
 	{
-		e.remove(len - 1, 1);
+		e.remove(len - 1, 1);	
 		return true; 
 	});
+	if (m_cursorY_itr->back().length() == 0) {
+		m_cursorY_itr->pop_back();
+	}
 }
 void BasicShellContext::FindFF() {
-
+	m_attr_updated = true;
 }

@@ -189,6 +189,7 @@
   <ItemGroup>
     <ClInclude Include="ansi\AnsiParser.h" />
     <ClInclude Include="ansi\AttributeText.h" />
+    <ClInclude Include="ansi\BasicColorTable.h" />
     <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="ConsoleWindow.h" />
@@ -206,7 +207,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TextBuilder.h" />
     <ClInclude Include="TextStoreLock.h" />
-    <ClInclude Include="TSFDWriteDrawer.h" />
+    <ClInclude Include="TextDrawer.h" />
     <ClInclude Include="D2DLineUtil.h" />
     <ClInclude Include="tstring.h" />
   </ItemGroup>
@@ -225,7 +226,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TextBuilder.cpp" />
-    <ClCompile Include="TSFDWriteDrawer.cpp" />
+    <ClCompile Include="TextDrawer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

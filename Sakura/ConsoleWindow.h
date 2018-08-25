@@ -14,7 +14,7 @@
 #include "Direct2D.h"
 #include "TextBuilder.h"
 #include "TextStoreLock.h"
-#include "TSFDWriteDrawer.h"
+#include "TextDrawer.h"
 namespace tignear::sakura {
 	class ConsoleWindow :ITextStoreACP, ITfContextOwnerCompositionSink {
 	public:
@@ -49,7 +49,7 @@ namespace tignear::sakura {
 		static bool m_registerState;
 		std::unique_ptr<Direct2DWithHWnd> m_d2d;
 		std::unique_ptr<tignear::dwrite::TextBuilder> m_tbuilder;
-		Microsoft::WRL::ComPtr<tignear::tsf::TsfDWriteDrawer> m_drawer;
+		Microsoft::WRL::ComPtr<tignear::dwrite::DWriteDrawer> m_drawer;
 		Microsoft::WRL::ComPtr<ITfDocumentMgr> m_docmgr;
 		Microsoft::WRL::ComPtr<ITfProperty> m_attr_prop;
 		Microsoft::WRL::ComPtr<ITfProperty> m_composition_prop;
@@ -67,7 +67,11 @@ namespace tignear::sakura {
 		std::queue<std::function<void()>> m_write_queue;
 		std::queue<std::function<void()>> m_read_queue;
 		bool m_caret_display;
+		bool m_fast_blink_display;
+		bool m_slow_blink_display;
 		std::chrono::steady_clock::time_point m_caret_update_time;
+		std::chrono::steady_clock::time_point m_fast_blink_update_time;
+		std::chrono::steady_clock::time_point m_slow_blink_update_time;
 		Microsoft::WRL::ComPtr<ITextStoreACPSink> m_sink;
 		DWORD m_sinkmask = 0;
 		ULONG m_ref_cnt = 0;
@@ -87,6 +91,7 @@ namespace tignear::sakura {
 		void OnKeyDown(WPARAM);
 		void UpdateText();
 		void CaretUpdate();
+		void BlinkUpdate();
 		void ConfirmCommand();
 		bool UseTerminalEchoBack();
 		LONG& SelectionStart();

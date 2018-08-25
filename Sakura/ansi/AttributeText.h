@@ -4,10 +4,24 @@
 #include <unicode/unistr.h>
 #include <functional>
 namespace tignear::ansi {
-	enum Blink {
+
+	enum class Blink {
 		None, Slow, Fast
 	};
 	struct AttributeText {
+		AttributeText() :
+			m_text(u""),
+			m_update_length_eaw(true),
+			m_textColor(0x000000),
+			m_backgroundColor(0xffffff),
+			m_bold(false),
+			m_faint(false),
+			m_italic(false),
+			m_underline(false),
+			m_blink(Blink::None),
+			m_conceal(false),
+			m_crossed_out(false),
+			m_font(0) {}
 		AttributeText(icu::UnicodeString text):
 			m_text(text),
 			m_update_length_eaw(true),
@@ -17,10 +31,11 @@ namespace tignear::ansi {
 			m_faint(false),
 			m_italic(false),
 			m_underline(false),
-			m_blink(None),
+			m_blink(Blink::None),
 			m_conceal(false),
+			m_crossed_out(false),
 			m_font(0){}
-		AttributeText(icu::UnicodeString text, std::uint32_t textcolor, std::uint32_t bgcolor,bool bold,bool faint,bool italic,bool underline, Blink blink,bool conceal,unsigned int font) :
+		AttributeText(icu::UnicodeString text, std::uint32_t textcolor, std::uint32_t bgcolor, bool bold, bool faint, bool italic, bool underline, Blink blink, bool conceal,bool crossed_out,unsigned int font) :
 			m_text(text),
 			m_textColor(textcolor),
 			m_backgroundColor(bgcolor),
@@ -30,6 +45,7 @@ namespace tignear::ansi {
 			m_underline(underline),
 			m_blink(blink),
 			m_conceal(conceal),
+			m_crossed_out(crossed_out),
 			m_font(font) {}
 		const icu::UnicodeString& text()const{
 			return m_text;
@@ -82,6 +98,9 @@ namespace tignear::ansi {
 		bool conceal() const {
 			return m_conceal;
 		}//‰B‚·
+		bool crossed_out()const {
+			return m_crossed_out;
+		}
 		unsigned int font()const  {
 			return m_font;
 		}//0-9
@@ -113,9 +132,13 @@ namespace tignear::ansi {
 		void conceal(bool conceal) {
 			m_conceal = conceal;
 		}
+		void crossed_out(bool crossed_out) {
+			m_crossed_out = crossed_out;
+		}
 		void font(unsigned int font) {
 			m_font = font;
 		}
+
 	private:
 		mutable icu::UnicodeString m_text;
 		std::uint32_t m_textColor;
@@ -129,6 +152,21 @@ namespace tignear::ansi {
 		bool m_fluktur;
 		Blink m_blink;
 		bool m_conceal;//‰B‚·
+		bool m_crossed_out;
 		unsigned int m_font;//0-9
 	};
+#pragma warning(disable:4505)
+	static bool EqAttr(AttributeText& a, AttributeText& b) {
+		return a.bold() == b.bold() &&
+			a.faint() == b.faint() &&
+			a.italic() == b.italic() &&
+			a.underline() == b.underline() &&
+			a.fluktur() == b.fluktur() &&
+			a.blink() == b.blink() &&
+			a.conceal() == b.conceal() &&
+			a.crossed_out() == b.crossed_out() &&
+			a.font() == b.font();
+	}
+#pragma warning(default:4505)
+
 }

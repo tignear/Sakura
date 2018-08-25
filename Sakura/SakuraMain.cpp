@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include <string>
+#include <selene.h>
 #include "FailToThrow.h"
 #include "SakuraMain.h"
 #include "ConsoleWindow.h"
 #include "IOCPMgr.h"
 #include "BasicShellContext.h"
-#include <selene.h>
+#include "ansi/BasicColorTable.h"
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
@@ -116,7 +117,7 @@ int Sakura::Main(HINSTANCE hInstance,
 
 	ConsoleWindow::Create(m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),&m_console);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001);
+	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001, ansi::BasicSystemColorTable(),ansi::Basic256ColorTable());
 	//shell->InputString(L"dir");
 		//shell->InputString("dir\br\r\n");
 

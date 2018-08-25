@@ -1,19 +1,19 @@
 #include "stdafx.h"
 #include <utility>
-#include "TSFDWriteDrawer.h"
+#include "TextDrawer.h"
 #include "D2DLineUtil.h"
 #include "FailToThrow.h"
-using tignear::tsf::TsfDWriteDrawer;
-using tignear::tsf::TsfDWriteDrawerEffect;
+using tignear::dwrite::DWriteDrawer;
+using tignear::dwrite::DWriteDrawerEffect;
 //http://www.charlespetzold.com/blog/2014/01/Character-Formatting-Extensions-with-DirectWrite.html
 namespace {
 	constexpr auto pi = 3.141592653589793238L;
 }
-ULONG  TsfDWriteDrawerEffect::AddRef() {
+ULONG  DWriteDrawerEffect::AddRef() {
 	m_ref_cnt++;
 	return m_ref_cnt;
 }
-ULONG  TsfDWriteDrawerEffect::Release() {
+ULONG  DWriteDrawerEffect::Release() {
 	m_ref_cnt--;
 	if (m_ref_cnt == 0) {
 		delete this;
@@ -24,7 +24,7 @@ ULONG  TsfDWriteDrawerEffect::Release() {
 
 	}
 }
-HRESULT  TsfDWriteDrawerEffect::QueryInterface(REFIID riid,
+HRESULT  DWriteDrawerEffect::QueryInterface(REFIID riid,
 	void **ppvObject) {
 	if (riid == IID_IUnknown) {
 		AddRef();
@@ -36,11 +36,11 @@ HRESULT  TsfDWriteDrawerEffect::QueryInterface(REFIID riid,
 	}
 }
 
-ULONG  TsfDWriteDrawer::AddRef() {
+ULONG  DWriteDrawer::AddRef() {
 	m_ref_cnt++;
 	return m_ref_cnt;
 }
-ULONG  TsfDWriteDrawer::Release() {
+ULONG  DWriteDrawer::Release() {
 	m_ref_cnt--;
 	if (m_ref_cnt == 0) {
 		delete this;
@@ -51,7 +51,7 @@ ULONG  TsfDWriteDrawer::Release() {
 
 	}
 }
-HRESULT  TsfDWriteDrawer::QueryInterface(REFIID riid,
+HRESULT  DWriteDrawer::QueryInterface(REFIID riid,
 	void **ppvObject) {
 	if (riid == IID_IUnknown) {
 		AddRef();
@@ -62,7 +62,7 @@ HRESULT  TsfDWriteDrawer::QueryInterface(REFIID riid,
 		return E_NOINTERFACE;
 	}
 }
-HRESULT TsfDWriteDrawer::DrawGlyphRun(
+HRESULT DWriteDrawer::DrawGlyphRun(
 	void * clientDrawingContext,
 	FLOAT  baselineOriginX,
 	FLOAT  baselineOriginY,
@@ -74,11 +74,11 @@ HRESULT TsfDWriteDrawer::DrawGlyphRun(
 	if (clientDrawingContext == nullptr) {
 		return E_INVALIDARG;
 	}
-	auto context=static_cast<TsfDWriteDrawerContext*>(clientDrawingContext);
+	auto context=static_cast<DWriteDrawerContext*>(clientDrawingContext);
 	if ( context->renderTarget == nullptr) {
 		return E_INVALIDARG;
 	}
-	auto effect = static_cast<TsfDWriteDrawerEffect*>(clientDrawingEffect);
+	auto effect = static_cast<DWriteDrawerEffect*>(clientDrawingEffect);
 	auto target = context->renderTarget;
 	if (effect == nullptr) {
 		effect = context->dafaultEffect.Get();
@@ -86,22 +86,21 @@ HRESULT TsfDWriteDrawer::DrawGlyphRun(
 	ID2D1Brush* backgroundBrush = effect->backgroundColor.Get();
 	if (backgroundBrush != nullptr)
 	{
-		float totalWidth = 0;
+		DOUBLE totalWidth = 0;
 
 		for (UINT32 index = 0; index < glyphRun->glyphCount; index++)
 		{
 			totalWidth += glyphRun->glyphAdvances[index];
 		}
-
 		DWRITE_FONT_METRICS fontMetrics;
 		glyphRun->fontFace->GetMetrics(&fontMetrics);
-		float adjust = glyphRun->fontEmSize / fontMetrics.designUnitsPerEm;
-		float ascent = adjust * fontMetrics.ascent;
-		float descent = adjust * fontMetrics.descent;
+		auto adjust = static_cast<DOUBLE>(glyphRun->fontEmSize)/ fontMetrics.designUnitsPerEm;
+		auto ascent = adjust * fontMetrics.ascent;
+		auto descent = adjust * fontMetrics.descent;
 		D2D1_RECT_F rect{ baselineOriginX,
-			baselineOriginY - ascent,
-			baselineOriginX + totalWidth,
-			baselineOriginY + descent };
+			static_cast<FLOAT>(baselineOriginY - ascent),
+			static_cast<FLOAT>(baselineOriginX + totalWidth),
+			static_cast<FLOAT>(baselineOriginY + descent) };
 
 		target->FillRectangle(rect, backgroundBrush);
 	}
@@ -114,11 +113,11 @@ HRESULT TsfDWriteDrawer::DrawGlyphRun(
 	target->DrawGlyphRun({baselineOriginX,baselineOriginY},glyphRun,brush,measuringMode);
 	return S_OK;
 }
-HRESULT TsfDWriteDrawer::GetPixelsPerDip(void * clientDrawingContext,
+HRESULT DWriteDrawer::GetPixelsPerDip(void * clientDrawingContext,
 	_Out_ FLOAT * pixelsPerDip)
 {
-	TsfDWriteDrawerContext * drawingContext =
-		static_cast<TsfDWriteDrawerContext *>(clientDrawingContext);
+	DWriteDrawerContext * drawingContext =
+		static_cast<DWriteDrawerContext *>(clientDrawingContext);
 
 	float dpiX, dpiY;
 	drawingContext->renderTarget->GetDpi(&dpiX, &dpiY);
@@ -126,27 +125,27 @@ HRESULT TsfDWriteDrawer::GetPixelsPerDip(void * clientDrawingContext,
 	return S_OK;
 }
 
-HRESULT TsfDWriteDrawer::GetCurrentTransform(void * clientDrawingContext,
+HRESULT DWriteDrawer::GetCurrentTransform(void * clientDrawingContext,
 	DWRITE_MATRIX * transform)
 {
-	TsfDWriteDrawerContext * drawingContext =
-		static_cast<TsfDWriteDrawerContext *>(clientDrawingContext);
+	DWriteDrawerContext * drawingContext =
+		static_cast<DWriteDrawerContext *>(clientDrawingContext);
 	drawingContext->renderTarget->GetTransform((D2D1_MATRIX_3X2_F *)transform);
 	return S_OK;
 }
-HRESULT TsfDWriteDrawer::IsPixelSnappingDisabled(
+HRESULT DWriteDrawer::IsPixelSnappingDisabled(
 	void * clientDrawingContext,
 	BOOL * isDisabled
 ) {
 	*isDisabled=FALSE;
 	return S_OK;
 }
- void TsfDWriteDrawer::Create(ID2D1Factory* factory, TsfDWriteDrawer** render) {
-	 auto r = new TsfDWriteDrawer(factory);
+ void DWriteDrawer::Create(ID2D1Factory* factory, DWriteDrawer** render) {
+	 auto r = new DWriteDrawer(factory);
 	 r->AddRef();
 	 *render = r;
 }
-HRESULT TsfDWriteDrawer::DrawUnderline(
+HRESULT DWriteDrawer::DrawUnderline(
 	void * clientDrawingContext,
 	FLOAT  baselineOriginX,
 	FLOAT  baselineOriginY,
@@ -156,11 +155,11 @@ HRESULT TsfDWriteDrawer::DrawUnderline(
 	if (clientDrawingContext == nullptr) {
 		return E_INVALIDARG;
 	}
-	auto context = static_cast<TsfDWriteDrawerContext*>(clientDrawingContext);
+	auto context = static_cast<DWriteDrawerContext*>(clientDrawingContext);
 	if (context->dafaultEffect == nullptr || context->renderTarget == nullptr) {
 		return E_INVALIDARG;
 	}
-	auto* effect = static_cast<TsfDWriteDrawerEffect*>(clientDrawingEffect);
+	auto* effect = static_cast<DWriteDrawerEffect*>(clientDrawingEffect);
 	if (effect == nullptr) {
 		effect = context->dafaultEffect.Get();
 	}
@@ -231,7 +230,7 @@ HRESULT TsfDWriteDrawer::DrawUnderline(
 	return S_OK;
 }
 
-HRESULT TsfDWriteDrawer::DrawStrikethrough(
+HRESULT DWriteDrawer::DrawStrikethrough(
 	void * clientDrawingContext,
 	FLOAT  baselineOriginX,
 	FLOAT  baselineOriginY,
@@ -242,7 +241,7 @@ HRESULT TsfDWriteDrawer::DrawStrikethrough(
 	{
 		return E_INVALIDARG;
 	}
-	auto context = static_cast<TsfDWriteDrawerContext*>(clientDrawingContext);
+	auto context = static_cast<DWriteDrawerContext*>(clientDrawingContext);
 	if (context->dafaultEffect == nullptr || context->renderTarget == nullptr)
 	{
 		return E_INVALIDARG;
@@ -264,7 +263,7 @@ HRESULT TsfDWriteDrawer::DrawStrikethrough(
 	context->renderTarget->DrawLine(start, end, context->dafaultEffect->textColor.Get(),strikethrough->thickness);
 	return S_OK;
 }
-HRESULT TsfDWriteDrawer::DrawInlineObject(
+HRESULT DWriteDrawer::DrawInlineObject(
 	void * clientDrawingContext,
 	FLOAT  originX,
 	FLOAT  originY,

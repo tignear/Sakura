@@ -5,6 +5,16 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sakura", "Sakura\Sakura.vcxproj", "{629661C7-86F9-4678-97A4-5663CAAA9AE2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BD1593E9-611B-403F-AB56-583CB3271DE7}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{2E0D6978-5D82-4A0B-9149-0B7E0E139885}"
+	ProjectSection(SolutionItems) = preProject
+		doc\ANSItoIDWriteTextLayoutMapping.md = doc\ANSItoIDWriteTextLayoutMapping.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -24,6 +34,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2E0D6978-5D82-4A0B-9149-0B7E0E139885} = {BD1593E9-611B-403F-AB56-583CB3271DE7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4B03F7BA-C3FC-4E37-81F8-A46121C2DC47}

@@ -12,8 +12,10 @@ using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
-shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage) {
+shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256) {
 	auto r = make_shared<BasicShellContext>(iocpmgr,codepage);
+	r->SetSystemColor(colorsys);
+	r->Set256Color(color256);
 	if (r->Init(cmdstr))
 	{
 		if (!r->IOWorkerStart(r)) {
@@ -30,8 +32,6 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 
 }
 bool BasicShellContext::Init(tstring cmdstr) {
-
-
 	//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(sa);
@@ -50,17 +50,18 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	out_pipename += str_process_cnt;
 
 	m_process_count++;
-	m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND| FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
+
+	m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND| PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
 	if (m_out_pipe == INVALID_HANDLE_VALUE) {
 		//auto le = GetLastError();
 		return false;
 	}
 	auto out_client_pipe = CreateFile(out_pipename.c_str(),
-		GENERIC_WRITE,
+		GENERIC_WRITE|GENERIC_READ,
 		0,
 		&sa,
 		OPEN_EXISTING,
-		FILE_FLAG_OVERLAPPED,
+		NULL,
 		NULL);
 
 	if (out_client_pipe == INVALID_HANDLE_VALUE) {
@@ -126,18 +127,7 @@ bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContex
 	return s->OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
-	if (keycode >= 65 && keycode <= 90) {//alphabet
-		return;
-	}
-	if (keycode >= 48 && keycode <= 57) {
-		return;
-	}
-	if (keycode >= 96 && keycode <= 105) {
-		return;
-	}
-	if (keycode == VK_RETURN) {
-		return;
-	}
+
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
@@ -149,6 +139,9 @@ void BasicShellContext::InputChar(WPARAM charcode) {
 	/*if (0x08 == charcode) {
 		return;
 	}*/
+	if (charcode <= 127) {
+		return;
+	}
 	PostMessage(m_hwnd, WM_CHAR, charcode, 0);
 }
 void BasicShellContext::InputString(std::wstring_view wstr) {
@@ -159,7 +152,7 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 void BasicShellContext::ConfirmString(std::wstring_view view) {
 	AddString(view);
 }
-std::list<std::list<AttributeText>>::const_iterator BasicShellContext::GetViewTextBegin() const{
+std::list<std::list<ansi::AttributeText>>::const_iterator BasicShellContext::GetViewTextBegin()const{
 	return m_viewstartY_itr;
 }
 std::list<std::list<AttributeText>>::const_iterator BasicShellContext::GetViewTextEnd() const {
@@ -194,5 +187,23 @@ void BasicShellContext::SetViewLineCount(std::wstring::size_type count) {
 std::wstring_view BasicShellContext::GetTitle()const {
 	return m_title;
 }
-//static fiels
+void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>& table256) {
+	m_256_color_table = table256;
+}
+void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>&& table256) {
+	m_256_color_table = std::move(table256);
+}
+void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>& tablesys) {
+	m_system_color_table = tablesys;
+}
+void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&& tablesys) {
+	m_system_color_table = std::move(tablesys);
+}
+void BasicShellContext::Lock() {
+	m_lock.lock();
+}
+void BasicShellContext::Unlock() {
+	m_lock.unlock();
+}
+//static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

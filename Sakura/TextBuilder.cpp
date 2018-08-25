@@ -64,10 +64,12 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> TextBuilder::GetTextFormat() {
 		return m_textFormat;
 	}
 }
-Microsoft::WRL::ComPtr<IDWriteTextLayout> TextBuilder::CreateTextLayout(const std::wstring& src, FLOAT maxWidth, FLOAT maxHeight) {
-	Microsoft::WRL::ComPtr<IDWriteTextLayout> r;
-	FailToThrowHR(m_factory->CreateTextLayout(src.c_str(),static_cast<UINT32>(src.length()),GetTextFormat().Get(),maxWidth,maxHeight,&r));
-	return r;
+Microsoft::WRL::ComPtr<IDWriteTextLayout1> TextBuilder::CreateTextLayout(const std::wstring& src, FLOAT maxWidth, FLOAT maxHeight) {
+	Microsoft::WRL::ComPtr<IDWriteTextLayout> r1;
+	FailToThrowHR(m_factory->CreateTextLayout(src.c_str(),static_cast<UINT32>(src.length()),GetTextFormat().Get(),maxWidth,maxHeight,&r1));
+	Microsoft::WRL::ComPtr<IDWriteTextLayout1> r2;
+	r1.As(&r2);
+	return r2;
 }
 TextBuilder::~TextBuilder()
 {

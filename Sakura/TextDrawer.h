@@ -3,24 +3,21 @@
 #include <d2d1.h>
 #include <memory>
 #include "D2DLineUtil.h"
-namespace {
-	using tignear::d2d::Line;
-}
-namespace tignear::tsf {
+namespace tignear::dwrite {
 	enum LineStyle {
 		LineStyle_Solid, LineStyle_Dot, LineStyle_Dash, LineStyle_Squiggle
 	};
-	struct TsfDWriteDrawerEffectUnderline {
+	struct DWriteDrawerEffectUnderline {
 		const LineStyle lineStyle;
 		const bool boldLine;
 		const Microsoft::WRL::ComPtr<ID2D1Brush> lineColor;
-		TsfDWriteDrawerEffectUnderline(const LineStyle ls,const bool bold, ID2D1Brush* b):lineStyle(ls),boldLine(bold),lineColor(b) {}
+		DWriteDrawerEffectUnderline(const LineStyle ls,const bool bold, ID2D1Brush* b):lineStyle(ls),boldLine(bold),lineColor(b) {}
 	};
-	struct TsfDWriteDrawerEffect :IUnknown {
+	struct DWriteDrawerEffect :IUnknown {
 		const Microsoft::WRL::ComPtr<ID2D1Brush> backgroundColor;
 		const Microsoft::WRL::ComPtr<ID2D1Brush> textColor;
-		std::unique_ptr<TsfDWriteDrawerEffectUnderline> underline;
-		TsfDWriteDrawerEffect(ID2D1Brush* bg, ID2D1Brush* fr, std::unique_ptr<TsfDWriteDrawerEffectUnderline> under) :backgroundColor(bg), textColor(fr), underline(std::move(under)), m_ref_cnt(0) {}
+		const std::unique_ptr<DWriteDrawerEffectUnderline> underline;
+		DWriteDrawerEffect(ID2D1Brush* bg, ID2D1Brush* fr ,std::unique_ptr<DWriteDrawerEffectUnderline> under) :backgroundColor(bg), textColor(fr),underline(std::move(under)), m_ref_cnt(0) {}
 		// IUnknown methods
 		ULONG STDMETHODCALLTYPE AddRef() override;
 		ULONG STDMETHODCALLTYPE Release() override;
@@ -29,24 +26,24 @@ namespace tignear::tsf {
 	private:
 		LONG m_ref_cnt;
 	};
-	struct TsfDWriteDrawerContext
+	struct DWriteDrawerContext
 	{
 		ID2D1RenderTarget* renderTarget;
-		Microsoft::WRL::ComPtr<TsfDWriteDrawerEffect> dafaultEffect;
-		TsfDWriteDrawerContext(ID2D1RenderTarget* t, TsfDWriteDrawerEffect* e) :renderTarget(t), dafaultEffect(e) {}
+		Microsoft::WRL::ComPtr<DWriteDrawerEffect> dafaultEffect;
+		DWriteDrawerContext(ID2D1RenderTarget* t, DWriteDrawerEffect* e) :renderTarget(t), dafaultEffect(e) {}
 	};
-	class TsfDWriteDrawer:public IDWriteTextRenderer {
+	class DWriteDrawer:public IDWriteTextRenderer {
 	private:
-		std::unique_ptr<Line> m_line;
+		std::unique_ptr<tignear::d2d::Line> m_line;
 		Microsoft::WRL::ComPtr<ID2D1Factory> m_factory;
-		TsfDWriteDrawer(ID2D1Factory* factory) :m_line(std::make_unique<Line>(factory)),m_factory(factory) {}
+		DWriteDrawer(ID2D1Factory* factory) :m_line(std::make_unique<tignear::d2d::Line>(factory)),m_factory(factory) {}
 		ULONG m_ref_cnt;
 	public:
 		ULONG STDMETHODCALLTYPE AddRef() override;
 		ULONG STDMETHODCALLTYPE Release() override;
 		HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
 			void **ppvObject) override;
-		static void Create(ID2D1Factory* factory, TsfDWriteDrawer** render);
+		static void Create(ID2D1Factory* factory, DWriteDrawer** render);
 		HRESULT STDMETHODCALLTYPE DrawGlyphRun(
 			void * clientDrawingContext,
 			FLOAT  baselineOriginX,
