@@ -49,7 +49,7 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	out_pipename += _T(".");
 	out_pipename += str_process_cnt;
 
-	m_process_count++;
+	++m_process_count;
 
 	m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND| PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
 	if (m_out_pipe == INVALID_HANDLE_VALUE) {
@@ -131,7 +131,7 @@ void BasicShellContext::InputKey(WPARAM keycode) {
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
-	for (auto i = 0U; i < count; i++) {
+	for (auto i = 0U; i < count; ++i) {
 		InputKey(keycode);
 	}
 }
@@ -151,16 +151,6 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 }
 void BasicShellContext::ConfirmString(std::wstring_view view) {
 	AddString(view);
-}
-std::list<std::list<ansi::AttributeText>>::const_iterator BasicShellContext::GetViewTextBegin()const{
-	return m_viewstartY_itr;
-}
-std::list<std::list<AttributeText>>::const_iterator BasicShellContext::GetViewTextEnd() const {
-	std::list<std::list<AttributeText>>::const_iterator r_itr = m_viewstartY_itr;
-	for (auto i = 0; i < m_viewline_count&&r_itr!=m_text.cend();i++) {
-		r_itr++;
-	}
-	return r_itr;
 }
 void BasicShellContext::AddString(std::wstring_view str) {
 	ansi::parseW(str, *this);
@@ -204,6 +194,12 @@ void BasicShellContext::Lock() {
 }
 void BasicShellContext::Unlock() {
 	m_lock.unlock();
+}
+BasicShellContext::attrtext_iterator BasicShellContext::begin()const {
+	return attrtext_iterator(std::make_unique<BasicShellContext::attrtext_iterator_impl>(m_viewstartY_itr, m_text.cend()));
+}
+BasicShellContext::attrtext_iterator BasicShellContext::end() const{
+	return attrtext_iterator(std::make_unique<BasicShellContext::attrtext_iterator_impl>(m_text.cend(), m_text.cend()));
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

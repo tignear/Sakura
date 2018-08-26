@@ -12,7 +12,7 @@ namespace tignear::stdex {
 			std::thread::id this_id = std::this_thread::get_id();
 			if (owner == this_id) {
 				// recursive locking
-				count++;
+				++count;
 			}
 			else {
 				// normal locking
@@ -24,7 +24,7 @@ namespace tignear::stdex {
 		void unlock(void) {
 			if (count > 1) {
 				// recursive unlocking
-				count--;
+				--count;
 			}
 			else {
 				// normal unlocking

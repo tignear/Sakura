@@ -48,26 +48,26 @@ AttributeText BasicShellContext::CreateAttrText(icu::UnicodeString&& str, const 
 		a.underline() == cp.underline;
 }*/
 void BasicShellContext::MoveCurosorYUp(std::wstring::size_type count) {
-	for (auto i = 0U; i < count&&m_cursorY_itr!=m_text.begin(); i++) {
-		m_cursorY_itr--;
+	for (auto i = 0U; i < count&&m_cursorY_itr!=m_text.begin(); ++i) {
+		--m_cursorY_itr;
 	}
 }
 void BasicShellContext::MoveCurosorYDown(std::wstring::size_type count) {
-	for (auto i = 0U; i < count&&m_cursorY_itr != m_text.end(); i++) {
-		m_cursorY_itr++;
+	for (auto i = 0U; i < count&&m_cursorY_itr != m_text.end(); ++i) {
+		++m_cursorY_itr;
 	}
 }
 void BasicShellContext::RemoveRows(std::list<std::list<AttributeText>>::size_type count) {
 	auto copy_itr = m_cursorY_itr;
-	for (auto i = 0U; i < count; i++) {
+	for (auto i = 0U; i < count; ++i) {
 		copy_itr->clear();
-		copy_itr++;
+		++copy_itr;
 	}
 }
 void BasicShellContext::RemoveRowsR(std::list<std::list<AttributeText>>::size_type count) {
 	auto copy = m_cursorY_itr;
 	auto ritr=std::reverse_iterator(copy);
-	for (auto i = 0U; i < count; i++) {
+	for (auto i = 0U; i < count; ++i) {
 		(--(ritr.base()))->clear();
 	}
 }
@@ -124,7 +124,7 @@ void BasicShellContext::RemoveColumnsR() {
 	auto& elem = (*m_cursorY_itr);
 	int32_t skip = 0;
 	auto itr = elem.begin();
-	for (; itr != elem.end() && skip <= m_cursorX;itr++) {
+	for (; itr != elem.end() && skip <= m_cursorX;++itr) {
 		if (itr->lengthEAW() >static_cast<uint32_t>(m_cursorX-skip)) {
 			//https://qiita.com/masakielastic/items/a3387817afb0a03def2b#unicodestring
 			itr->textE([this,&skip](auto self, icu::UnicodeString& e2) {
@@ -154,7 +154,7 @@ void BasicShellContext::RemoveColumnsR() {
 				m_cursorX = skip;
 				return true;
 			});
-			itr++;
+			++itr;
 			break;
 		}
 		else {
@@ -180,7 +180,7 @@ void BasicShellContext::RemoveCursorAfter() {
 }
 int32_t BasicShellContext::CurosorLineLength() {
 	int32_t cnt=0;
-	for (auto itr = m_cursorY_itr->cbegin(); itr != m_cursorY_itr->cend();itr++) {
+	for (auto itr = m_cursorY_itr->cbegin(); itr != m_cursorY_itr->cend();++itr) {
 		cnt += itr->length();
 	}
 	return cnt;
@@ -193,10 +193,10 @@ void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
 		m_cursorX = EastAsianWidth(ustr);
 		m_text.push_back({ CreateAttrText(std::move(ustr), m_current_attr) });
 		m_cursorY_itr = m_text.end();
-		m_cursorY_itr--;
+		--m_cursorY_itr;
 		return;
 	}
-	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end();itr++) {
+	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end();++itr) {
 		int32_t l=static_cast<int32_t>(itr->lengthEAW());
 		if (i+l > m_cursorX) {
 			auto ustrlen = EastAsianWidth(ustr);
@@ -286,7 +286,7 @@ void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
 }
 void BasicShellContext::ParseColor(std::wstring_view sv) {
 	auto elems=split<wchar_t, std::vector<std::wstring>>(std::wstring(sv), L";");
-	for (auto itr = elems.begin(); itr != elems.end();itr++) {
+	for (auto itr = elems.begin(); itr != elems.end();++itr) {
 		auto num = std::stoul(*itr);
 		switch (num)
 		{
@@ -351,7 +351,7 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			continue;
 		case 38:
 		{
-			itr++;
+			++itr;
 			auto t = std::stoul(std::wstring(*itr));
 			switch (t)
 			{
@@ -363,11 +363,11 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			}
 			case 2:
 			{
-				itr++;
+				++itr;
 				auto r = std::stoul(std::wstring(*itr));
-				itr++;
+				++itr;
 				auto g=std::stoul(std::wstring(*itr));
-				itr++;
+				++itr;
 				auto b = std::stoul(std::wstring(*itr));
 				m_current_attr.textColor = r << 16 | g << 8 | b;
 				break;
@@ -382,23 +382,23 @@ void BasicShellContext::ParseColor(std::wstring_view sv) {
 			continue;
 		case 48:
 		{
-			itr++;
+			++itr;
 			auto t = std::stoul(std::wstring(*itr));
 			switch (t)
 			{
 			case 5:
 			{
-				itr++;
+				++itr;
 				m_current_attr.backgroundColor = m_256_color_table.at(std::stoul(std::wstring(*itr)));
 				break;
 			}
 			case 2:
 			{
-				itr++;
+				++itr;
 				auto r = std::stoul(std::wstring(*itr));
-				itr++;
+				++itr;
 				auto g = std::stoul(std::wstring(*itr));
-				itr++;
+				++itr;
 				auto b = std::stoul(std::wstring(*itr));
 				m_current_attr.backgroundColor = r << 16 | g << 8 | b;
 				break;
@@ -447,7 +447,7 @@ void BasicShellContext::FindString(std::wstring_view str) {
 	for (auto e : r) {
 		e +=L"\n";
 		InsertCursorPos(std::move(e));
-		m_cursorX++;
+		++m_cursorX;
 		MoveCurosorYDown(1);
 	}
 	if (!back.empty()) {
@@ -620,7 +620,7 @@ void BasicShellContext::FindBS() {
 	if (m_cursorY_itr == m_text.end()) {
 		return;
 	}
-	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end(); itr++) {
+	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end(); ++itr) {
 		auto l = itr->length();
 		if (i + l >= m_cursorX) {
 			itr->textE([this, i](auto& self, auto& e) {e.remove(m_cursorX - i, 1); return true; });

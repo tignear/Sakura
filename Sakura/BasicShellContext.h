@@ -11,6 +11,7 @@
 namespace tignear::sakura {
 	class BasicShellContext:public ShellContext {
 	private:
+
 		struct Attribute {
 			std::uint32_t textColor;
 			std::uint32_t backgroundColor;
@@ -77,6 +78,26 @@ namespace tignear::sakura {
 		//out pipe temp
 		std::string m_outbuf;
 	public:
+		class attrtext_iterator_impl :public attrtext_iterator_innner {
+		public:
+			attrtext_iterator_impl(const attrtext_iterator_impl&);
+			attrtext_iterator_impl(std::list<std::list<ansi::AttributeText>>::const_iterator, std::list<std::list<ansi::AttributeText>>::const_iterator);
+
+			void operator++()override;
+			attrtext_iterator_impl* operator++(int) override;
+			reference operator*()const override;
+			pointer operator->()const override;
+			bool operator==(const attrtext_iterator_innner& iterator)const override;
+			bool operator!=(const attrtext_iterator_innner& iterator)const override;
+			attrtext_iterator_impl* clone()const override;
+		private:
+			attrtext_iterator_impl(std::list<std::list<ansi::AttributeText>>::const_iterator, std::list<std::list<ansi::AttributeText>>::const_iterator,std::list<ansi::AttributeText>::const_iterator);
+
+			std::list<std::list<ansi::AttributeText>>::const_iterator m_base_itr;
+			std::list<std::list<ansi::AttributeText>>::const_iterator m_base_itr_end;
+
+			std::list<ansi::AttributeText>::const_iterator m_line_itr;
+		};
 		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage):
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
@@ -100,8 +121,6 @@ namespace tignear::sakura {
 		void InputKey(WPARAM keycode, unsigned int count) override;
 		void InputString(std::wstring_view) override;
 		void ConfirmString(std::wstring_view) override;
-		std::list<std::list<ansi::AttributeText>>::const_iterator GetViewTextBegin()const override;
-		std::list<std::list<ansi::AttributeText>>::const_iterator GetViewTextEnd()const override;
 		std::wstring_view GetTitle()const override;
 		std::wstring::size_type GetViewLineCount()const override;
 		void SetViewLineCount(std::wstring::size_type count)override;
@@ -113,8 +132,10 @@ namespace tignear::sakura {
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		attrtext_iterator begin()const override;
+		attrtext_iterator end()const override;
 		void Lock()override;
 		void Unlock()override;
-	};
+};
 
 }

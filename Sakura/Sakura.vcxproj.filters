@@ -119,5 +119,8 @@
     <ClCompile Include="TextDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

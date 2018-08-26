@@ -23,12 +23,12 @@ namespace tignear::ansi {
 			}
 			if (wstr[elmpos] == L'\b') {
 				r.FindBS();
-				nowpos++;
+				++nowpos;
 				continue;
 			}
 			if (wstr[elmpos] == L'\f') {
 				r.FindFF();
-				nowpos++;
+				++nowpos;
 				continue;
 			}
 			if (wstr[elmpos + 1] == L'[') {
@@ -47,7 +47,7 @@ namespace tignear::ansi {
 			}
 			else {
 				OutputDebugString(_T("Unsupported Sequence"));
-				nowpos += 1;
+				++nowpos;
 			}
 		}
 		return r;
@@ -71,12 +71,12 @@ namespace tignear::ansi {
 			}
 			if (wstr[elmpos] == '\b') {
 				r.FindBS();
-				nowpos++;
+				++nowpos;
 				continue;
 			}
 			if (wstr[elmpos] == '\f') {
 				r.FindFF();
-				nowpos++;
+				++nowpos;
 				continue;
 			}
 			if (wstr[elmpos + 1] == '[') {
@@ -95,7 +95,7 @@ namespace tignear::ansi {
 			}
 			else {
 				OutputDebugString(_T("Unsupported Sequence"));
-				nowpos += 1;
+				++nowpos;
 			}
 		}
 		return r;
@@ -119,12 +119,12 @@ namespace tignear::ansi {
 			}
 			if (wstr[elmpos] == U'\b') {
 				r.FindBS();
-				nowpos++;
+				++nowpos;
 				continue;
 			}
 			if (wstr[elmpos] == U'\f') {
 				r.FindFF();
-				nowpos++;
+				++nowpos;
 				continue;
 			}
 			if (wstr[elmpos + 1] == U'[') {

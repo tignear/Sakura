@@ -112,11 +112,11 @@ namespace tignear::tsf {
 		std::optional<R> TryWriteLockToCallBase(std::function<R()> fn) {
 			auto l = std::unique_lock <tignear::stdex::shared_recursive_mutex >(m_lock, std::try_to_lock);
 			if (l) {
-				m_write_lock++;
-				m_read_lock++;
+				++m_write_lock;
+				++m_read_lock;
 				auto r = fn();
-				m_read_lock--;
-				m_write_lock--;
+				--m_read_lock;
+				--m_write_lock;
 				return r;
 			}
 			else {
@@ -126,11 +126,11 @@ namespace tignear::tsf {
 		bool TryWriteLockToCallBase(std::function<void()> fn) {
 			auto r = std::unique_lock <tignear::stdex::shared_recursive_mutex >(m_lock, std::try_to_lock);
 			if (r) {
-				m_write_lock++;
-				m_read_lock++;
+				++m_write_lock;
+				++m_read_lock;
 				fn();
-				m_read_lock--;
-				m_write_lock--;
+				--m_read_lock;
+				--m_write_lock;
 				return true;
 			}
 			else {
@@ -141,9 +141,9 @@ namespace tignear::tsf {
 		std::optional<R> TryReadLockToCallBase(std::function<R()> fn) {
 			auto r = std::shared_lock <tignear::stdex::shared_recursive_mutex >(m_lock, std::try_to_lock);
 			if (r) {
-				m_read_lock++;
+				++m_read_lock;
 				auto r = fn();
-				m_read_lock--;
+				--m_read_lock;
 				return r;
 			}
 			else {
@@ -153,9 +153,9 @@ namespace tignear::tsf {
 		bool TryReadLockToCallBase(std::function<void()> fn) {
 			auto r = std::shared_lock <tignear::stdex::shared_recursive_mutex >(m_lock, std::try_to_lock);
 			if (r) {
-				m_read_lock++;
+				++m_read_lock;
 				fn();
-				m_read_lock--;
+				--m_read_lock;
 				return true;
 			}
 			else {
@@ -166,34 +166,34 @@ namespace tignear::tsf {
 		template <class R>
 		R ReadLockToCallBase(std::function<R()> fn) {
 			std::shared_lock lock(m_lock);
-			m_read_lock++;
+			++m_read_lock;
 			auto r = fn();
-			m_read_lock--;
+			--m_read_lock;
 			return r;
 		}
 		void ReadLockToCallBase(std::function<void()> fn) {
 			std::shared_lock lock(m_lock);
-			m_read_lock++;
+			++m_read_lock;
 			fn();
-			m_read_lock--;
+			--m_read_lock;
 		}
 		template <class R>
 		R WriteLockToCallBase(std::function<R()> fn) {
 			std::lock_guard lock(m_lock);
-			m_write_lock++;
-			m_read_lock++;
+			++m_write_lock;
+			++m_read_lock;
 			auto r = fn();
-			m_read_lock--;
-			m_write_lock--;
+			--m_read_lock;
+			--m_write_lock;
 			return r;
 		}
 		void WriteLockToCallBase(std::function<void()> fn) {
 			std::lock_guard lock(m_lock);
-			m_write_lock++;
-			m_read_lock++;
+			++m_write_lock;
+			++m_read_lock;
 			fn();
-			m_read_lock--;
-			m_write_lock--;
+			--m_read_lock;
+			--m_write_lock;
 		}
 		//コピー不可
 		void operator =(const TextStoreLock& src) {}

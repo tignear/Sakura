@@ -134,7 +134,7 @@ namespace tignear::sakura {
 		ItextStoreAcp
 		*/
 		ULONG STDMETHODCALLTYPE AddRef()override {
-			m_ref_cnt++;
+			++m_ref_cnt;
 			return m_ref_cnt;
 		}
 		ULONG STDMETHODCALLTYPE Release()override {
