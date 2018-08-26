@@ -10,11 +10,11 @@ namespace {
 	constexpr auto pi = 3.141592653589793238L;
 }
 ULONG  DWriteDrawerEffect::AddRef() {
-	m_ref_cnt++;
+	++m_ref_cnt;
 	return m_ref_cnt;
 }
 ULONG  DWriteDrawerEffect::Release() {
-	m_ref_cnt--;
+	--m_ref_cnt;
 	if (m_ref_cnt == 0) {
 		delete this;
 		return 0;
@@ -37,11 +37,11 @@ HRESULT  DWriteDrawerEffect::QueryInterface(REFIID riid,
 }
 
 ULONG  DWriteDrawer::AddRef() {
-	m_ref_cnt++;
+	++m_ref_cnt;
 	return m_ref_cnt;
 }
 ULONG  DWriteDrawer::Release() {
-	m_ref_cnt--;
+	--m_ref_cnt;
 	if (m_ref_cnt == 0) {
 		delete this;
 		return 0;
@@ -88,7 +88,7 @@ HRESULT DWriteDrawer::DrawGlyphRun(
 	{
 		DOUBLE totalWidth = 0;
 
-		for (UINT32 index = 0; index < glyphRun->glyphCount; index++)
+		for (UINT32 index = 0; index < glyphRun->glyphCount; ++index)
 		{
 			totalWidth += glyphRun->glyphAdvances[index];
 		}
@@ -202,7 +202,7 @@ HRESULT DWriteDrawer::DrawUnderline(
 				float period = 5 * underline->thickness;
 				float xOffset = baselineOriginX;
 				float yOffset = baselineOriginY + underline->offset;
-				for (float t = 0; t < underline->width; t++)
+				for (float t = 0; t < underline->width; ++t)
 				{
 					float x = xOffset + t;
 					auto angle =  static_cast<float>(pi*2)*std::fmod(x, period) / period;

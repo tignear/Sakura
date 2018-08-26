@@ -58,7 +58,7 @@ namespace tignear::sakura::iocp {
 			if (!m_iocp) {
 				throw "Error";
 			}
-			for (auto i = 0U; i < m_thread_count; i++) {
+			for (auto i = 0U; i < m_thread_count; ++i) {
 				UINT uThreadId;
 				_beginthreadex(
 					NULL,
@@ -70,7 +70,7 @@ namespace tignear::sakura::iocp {
 			}
 		}
 		~IOCPMgr() {
-			for (auto i = 0U; i < m_thread_count; i++) {
+			for (auto i = 0U; i < m_thread_count; ++i) {
 				PostQueuedCompletionStatus(m_iocp, 0, COMPKEY_EXIT,new OVERLAPPED());
 			}
 			CloseHandle(m_iocp);

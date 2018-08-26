@@ -127,15 +127,15 @@ void ConsoleWindow::OnChar(WPARAM wp) {
 			{
 				if (UseTerminalEchoBack()) {
 					InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
-					SelectionStart()++;
-					SelectionEnd()++;
+					++SelectionStart();
+					++SelectionEnd();
 				}
 
 			}
 			else
 			{
 				InputtingString().replace(InputtingString().begin() + SelectionStart(), InputtingString().begin() + SelectionEnd(), 1, wc);
-				SelectionStart()++;
+				++SelectionStart();
 				SelectionEnd()=SelectionStart();
 				ActiveSelEnd()=TS_AE_NONE;
 			}
@@ -223,7 +223,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					{
 						return;
 					}
-					SelectionStart()--;
+					--SelectionStart();
 					ActiveSelEnd()= TS_AE_START;
 				}
 				else
@@ -234,7 +234,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 						{
 							return;
 						}
-						SelectionStart() -- ;
+						--SelectionStart();
 						ActiveSelEnd()=TS_AE_START;
 						break;
 					case TS_AE_START:
@@ -242,10 +242,10 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 						{
 							return;
 						}
-						SelectionStart()--;
+						--SelectionStart();
 						break;
 					case TS_AE_END:
-						SelectionEnd()--;
+						--SelectionEnd();
 						if (SelectionStart() == SelectionEnd())
 						{
 							ActiveSelEnd()= TS_AE_NONE;
@@ -271,8 +271,8 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				}
 				else
 				{
-					SelectionStart()--;
-					SelectionEnd() --;
+					--SelectionStart();
+					--SelectionEnd();
 					m_console->shell->InputKey(VK_LEFT);
 				}
 			}
@@ -289,7 +289,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 					{
 						return;
 					}
-					SelectionEnd()++;
+					++SelectionEnd();
 					ActiveSelEnd()=TS_AE_END;
 				}
 				else
@@ -300,7 +300,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 						{
 							return;
 						}
-						SelectionEnd()++;
+						++SelectionEnd();
 						ActiveSelEnd()=TS_AE_END;
 						break;
 					case TS_AE_END:
@@ -308,10 +308,10 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 						{
 							return;
 						}
-						SelectionEnd()++;
+						++SelectionEnd();
 						break;
 					case TS_AE_START:
-						SelectionStart()++;
+						++SelectionStart();
 						if (SelectionStart() == SelectionEnd())
 						{
 							ActiveSelEnd()=TS_AE_NONE;
@@ -338,8 +338,8 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				}
 				else
 				{
-					SelectionStart() ++; 
-					SelectionEnd() ++;
+					++SelectionStart(); 
+					++SelectionEnd();
 					m_console->shell->InputKey(VK_RIGHT);
 				}
 			}
@@ -389,8 +389,8 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 						return;
 					}
 					if (UseTerminalEchoBack()) {
-						SelectionStart()--;
-						SelectionEnd()--;
+						--SelectionStart();
+						--SelectionEnd();
 						InputtingString().erase(SelectionStart(), 1);
 						m_console->shell->InputKey(VK_BACK);
 					}
@@ -513,13 +513,9 @@ void ConsoleWindow::OnPaint() {
 		std::wstring ftext;
 		{
 			m_console->shell->Lock();
-			auto end = m_console->shell->GetViewTextEnd();
-			auto endb = end;
-			endb--;
-			for (auto itr = m_console->shell->GetViewTextBegin(); itr !=end; itr++) {
-				for (auto elem:(*itr)) {
-					ftext += elem.textW();
-				}
+			auto end = m_console->shell->end();
+			for (auto itr = m_console->shell->begin(); itr !=end; ++itr) {
+				ftext += itr->textW();
 			}
 			m_console->shell->Unlock();
 		}
@@ -560,7 +556,7 @@ void ConsoleWindow::OnPaint() {
 			std::unique_ptr<DWRITE_HIT_TEST_METRICS[]> mats(new DWRITE_HIT_TEST_METRICS[count]);
 			FailToThrowHR(layout->HitTestTextRange(lengthShell+SelectionStart(), SelectionEnd() -SelectionStart(), 0, 0, mats.get(), count, &count));
 
-			for (auto i = 0UL; i < count; i++) 
+			for (auto i = 0UL; i < count; ++i) 
 			{
 				t->FillRectangle({
 					mats[i].left,
@@ -575,47 +571,45 @@ void ConsoleWindow::OnPaint() {
 			//draw string
 			//shell string
 			m_console->shell->Lock();
-			auto end = m_console->shell->GetViewTextEnd();
+			auto end = m_console->shell->end();
 			int32_t strcnt = 0;
-			for (auto itr = m_console->shell->GetViewTextBegin(); itr != end; itr++) {
-				for (auto itr2 = itr->cbegin(); itr2 != itr->cend();itr2++) {
-					auto nstrcnt =strcnt+itr2->length();
-					DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr2->length()) };
-					if (itr2->bold()) {
-						layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
-					}
-					if (itr2->italic()) {
-						layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
-					}
-					if (itr2->underline()) {
-						layout->SetUnderline(true, range);
-					}
-					if (itr2->crossed_out()) {
-						layout->SetStrikethrough(true, range);
-					}
-					ComPtr<ID2D1SolidColorBrush> bgbrush;
-					t->CreateSolidColorBrush(D2D1::ColorF(itr2->backgroundColor()),&bgbrush);
-					ComPtr<ID2D1SolidColorBrush> frbrush;
-					auto fralpha = 1.0f;
-
-					if ((itr2->blink == ansi::Blink::Fast&&!m_fast_blink_display)|| (itr2->blink == ansi::Blink::Slow && !m_slow_blink_display)) {
-						fralpha = 0;
-					}
-					else if (itr2->faint()) {
-						fralpha = 0.75f;
-					}
-					t->CreateSolidColorBrush(D2D1::ColorF(itr2->textColor(),fralpha), &frbrush);
-					ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
-						bgbrush.Get(),
-						frbrush.Get(),
-						itr2->underline() ?  std::make_unique<DWriteDrawerEffectUnderline>(
-							LineStyle_Solid,
-							false,
-							frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
-					);
-					layout->SetDrawingEffect(effect.Get(),range);
-					strcnt = nstrcnt;
+			for (auto itr =m_console->shell->begin(); itr != end; ++itr) {
+				auto nstrcnt = strcnt + itr->length();
+				DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
+				if (itr->bold()) {
+					layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
 				}
+				if (itr->italic()) {
+					layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
+				}
+				if (itr->underline()) {
+					layout->SetUnderline(true, range);
+				}
+				if (itr->crossed_out()) {
+					layout->SetStrikethrough(true, range);
+				}
+				ComPtr<ID2D1SolidColorBrush> bgbrush;
+				t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()),&bgbrush);
+				ComPtr<ID2D1SolidColorBrush> frbrush;
+				auto fralpha = 1.0f;
+				
+				if ((itr->blink() == ansi::Blink::Fast&&!m_fast_blink_display)|| (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+					fralpha = 0;
+				}
+				else if (itr->faint()) {
+					fralpha = 0.75f;
+				}
+				t->CreateSolidColorBrush(D2D1::ColorF(itr->textColor(),fralpha), &frbrush);
+				ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
+					bgbrush.Get(),
+					frbrush.Get(),
+					itr->underline() ?  std::make_unique<DWriteDrawerEffectUnderline>(
+						LineStyle_Solid,
+						false,
+						frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
+				);
+				layout->SetDrawingEffect(effect.Get(),range);
+				strcnt = nstrcnt;
 			}
 			m_console->shell->Unlock();
 		}

@@ -340,11 +340,9 @@ HRESULT ConsoleWindow::GetTextExt(
 		std::swap(acpStart, acpEnd);
 	}
 	std::wstring shellstr;
-	for (auto itr = m_console->shell->GetViewTextBegin(); itr != m_console->shell->GetViewTextEnd(); itr++) {
-		for (auto elem : (*itr)) {
-			shellstr += elem.textW();
-		}
-		shellstr += L"\r\n";
+	auto end = m_console->shell->end();
+	for (auto itr =m_console->shell->begin(); itr !=end ; ++itr) {
+		shellstr += itr->textW();
 	}
 	shellstr.erase(shellstr.end() - 2, shellstr.end());
 	auto shelllen=static_cast<UINT32>(shellstr.length());
@@ -356,7 +354,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	auto mats=std::make_unique<DWRITE_HIT_TEST_METRICS[]>(count);
 	FailToThrowHR(layout->HitTestTextRange(shelllen+ SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, mats.get(), count, &count));
 	LONG left=LONG_MAX, top=LONG_MAX, right=0, bottom=0;
-	for (auto i = 0UL; i < count; i++)
+	for (auto i = 0UL; i < count; ++i)
 	{
 		left = left < mats[i].left ? left : static_cast<LONG>(mats[i].left);
 		top = top < mats[i].top ? top : static_cast<LONG>(mats[i].top);

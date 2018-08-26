@@ -214,6 +214,7 @@
   <ItemGroup>
     <ClCompile Include="BasicShellContext.cpp" />
     <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
+    <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowCompositionSink.cpp" />
     <ClCompile Include="ConsoleWindowTextStore.cpp" />

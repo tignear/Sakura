@@ -61,9 +61,9 @@ namespace tignear::ansi {
 		{15,0xffffff}
 		};
 		uint_fast8_t t[]{ 0,95,135,175,215,255 };
-		for (uint_fast8_t ri = 0, cnt = 16; ri < std::size(t);ri++) {
-			for (uint_fast8_t gi = 0; gi < std::size(t); gi++) {
-				for (uint_fast8_t bi = 0; bi < std::size(t); bi++) {
+		for (uint_fast8_t ri = 0, cnt = 16; ri < std::size(t); ++ri) {
+			for (uint_fast8_t gi = 0; gi < std::size(t); ++gi) {
+				for (uint_fast8_t bi = 0; bi < std::size(t); ++bi) {
 					r[cnt] = rgb(t[ri], t[gi], t[bi]);
 					cnt++;
 				}
@@ -72,7 +72,7 @@ namespace tignear::ansi {
 		{
 			auto cnt = 232;
 			uint_fast8_t e=8;
-			for (; cnt <= 255; cnt ++, e += 10) {
+			for (; cnt <= 255; ++cnt , e += 10) {
 				r[cnt] = rgb(e, e, e);
 			}
 		}
