@@ -115,7 +115,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	GetWindowRect(m_sakura, (LPRECT)&rect);
 
 
-	ConsoleWindow::Create(m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),&m_console);
+	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get());
 	auto iocpmgr = std::make_shared<IOCPMgr>();
 	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001, ansi::BasicSystemColorTable(),ansi::Basic256ColorTable());
 	//shell->InputString(L"dir");
@@ -129,9 +129,9 @@ int Sakura::Main(HINSTANCE hInstance,
 	//shell->InputKey('\b');
 
 	//shell->InputString("\r\n");
-	auto console = std::make_shared<ConsoleWindow::ConsoleContext>(shell,false);
+	auto console = std::make_shared<cwnd::Context>(shell,false);
 
-	m_console->SetConsoleContext(console);
+	m_console->SetContext(console);
 	/*shell->InputChar(L'c');
 	shell->InputChar(L'd');
 	shell->InputChar(L' ');
@@ -221,6 +221,6 @@ int Sakura::Run() {
  TfClientId Sakura::m_clientId;
  Microsoft::WRL::ComPtr<ID2D1Factory> Sakura::m_d2d_factory;
  Microsoft::WRL::ComPtr<IDWriteFactory> Sakura::m_dwrite_factory;
- ComPtr<ConsoleWindow> Sakura::m_console;
+ std::unique_ptr<ConsoleWindow> Sakura::m_console;
  ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
  ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;

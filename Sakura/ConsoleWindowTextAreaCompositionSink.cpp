@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "ConsoleWindow.h"
+#include "ConsoleWindowTextArea.h"
 #include "FailToThrow.h"
-using tignear::sakura::ConsoleWindow;
+using tignear::sakura::ConsoleWindowTextArea;
 using Microsoft::WRL::ComPtr;
-HRESULT ConsoleWindow::OnStartComposition(ITfCompositionView *pComposition, BOOL *pfOk) {
+HRESULT ConsoleWindowTextArea::OnStartComposition(ITfCompositionView *pComposition, BOOL *pfOk) {
 	OutputDebugString(_T("TSF:OnStartComposition\n"));
 	*pfOk = TRUE;
 	ComPtr<ITfRange> range;
@@ -17,7 +17,7 @@ HRESULT ConsoleWindow::OnStartComposition(ITfCompositionView *pComposition, BOOL
 	}
 	return S_OK;
 }
-HRESULT ConsoleWindow::OnUpdateComposition(ITfCompositionView *pComposition, ITfRange *pRangeNew) {
+HRESULT ConsoleWindowTextArea::OnUpdateComposition(ITfCompositionView *pComposition, ITfRange *pRangeNew) {
 	OutputDebugString(_T("TSF:OnUpdateComposition\n"));
 	ComPtr<IEnumTfRanges> enumRanges;
 	FailToThrowHR(m_composition_prop->EnumRanges(m_edit_cookie, &enumRanges, NULL));
@@ -45,7 +45,7 @@ HRESULT ConsoleWindow::OnUpdateComposition(ITfCompositionView *pComposition, ITf
 	return S_OK;
 }
 
-HRESULT ConsoleWindow::OnEndComposition(ITfCompositionView *pComposition) {
+HRESULT ConsoleWindowTextArea::OnEndComposition(ITfCompositionView *pComposition) {
 	OutputDebugString(_T("TSF:OnEndComposition\n"));
 	ComPtr<ITfRange> range;
 	pComposition->GetRange(&range);

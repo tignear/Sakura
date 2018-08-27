@@ -15,7 +15,7 @@ namespace tignear::sakura {
 	private:
 		static HWND m_sakura;
 		static HINSTANCE appInstance;
-		static Microsoft::WRL::ComPtr<tignear::sakura::ConsoleWindow> m_console;
+		static std::unique_ptr<tignear::sakura::ConsoleWindow> m_console;
 		static Microsoft::WRL::ComPtr<ITfThreadMgr> m_thread_mgr;
 		static Microsoft::WRL::ComPtr<ID2D1Factory> m_d2d_factory;
 		static Microsoft::WRL::ComPtr<IDWriteFactory> m_dwrite_factory;

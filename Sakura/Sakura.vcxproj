@@ -193,6 +193,8 @@
     <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="ConsoleWindow.h" />
+    <ClInclude Include="ConsoleWindowContext.h" />
+    <ClInclude Include="ConsoleWindowTextArea.h" />
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="EastAsianWidth.h" />
     <ClInclude Include="FailToThrow.h" />
@@ -216,8 +218,9 @@
     <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
     <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
-    <ClCompile Include="ConsoleWindowCompositionSink.cpp" />
-    <ClCompile Include="ConsoleWindowTextStore.cpp" />
+    <ClCompile Include="ConsoleWindowTextArea.cpp" />
+    <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
+    <ClCompile Include="ConsoleWindowTextAreaTextStore.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="SakuraMain.cpp" />
     <ClCompile Include="stdafx.cpp">
