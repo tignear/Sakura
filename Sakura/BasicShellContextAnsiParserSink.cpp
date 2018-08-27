@@ -196,7 +196,7 @@ void BasicShellContext::InsertCursorPos(const std::wstring& wstr) {
 		--m_cursorY_itr;
 		return;
 	}
-	for (auto itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end();++itr) {
+	for (auto&& itr = m_cursorY_itr->begin(); itr != m_cursorY_itr->end();++itr) {
 		int32_t l=static_cast<int32_t>(itr->lengthEAW());
 		if (i+l > m_cursorX) {
 			auto ustrlen = EastAsianWidth(ustr);
@@ -615,7 +615,6 @@ void BasicShellContext::FindOSC(std::wstring_view sv) {
 	}
 }
 void BasicShellContext::FindBS() {
-	OutputDebugString(_T("BackSpace\n"));
 	int32_t i = 0;
 	if (m_cursorY_itr == m_text.end()) {
 		return;
