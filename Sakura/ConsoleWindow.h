@@ -61,7 +61,7 @@ namespace tignear::sakura {
 		TfClientId m_clientId;
 		HINSTANCE m_hinst;
 		HWND m_parentHwnd;
-		HWND m_hwnd;
+		HWND m_textarea_hwnd;
 		std::atomic<DWORD> m_request_lock_async;
 		std::recursive_mutex m_queue_lock;
 		std::queue<std::function<void()>> m_write_queue;
@@ -127,7 +127,7 @@ namespace tignear::sakura {
 		}
 		const HWND GetHWnd()
 		{
-			return m_hwnd;
+			return m_textarea_hwnd;
 		}
 
 		/*

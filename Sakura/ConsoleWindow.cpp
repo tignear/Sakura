@@ -78,8 +78,8 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 	FailToThrowHR(m_context->GetProperty(GUID_PROP_ATTRIBUTE, &m_attr_prop));
 	FailToThrowHR(m_context->GetProperty(GUID_PROP_COMPOSING, &m_composition_prop));
 	FailToThrowB(RegisterConsoleWindowClass(m_hinst));
-	m_hwnd = CreateWindowEx(0, className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, m_parentHwnd, m, m_hinst, this);
-	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_hwnd);
+	m_textarea_hwnd = CreateWindowEx(0, className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, m_parentHwnd, m, m_hinst, this);
+	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_textarea_hwnd);
 	tignear::dwrite::DWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
 		L"Cica",
@@ -89,7 +89,7 @@ void ConsoleWindow::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_
 		static_cast<FLOAT>(16),
 		L"ja-jp");
 	FailToThrowHR(m_docmgr->Push(m_context.Get()));
-	SetTimer(m_hwnd, CallAsyncTimerId, 60u, NULL);
+	SetTimer(m_textarea_hwnd, CallAsyncTimerId, 60u, NULL);
 }
 void ConsoleWindow::OnSetFocus() {
 	OutputDebugString(_T("ConsoleWindow::OnSetFocus\n"));
@@ -157,7 +157,7 @@ void ConsoleWindow::CaretUpdate()
 			if (m_caret_display)
 			{
 				m_caret_display = false;
-				InvalidateRect(m_hwnd, NULL, FALSE);
+				InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 			}
 			return;
 		}
@@ -172,7 +172,7 @@ void ConsoleWindow::CaretUpdate()
 		{
 			m_caret_display = !m_caret_display;
 			m_caret_update_time = now;
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 	});
 }
@@ -277,7 +277,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				}
 			}
 			m_sink->OnSelectionChange();
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_RIGHT) & 0x80)
 		{
@@ -344,7 +344,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				}
 			}
 			m_sink->OnSelectionChange();
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_DELETE)&0x80) {
 			if (InputtingString().empty())
@@ -377,7 +377,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 				SelectionEnd()=SelectionStart();
 				ActiveSelEnd()=TS_AE_NONE;
 			}
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_BACK) & 0x80) {
 			if (!InputtingString().empty())
@@ -411,7 +411,7 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			else {
 				m_console->shell->InputKey(VK_BACK);
 			}
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 		else if (GetKeyState(VK_RETURN)&0x80) {
 			if (UseTerminalEchoBack()) {
@@ -419,11 +419,11 @@ void ConsoleWindow::OnKeyDown(WPARAM param) {
 			}
 			ConfirmCommand();
 			m_console->shell->InputKey(VK_RETURN);
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 		else {
 			m_console->shell->InputKey(param);
-			InvalidateRect(m_hwnd, NULL, FALSE);
+			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 		}
 	});
 }
@@ -442,7 +442,7 @@ void ConsoleWindow::ConfirmCommand() {
 	m_sink->OnTextChange(0, &change);
 }
 void ConsoleWindow::UpdateText() {
-	InvalidateRect(m_hwnd, NULL, FALSE);
+	InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 	//OutputDebugStringW((std::wstring(L"length:")+std::to_wstring(m_string.length())+std::wstring(L",acpStart:")+std::to_wstring(m_selection_start)+ std::wstring(L",acpend:") + std::to_wstring(m_selection_end)+std::wstring(L",inherim:")+std::to_wstring(m_InterimChar)+L"\n").c_str());
 }
 
@@ -482,7 +482,7 @@ void ConsoleWindow::OnPaint() {
 		PAINTSTRUCT pstruct;
 		RECT rc;
 
-		GetClientRect(m_hwnd, &rc);
+		GetClientRect(m_textarea_hwnd, &rc);
 
 		auto t = m_d2d->GetRenderTarget();
 
@@ -506,7 +506,7 @@ void ConsoleWindow::OnPaint() {
 		);
 		ComPtr<ID2D1SolidColorBrush> transparency;
 		t->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 0.0f), &transparency);
-		BeginPaint(m_hwnd, &pstruct);
+		BeginPaint(m_textarea_hwnd, &pstruct);
 
 		t->BeginDraw();
 		t->Clear(clearColor);
@@ -670,7 +670,7 @@ void ConsoleWindow::OnPaint() {
 
 		FailToThrowHR(t->EndDraw());
 
-		EndPaint(m_hwnd, &pstruct);
+		EndPaint(m_textarea_hwnd, &pstruct);
 	});
 }
 void ConsoleWindow::SetConsoleContext(std::shared_ptr<ConsoleContext> console) {

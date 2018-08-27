@@ -16,7 +16,7 @@ HRESULT STDMETHODCALLTYPE ConsoleWindow::GetWnd(
 	HWND         *phwnd
 ) {
 	if (vcView==1) {
-		*phwnd = m_hwnd;
+		*phwnd = m_textarea_hwnd;
 		return S_OK;
 	}
 	else {
@@ -315,7 +315,7 @@ HRESULT ConsoleWindow::GetScreenExt(
 ) {
 	OutputDebugString(_T("TSF:GetScreenExt\n"));
 
-	GetClientRect(m_hwnd, prc);
+	GetClientRect(m_textarea_hwnd, prc);
 	return S_OK;
 }
 HRESULT ConsoleWindow::GetTextExt(
@@ -347,7 +347,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	shellstr.erase(shellstr.end() - 2, shellstr.end());
 	auto shelllen=static_cast<UINT32>(shellstr.length());
 	RECT rc;
-	GetClientRect(m_hwnd, &rc);
+	GetClientRect(m_textarea_hwnd, &rc);
 	auto layout = m_tbuilder->CreateTextLayout(shellstr+InputtingString(), static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
 	UINT32 count;
 	layout->HitTestTextRange(shelllen+ SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
@@ -365,7 +365,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	}
 	RECT localrc{ left, top, right, bottom};
 	*prc = localrc;
-	MapWindowPoints(m_hwnd, 0, reinterpret_cast<POINT*>(prc), 2); 
+	MapWindowPoints(m_textarea_hwnd, 0, reinterpret_cast<POINT*>(prc), 2);
 	*pfClipped = FALSE;
 	return S_OK;
 }
