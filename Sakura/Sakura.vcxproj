@@ -192,6 +192,9 @@
     <ClInclude Include="ansi\BasicColorTable.h" />
     <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
+    <ClInclude Include="BasicShellContextAttributeText.h" />
+    <ClInclude Include="BasicShellContextDocument.h" />
+    <ClInclude Include="BasicShellContextLineText.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="ConsoleWindowContext.h" />
     <ClInclude Include="ConsoleWindowTextArea.h" />
@@ -200,6 +203,7 @@
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />
     <ClInclude Include="IOCPMgr.h" />
+    <ClInclude Include="Looper.h" />
     <ClInclude Include="SakuraMain.h" />
     <ClInclude Include="shared_recursive_mutex.h" />
     <ClInclude Include="ShellContext.h" />
@@ -216,7 +220,10 @@
   <ItemGroup>
     <ClCompile Include="BasicShellContext.cpp" />
     <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
+    <ClCompile Include="BasicShellContextAttributeText.cpp" />
     <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
+    <ClCompile Include="BasicShellContextDocument.cpp" />
+    <ClCompile Include="BasicShellContextLineText.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowTextArea.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />

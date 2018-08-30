@@ -4,7 +4,8 @@
 #include "ansi/AttributeText.h"
 namespace tignear::sakura {
 	class ShellContext {
-	protected:
+
+	public:
 		class attrtext_iterator_innner {
 		public:
 			using iterator_category = std::input_iterator_tag;
@@ -20,7 +21,6 @@ namespace tignear::sakura {
 			virtual attrtext_iterator_innner* clone()const = 0;
 			virtual ~attrtext_iterator_innner() {};
 		};
-	public:
 		class attrtext_iterator {
 		private:
 			std::unique_ptr<attrtext_iterator_innner> m_inner;
@@ -65,9 +65,12 @@ namespace tignear::sakura {
 		virtual void ConfirmString(std::wstring_view)=0;//no lock call
 		virtual attrtext_iterator begin()const=0;//lock call
 		virtual attrtext_iterator end()const = 0;//lock call
-		virtual std::list<std::list<ansi::AttributeText>>::size_type GetViewLineCount()const=0;//no lock call
-		virtual std::wstring_view GetTitle()const =0;//no lock call
-		virtual void SetViewLineCount(std::list<std::list<ansi::AttributeText>>::size_type count)=0;//no lock call
+		virtual std::wstring_view GetTitle()const = 0;//no lock call
+		virtual size_t GetLineCount()const=0;
+		virtual size_t GetViewCount()const=0;//no lock call
+		virtual void SetViewCount(size_t count)=0;//no lock call
+		virtual size_t GetViewStart()const=0;
+		virtual void SetViewStart(size_t)=0;
 		virtual uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const=0;//no lock call
 		virtual void RemoveTextChangeListener(uintptr_t)const = 0;//no lock call
 		virtual uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const = 0;//no lock call

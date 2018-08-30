@@ -2,7 +2,7 @@
 #include <string>
 namespace tignear::stdex{
 	template <class T,class R>
-	R split(std::basic_string<T> string,std::basic_string_view<T> separator) {
+	R split(const std::basic_string<T>& string,std::basic_string_view<T> separator) {
 		auto separator_length = separator.length(); // ‹æØ‚è•¶š‚Ì’·‚³
 
 		auto list = R();

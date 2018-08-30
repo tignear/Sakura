@@ -13,7 +13,12 @@ using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
 shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256) {
-	auto r = make_shared<BasicShellContext>(iocpmgr,codepage);
+	Attribute attr{};
+	attr.frColor.type = ColorType::ColorSystem;
+	attr.frColor.color_system = 30;
+	attr.bgColor.type = ColorType::ColorSystem;
+	attr.bgColor.color_system = 47;
+	auto r = make_shared<BasicShellContext>(iocpmgr,codepage,colorsys, color256,attr);
 	r->SetSystemColor(colorsys);
 	r->Set256Color(color256);
 	if (r->Init(cmdstr))
@@ -127,7 +132,6 @@ bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContex
 	return s->OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
-
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
@@ -168,26 +172,32 @@ uintptr_t BasicShellContext::AddCursorChangeListener(std::function<void(ShellCon
 	return 0;
 }
 void BasicShellContext::RemoveCursorChangeListener(uintptr_t)const{}
-std::wstring::size_type BasicShellContext::GetViewLineCount()const {
-	return m_viewline_count;
+std::wstring::size_type BasicShellContext::GetViewCount()const {
+	return m_document.GetViewCount();
 }
-void BasicShellContext::SetViewLineCount(std::wstring::size_type count) {
-	m_viewline_count = count;
+void BasicShellContext::SetViewCount(size_t count) {
+	m_document.SetViewCount(count);
+}
+size_t  BasicShellContext::GetViewStart()const {
+	return m_document.GetViewPosition();
+}
+void  BasicShellContext::SetViewStart(size_t s) {
+	m_document.SetViewPosition(s);
 }
 std::wstring_view BasicShellContext::GetTitle()const {
 	return m_title;
 }
 void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>& table256) {
-	m_256_color_table = table256;
+	m_document.Set256ColorTable(table256);
 }
 void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>&& table256) {
-	m_256_color_table = std::move(table256);
+	m_document.Set256ColorTable(table256);
 }
 void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>& tablesys) {
-	m_system_color_table = tablesys;
+	m_document.SetSystemColorTable(tablesys);
 }
 void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&& tablesys) {
-	m_system_color_table = std::move(tablesys);
+	m_document.SetSystemColorTable(std::move(tablesys));
 }
 void BasicShellContext::Lock() {
 	m_lock.lock();
@@ -196,10 +206,14 @@ void BasicShellContext::Unlock() {
 	m_lock.unlock();
 }
 BasicShellContext::attrtext_iterator BasicShellContext::begin()const {
-	return attrtext_iterator(std::make_unique<BasicShellContext::attrtext_iterator_impl>(m_viewstartY_itr, m_text.cend()));
+	return m_document.begin();
 }
 BasicShellContext::attrtext_iterator BasicShellContext::end() const{
-	return attrtext_iterator(std::make_unique<BasicShellContext::attrtext_iterator_impl>(m_text.cend(), m_text.cend()));
+	return m_document.end();
+
+}
+size_t BasicShellContext::GetLineCount()const {
+	return m_document.GetLineCount();
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

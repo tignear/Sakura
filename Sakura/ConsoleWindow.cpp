@@ -6,13 +6,21 @@ using tignear::sakura::cwnd::Context;
 std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f) {
 	auto r = std::make_unique<ConsoleWindow>();
 	r->m_hinst = hinst;
-	FailToThrowB(RegisteConsoleWindowrClass(hinst));
+	FailToThrowB(RegisterConsoleWindowrClass(hinst));
 	r->m_parent_hwnd = pwnd;
-	CreateWindowEx(0, m_classname, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, pwnd,hmenu, hinst, r.get());
-	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, w, h, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, &(r->m_textarea));
+	r->m_hwnd=CreateWindowEx(0, m_classname, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, pwnd,hmenu, hinst, r.get());
+	r->m_scrollbar_hwnd=CreateWindowEx(0, _T("SCROLLBAR"), NULL,WS_CHILD|WS_VISIBLE| SBS_VERT, w-m_scrollbar_width,0, m_scrollbar_width,h,r->m_hwnd,m_hmenu_scrollbar,hinst,NULL);
+	SCROLLINFO sbinfo{};
+	sbinfo.cbSize = sizeof(sbinfo);
+	sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
+	sbinfo.nMin = 0;
+	sbinfo.nMax = 20;
+	sbinfo.nPage = 10;
+	SetScrollInfo(r->m_scrollbar_hwnd, SB_VERT, &sbinfo, TRUE);
+	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, w- m_scrollbar_width, h, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, &(r->m_textarea));
 	return r;
  }
-bool ConsoleWindow::RegisteConsoleWindowrClass(HINSTANCE hinst) {
+bool ConsoleWindow::RegisterConsoleWindowrClass(HINSTANCE hinst) {
 	if (m_registerstate) return true;
 	WNDCLASSEX wcex;
 
@@ -40,8 +48,6 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 	{
 	case WM_CREATE:
 		self=static_cast<ConsoleWindow*>(reinterpret_cast<CREATESTRUCT*>(lParam)->lpCreateParams);
-		self->m_hwnd = hwnd;
-		self->OnCreate();
 		break;
 	case WM_SETFOCUS:
 		if (self->m_textarea) {
@@ -52,19 +58,30 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		break;
 	case WM_SIZING:
 	case WM_SIZE:
+	{			
+		RECT rect;
+		GetClientRect(self->GetHWnd(), &rect);
 		if (self->m_textarea) {
-			RECT rect;
-			GetClientRect(self->GetHWnd(), &rect);
-			SetWindowPos(self->m_textarea->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOOWNERZORDER);
+			SetWindowPos(self->m_textarea->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left - m_scrollbar_width, rect.bottom - rect.top, SWP_NOOWNERZORDER);
+
+		}
+		if (self->m_scrollbar_hwnd) {
+			FailToThrowB(SetWindowPos(self->m_scrollbar_hwnd,0, rect.right-m_scrollbar_width, rect.top, m_scrollbar_width, rect.bottom - rect.top, SWP_NOOWNERZORDER));
+			SCROLLINFO sbinfo{};
+			sbinfo.cbSize = sizeof(sbinfo);
+			sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
+			sbinfo.nMin = 0;
+			sbinfo.nMax = 20;
+			sbinfo.nPage = 10;
+			SetScrollInfo(self->m_scrollbar_hwnd, SB_VERT, &sbinfo, TRUE);
 		}
 		break;
+	}
+
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
 	return 0;
-}
-void ConsoleWindow::OnCreate() {
-
 }
 HWND ConsoleWindow::GetHWnd() {
 	return m_hwnd;

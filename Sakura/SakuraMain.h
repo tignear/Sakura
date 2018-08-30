@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <wrl.h>
+#include "BasicShellContextAttributeText.h"
 #include "ConsoleWindow.h"
 namespace tignear::sakura {
 	class Sakura {
@@ -22,5 +23,7 @@ namespace tignear::sakura {
 		static TfClientId m_clientId;
 		static Microsoft::WRL::ComPtr<ITfCategoryMgr> m_category_mgr;
 		static Microsoft::WRL::ComPtr<ITfDisplayAttributeMgr> m_attribute_mgr;
+		static ColorTable ct_sys;
+		static ColorTable ct_256;
 };
 }

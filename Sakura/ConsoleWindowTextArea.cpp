@@ -269,6 +269,7 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 				}
 				else if (SelectionStart() == 0 || SelectionEnd() == 0)
 				{
+					m_console->shell->InputKey(VK_LEFT);
 					return;
 				}
 				else
@@ -331,11 +332,10 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 					}
 					SelectionStart()=SelectionEnd();
 					ActiveSelEnd()=TS_AE_NONE;
-					//do not send key
 				}
 				else if (SelectionEnd() == InputtingString().length())
 				{
-					//do not send key
+					m_console->shell->InputKey(VK_RIGHT);
 					return;
 				}
 				else
@@ -512,14 +512,13 @@ void ConsoleWindowTextArea::OnPaint() {
 
 		t->BeginDraw();
 		t->Clear(clearColor);
+		m_console->shell->Lock();
 		std::wstring ftext;
 		{
-			m_console->shell->Lock();
 			auto end = m_console->shell->end();
 			for (auto itr = m_console->shell->begin(); itr !=end; ++itr) {
 				ftext += itr->textW();
 			}
-			m_console->shell->Unlock();
 		}
 		auto lengthShell = static_cast<UINT32>(ftext.length());
 		ftext += InputtingString();
@@ -572,7 +571,6 @@ void ConsoleWindowTextArea::OnPaint() {
 		{
 			//draw string
 			//shell string
-			m_console->shell->Lock();
 			auto end = m_console->shell->end();
 			int32_t strcnt = 0;
 			for (auto itr =m_console->shell->begin(); itr != end; ++itr) {
@@ -613,8 +611,8 @@ void ConsoleWindowTextArea::OnPaint() {
 				layout->SetDrawingEffect(effect.Get(),range);
 				strcnt = nstrcnt;
 			}
-			m_console->shell->Unlock();
 		}
+		m_console->shell->Unlock();
 
 
 		//inputting string

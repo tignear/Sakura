@@ -7,11 +7,19 @@
 #include "IOCPMgr.h"
 #include "BasicShellContext.h"
 #include "ansi/BasicColorTable.h"
+#pragma comment(linker, \
+  "\"/manifestdependency:type='Win32' "\
+  "name='Microsoft.Windows.Common-Controls' "\
+  "version='6.0.0.0' "\
+  "processorArchitecture='*' "\
+  "publicKeyToken='6595b64144ccf1df' "\
+  "language='*'\"")
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
 using tignear::sakura::iocp::IOCPMgr;
+using tignear::sakura::ColorTable;
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPTSTR lpCmdLine,
@@ -112,12 +120,13 @@ int Sakura::Main(HINSTANCE hInstance,
 
 
 	RECT rect;
-	GetWindowRect(m_sakura, (LPRECT)&rect);
+	GetClientRect(m_sakura, (LPRECT)&rect);
 
 
 	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get());
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001, ansi::BasicSystemColorTable(),ansi::Basic256ColorTable());
+
+	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001, ct_sys,ct_256);
 	//shell->InputString(L"dir");
 		//shell->InputString("dir\br\r\n");
 
@@ -224,3 +233,5 @@ int Sakura::Run() {
  std::unique_ptr<ConsoleWindow> Sakura::m_console;
  ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
  ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
+ ColorTable Sakura::ct_sys = tignear::ansi::BasicSystemColorTable();
+ ColorTable Sakura::ct_256 = tignear::ansi::Basic256ColorTable();
