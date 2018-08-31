@@ -1,19 +1,11 @@
 #include "stdafx.h"
 #include <string>
-#include <selene.h>
 #include "FailToThrow.h"
 #include "SakuraMain.h"
 #include "ConsoleWindow.h"
 #include "IOCPMgr.h"
 #include "BasicShellContext.h"
 #include "ansi/BasicColorTable.h"
-#pragma comment(linker, \
-  "\"/manifestdependency:type='Win32' "\
-  "name='Microsoft.Windows.Common-Controls' "\
-  "version='6.0.0.0' "\
-  "processorArchitecture='*' "\
-  "publicKeyToken='6595b64144ccf1df' "\
-  "language='*'\"")
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
@@ -122,7 +114,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	RECT rect;
 	GetClientRect(m_sakura, (LPRECT)&rect);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<ShellContext> shell = tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr, 65001, ct_sys, ct_256);
+	std::shared_ptr<ShellContext> shell = tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr, 65001, ct_sys, ct_256, {NULL,NULL,false,0,0,false,0,0});
 
 	auto console = std::make_shared<cwnd::Context>(shell, false, 16.0f, L"Cica");
 	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),console);

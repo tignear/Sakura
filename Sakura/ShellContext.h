@@ -81,6 +81,7 @@ namespace tignear::sakura {
 		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
 		virtual void Lock()=0;//no lock call
 		virtual void Unlock()=0;//lock call
+		virtual void Resize(UINT w,UINT h)=0;
 		virtual ~ShellContext() {};//no lock call
 	};
 

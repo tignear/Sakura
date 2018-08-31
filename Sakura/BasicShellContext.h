@@ -11,6 +11,17 @@
 #include "tstring.h"
 namespace tignear::sakura {
 	class BasicShellContext:public ShellContext {
+	public:
+		struct Options {
+			LPVOID environment;
+			LPCTSTR current_directory;
+			bool use_size;
+			DWORD width;
+			DWORD height;
+			bool use_count_chars;
+			DWORD x_count_chars;
+			DWORD y_count_chars;
+		};
 	private:
 		//ansi parser call backs
 		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
@@ -37,7 +48,7 @@ namespace tignear::sakura {
 		BasicShellContextDocument m_document;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_text_change_listeners;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_layout_change_listeners;
-		bool Init(stdex::tstring);
+		bool Init(stdex::tstring,const Options& opt);
 		void NotifyLayoutChange();
 		void NotifyTextChange();
 		//out pipe temp
@@ -61,7 +72,7 @@ namespace tignear::sakura {
 			CloseHandle(m_out_pipe);
 			CloseHandle(m_childProcess);
 		}
-		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage, std::unordered_map<unsigned int, uint32_t>, std::unordered_map<unsigned int, uint32_t>);
+		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage, std::unordered_map<unsigned int, uint32_t>, std::unordered_map<unsigned int, uint32_t>,const Options& opt);
 		void InputChar(WPARAM c) override;
 		void InputKey(WPARAM keycode) override;
 		void InputKey(WPARAM keycode, unsigned int count) override;
@@ -81,6 +92,7 @@ namespace tignear::sakura {
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		void Resize(UINT w, UINT h)override;
 		attrtext_iterator begin()const override;
 		attrtext_iterator end()const override;
 		void Lock()override;

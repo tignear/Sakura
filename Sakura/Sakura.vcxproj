@@ -72,19 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)lib\lua\include;$(ProjectDir)lib\selene\include;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -132,7 +136,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
@@ -192,7 +196,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
@@ -207,6 +211,7 @@
     <ClInclude Include="BasicShellContextAttributeText.h" />
     <ClInclude Include="BasicShellContextDocument.h" />
     <ClInclude Include="BasicShellContextLineText.h" />
+    <ClInclude Include="ConfigLoader.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="ConsoleWindowContext.h" />
     <ClInclude Include="ConsoleWindowTextArea.h" />
@@ -219,6 +224,7 @@
     <ClInclude Include="SakuraMain.h" />
     <ClInclude Include="shared_recursive_mutex.h" />
     <ClInclude Include="ShellContext.h" />
+    <ClInclude Include="ShellContextFactory.h" />
     <ClInclude Include="split.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="strconv.h" />
@@ -236,6 +242,7 @@
     <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
     <ClCompile Include="BasicShellContextDocument.cpp" />
     <ClCompile Include="BasicShellContextLineText.cpp" />
+    <ClCompile Include="ConfigLoader.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowTextArea.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
@@ -252,6 +259,7 @@
     <ClCompile Include="TextDrawer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Manifest Include="ComCtrl.manifest" />
     <Manifest Include="DpiAware.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

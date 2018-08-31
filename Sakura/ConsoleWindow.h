@@ -13,6 +13,7 @@ namespace tignear::sakura {
 		HWND m_parent_hwnd;
 		HWND m_hwnd;
 		HWND m_scrollbar_hwnd;
+		HWND m_tab_hwnd;
 		HINSTANCE m_hinst;
 		static bool m_registerstate;
 		static bool RegisterConsoleWindowrClass(HINSTANCE hinst);

@@ -12,7 +12,7 @@ using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
-shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256) {
+shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256,const Options& opt) {
 	Attribute attr{};
 	attr.frColor.type = ColorType::ColorSystem;
 	attr.frColor.color_system = 30;
@@ -21,7 +21,7 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 	auto r = make_shared<BasicShellContext>(iocpmgr,codepage,colorsys, color256,attr);
 	r->SetSystemColor(colorsys);
 	r->Set256Color(color256);
-	if (r->Init(cmdstr))
+	if (r->Init(cmdstr,opt))
 	{
 		if (!r->IOWorkerStart(r)) {
 			r.reset();
@@ -36,7 +36,7 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 	}
 
 }
-bool BasicShellContext::Init(tstring cmdstr) {
+bool BasicShellContext::Init(tstring cmdstr,const Options& opt) {
 	//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(sa);
@@ -80,6 +80,15 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	si.hStdError = out_client_pipe;
 	si.hStdInput = NULL;
 	si.wShowWindow = SW_HIDE;
+	if (opt.use_count_chars) {
+		si.dwFlags |= STARTF_USECOUNTCHARS;
+		si.dwXCountChars = opt.x_count_chars;
+		si.dwXCountChars = opt.y_count_chars;
+	}
+	if (opt.use_size) {
+		si.dwXSize = opt.width;
+		si.dwYSize = opt.height;
+	}
 	auto len = cmdstr.length();
 	auto cmd = std::make_unique<TCHAR[]>(len+1);
 #pragma warning(disable:4996)
@@ -87,7 +96,7 @@ bool BasicShellContext::Init(tstring cmdstr) {
 #pragma warning(default:4996)
 	m_iocpmgr->Attach(m_out_pipe);
 
-	if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, NULL, _T("C:\\users\\tignear"), &si, &pi)) {
+	if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, opt.environment,opt.current_directory, &si, &pi)) {
 		auto le=GetLastError();
 		OutputDebugStringW(std::to_wstring(le).c_str());
 		return false;
@@ -229,6 +238,9 @@ void BasicShellContext::NotifyTextChange() {
 	for (auto&& f : m_text_change_listeners) {
 		f.second(this);
 	}
+}
+void BasicShellContext::Resize(UINT w,UINT h) {
+	SetWindowPos(m_hwnd, NULL,0,0,w,h, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_HIDEWINDOW| SWP_ASYNCWINDOWPOS);
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;
