@@ -533,6 +533,7 @@ void ConsoleWindowTextArea::OnPaint() {
 				layout->SetCharacterSpacing(0, 0, 0, { 0,static_cast<UINT32>(ftext.length()) });
 				layout->SetPairKerning(false, { 0,static_cast<UINT32>(ftext.length()) });
 				layout->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, m_linespacing, m_baseline);
+				layout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 			}
 
 			//draw caret
@@ -683,8 +684,17 @@ void ConsoleWindowTextArea::OnPaint() {
 	});
 }
 void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::cwnd::Context> console) {
-	
+	if (m_console) {
+		m_console->shell->RemoveLayoutChangeListener(m_layout_change_listener_removekey);
+		m_console->shell->RemoveTextChangeListener(m_text_change_listener_removekey);
+	}
+
 	m_console =console;
+	auto fn = [this](ShellContext*) {
+		InvalidateRect(this->GetHWnd(), NULL, FALSE);
+	};
+	m_layout_change_listener_removekey = m_console->shell->AddLayoutChangeListener(fn);
+	m_text_change_listener_removekey = m_console->shell->AddTextChangeListener(fn);
 	m_tbuilder->UpdateFontName(m_console->textarea_context.fontname.c_str());
 	m_tbuilder->UpdateFontSize(m_console->textarea_context.fontsize);
 	auto format=m_tbuilder->GetTextFormat();

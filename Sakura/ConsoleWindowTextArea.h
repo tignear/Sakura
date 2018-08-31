@@ -341,7 +341,7 @@ namespace tignear::sakura {
 			return m_d2d->GetRenderTarget()->GetSize();
 		}
 		size_t GetPageSize() {
-			return static_cast<size_t>(GetAreaDip().height / m_linespacing-1);
+			return static_cast<size_t>(GetAreaDip().height / m_linespacing);
 		}
 	};
 }
