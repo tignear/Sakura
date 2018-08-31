@@ -18,14 +18,19 @@
 #include "ConsoleWindowContext.h"
 namespace tignear::sakura {
 	class ConsoleWindowTextArea :public ITextStoreACP,public ITfContextOwnerCompositionSink {
-	public:
-	public:
-
 	private:
 		static constexpr UINT_PTR CallAsyncTimerId = 0x01;
 		static constexpr LPCTSTR m_className = _T("ConsoleWindow.TextArea");
 		static bool m_registerstate;
-
+		struct LockHolder {
+			ShellContext& context;
+			LockHolder(ShellContext& context):context(context) {
+				context.Lock();
+			}
+			~LockHolder() {
+				context.Unlock();
+			}
+		};
 		std::unique_ptr<Direct2DWithHWnd> m_d2d;
 		std::unique_ptr<tignear::dwrite::TextBuilder> m_tbuilder;
 		Microsoft::WRL::ComPtr<tignear::dwrite::DWriteDrawer> m_drawer;
@@ -58,7 +63,7 @@ namespace tignear::sakura {
 		std::shared_ptr<cwnd::Context> m_console;
 		LONG m_composition_start_pos;
 		std::wstring m_last_composition_string;
-		void Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f);
+		void Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context>);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 		ConsoleWindowTextArea() {}
 		void CallAsync();
@@ -86,15 +91,14 @@ namespace tignear::sakura {
 			LONG          *pacpEnd,
 			TS_TEXTCHANGE *pChange
 		);
-
+		FLOAT m_linespacing;
+		FLOAT m_baseline;
 	public:
 		// void OnSize(ConsoleWindow*, LPARAM);
-
-
 		static bool RegisterConsoleWindowTextAreaClass(HINSTANCE hinst);//call once.but automatic call when create.
-		static void Create(HINSTANCE, HWND, int x, int y, int w, int h, HMENU, ITfThreadMgr* threadmgr, TfClientId, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory*, IDWriteFactory*, ConsoleWindowTextArea**);
-		inline static void Create(HWND parent, int x, int y, int w, int h, HMENU menu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, ConsoleWindowTextArea** pr) {
-			return Create(reinterpret_cast<HINSTANCE>(GetWindowLongPtr(parent, GWLP_HINSTANCE)), parent, x, y, w, h, menu, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, pr);
+		static void Create(HINSTANCE, HWND, int x, int y, int w, int h, HMENU, ITfThreadMgr* threadmgr, TfClientId, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory*, IDWriteFactory*, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea**);
+		inline static void Create(HWND parent, int x, int y, int w, int h, HMENU menu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
+			return Create(reinterpret_cast<HINSTANCE>(GetWindowLongPtr(parent, GWLP_HINSTANCE)), parent, x, y, w, h, menu, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, console,pr);
 		}
 		const HWND GetParentHwnd()
 		{
@@ -327,6 +331,14 @@ namespace tignear::sakura {
 		~ConsoleWindowTextArea() {
 			m_docmgr->Pop(0);
 		}
-
+		void SetViewPosition(size_t t) {
+			m_console->shell->SetViewStart(t);
+		}
+		D2D1_SIZE_F GetAreaDip() {
+			return m_d2d->GetRenderTarget()->GetSize();
+		}
+		size_t GetPageSize() {
+			return static_cast<size_t>(GetAreaDip().height / m_linespacing-1);
+		}
 	};
 }

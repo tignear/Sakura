@@ -14,7 +14,7 @@ TextBuilder::TextBuilder(IDWriteFactory* factory, LPCWSTR fontName, DWRITE_FONT_
 	m_locale = locale;
 }
 
-void TextBuilder::UpdateFontName(const LPCWSTR fname)
+void TextBuilder::UpdateFontName(LPCWSTR fname)
 {
 	m_fontName = fname;
 	ClearTextFormatCache();

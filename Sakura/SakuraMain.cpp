@@ -121,41 +121,12 @@ int Sakura::Main(HINSTANCE hInstance,
 
 	RECT rect;
 	GetClientRect(m_sakura, (LPRECT)&rect);
-
-
-	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get());
 	auto iocpmgr = std::make_shared<IOCPMgr>();
+	std::shared_ptr<ShellContext> shell = tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr, 65001, ct_sys, ct_256);
 
-	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001, ct_sys,ct_256);
-	//shell->InputString(L"dir");
-		//shell->InputString("dir\br\r\n");
+	auto console = std::make_shared<cwnd::Context>(shell, false, 16.0f, L"Cica");
+	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),console);
 
-	//shell->InputKey();
-	//shell->InputKey(0x75);
-	//shell->InputString("i");
-	//shell->InputString("\t");
-	//shell->InputKey(3);
-	//shell->InputKey('\b');
-
-	//shell->InputString("\r\n");
-	auto console = std::make_shared<cwnd::Context>(shell,false);
-
-	m_console->SetContext(console);
-	/*shell->InputChar(L'c');
-	shell->InputChar(L'd');
-	shell->InputChar(L' ');
-	shell->InputChar(L'c');
-	shell->InputChar(L':');
-	shell->InputChar(L'\\');
-	shell->InputChar(L'‚Ù');
-	shell->InputChar(L'‚°');
-	shell->InputChar(L'‚Ù');
-	shell->InputChar(L'\b');
-	shell->InputChar(L'‚Ù');
-	shell->InputChar(L'‚°');
-	//shell->InputKey(VK_TAB);
-	shell->InputKey(VK_RETURN);*/
-	//shell->InputString("cd ../\r\n");
 	ShowWindow(m_sakura, SW_SHOWDEFAULT);
 	UpdateWindow(m_sakura);
 	auto r= Run();

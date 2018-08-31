@@ -3,8 +3,9 @@
 #include "FailToThrow.h"
 using tignear::sakura::ConsoleWindow;
 using tignear::sakura::cwnd::Context;
-std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f) {
+std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console) {
 	auto r = std::make_unique<ConsoleWindow>();
+	r->m_console = console;
 	r->m_hinst = hinst;
 	FailToThrowB(RegisterConsoleWindowrClass(hinst));
 	r->m_parent_hwnd = pwnd;
@@ -17,7 +18,9 @@ std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(HINSTANCE hinst, HWND pwnd,
 	sbinfo.nMax = 20;
 	sbinfo.nPage = 10;
 	SetScrollInfo(r->m_scrollbar_hwnd, SB_VERT, &sbinfo, TRUE);
-	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, w- m_scrollbar_width, h, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, &(r->m_textarea));
+	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, w- m_scrollbar_width, h, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f,console, &(r->m_textarea));
+	r->UpdateScrollBar();
+	r->m_console->shell->AddLayoutChangeListener(std::bind(&ConsoleWindow::OnLayoutChange,std::ref(*r), std::placeholders::_1));
 	return r;
  }
 bool ConsoleWindow::RegisterConsoleWindowrClass(HINSTANCE hinst) {
@@ -67,27 +70,62 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		}
 		if (self->m_scrollbar_hwnd) {
 			FailToThrowB(SetWindowPos(self->m_scrollbar_hwnd,0, rect.right-m_scrollbar_width, rect.top, m_scrollbar_width, rect.bottom - rect.top, SWP_NOOWNERZORDER));
-			SCROLLINFO sbinfo{};
-			sbinfo.cbSize = sizeof(sbinfo);
-			sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
-			sbinfo.nMin = 0;
-			sbinfo.nMax = 20;
-			sbinfo.nPage = 10;
-			SetScrollInfo(self->m_scrollbar_hwnd, SB_VERT, &sbinfo, TRUE);
+
 		}
 		break;
 	}
+	case WM_VSCROLL:
+	switch(LOWORD(wParam)){
+	case SB_THUMBTRACK:
+	{
+		SCROLLINFO info{};
+		info.cbSize = sizeof(info);
+		info.fMask = SIF_TRACKPOS;
+		GetScrollInfo(self->m_scrollbar_hwnd, SB_CTL, &info);
+		self->m_textarea->SetViewPosition(info.nTrackPos);
+		break;
+	}
+	default:
+	{
+		SCROLLINFO info{};
+		info.cbSize = sizeof(info);
+		info.fMask = SIF_POS;
+		GetScrollInfo(self->m_scrollbar_hwnd, SB_CTL, &info);
+		self->m_textarea->SetViewPosition(info.nPos);
+		break;
+	}
 
+	}
+		break;
+	case WM_UPDATE_SCROLLBAR:
+		self->UpdateScrollBar();
+		break;
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
+
 	return 0;
 }
 HWND ConsoleWindow::GetHWnd() {
 	return m_hwnd;
 }
 void ConsoleWindow::SetContext(std::shared_ptr<Context> p) {
+	m_console = p;
 	m_textarea->SetConsoleContext(std::move(p));
+}
+void ConsoleWindow::OnLayoutChange(tignear::sakura::ShellContext* shell) {
+	PostMessage(m_hwnd, WM_UPDATE_SCROLLBAR, 0, 0);
+}
+void ConsoleWindow::UpdateScrollBar() {
+	SCROLLINFO sbinfo{};
+	sbinfo.cbSize = sizeof(sbinfo);
+	sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
+	sbinfo.nMin = 0;
+	sbinfo.nPos = static_cast<UINT>( m_console->shell->GetViewStart());
+	sbinfo.nMax = static_cast<UINT>(m_console->shell->GetLineCount());
+	sbinfo.nPage = static_cast<UINT>( m_textarea->GetPageSize());
+	SetScrollInfo(m_scrollbar_hwnd, SB_CTL, &sbinfo, FALSE);
+	InvalidateRect(m_scrollbar_hwnd,NULL,TRUE);
 }
 //static fields
 bool ConsoleWindow::m_registerstate = false;

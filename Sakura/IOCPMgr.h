@@ -56,7 +56,7 @@ namespace tignear::sakura::iocp {
 				NULL,
 				m_thread_count);
 			if (!m_iocp) {
-				throw "Error";
+				std::terminate();
 			}
 			for (auto i = 0U; i < m_thread_count; ++i) {
 				UINT uThreadId;

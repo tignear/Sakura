@@ -157,6 +157,7 @@ void BasicShellContext::ConfirmString(std::wstring_view view) {
 	AddString(view);
 }
 void BasicShellContext::AddString(std::wstring_view str) {
+	std::lock_guard lock(m_lock);
 	ansi::parseW(str, *this);
 }
 
@@ -168,15 +169,19 @@ uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellConte
 void BasicShellContext::RemoveTextChangeListener(uintptr_t key)const {
 	m_text_change_listeners.erase(key);
 }
-uintptr_t BasicShellContext::AddCursorChangeListener(std::function<void(ShellContext*)>)const {
-	return 0;
+uintptr_t BasicShellContext::AddLayoutChangeListener(std::function<void(ShellContext*)> f)const {
+	auto key = reinterpret_cast<uintptr_t>(&f);
+	m_layout_change_listeners[key] = f;
+	return key;
 }
-void BasicShellContext::RemoveCursorChangeListener(uintptr_t)const{}
+void BasicShellContext::RemoveLayoutChangeListener(uintptr_t key)const{
+	m_layout_change_listeners.erase(key);
+}
 std::wstring::size_type BasicShellContext::GetViewCount()const {
 	return m_document.GetViewCount();
 }
-void BasicShellContext::SetViewCount(size_t count) {
-	m_document.SetViewCount(count);
+void BasicShellContext::SetPageSize(size_t count) {
+	m_document.SetPageSize(count);
 }
 size_t  BasicShellContext::GetViewStart()const {
 	return m_document.GetViewPosition();
@@ -214,6 +219,16 @@ BasicShellContext::attrtext_iterator BasicShellContext::end() const{
 }
 size_t BasicShellContext::GetLineCount()const {
 	return m_document.GetLineCount();
+}
+void BasicShellContext::NotifyLayoutChange() {
+	for (auto&& f : m_layout_change_listeners) {
+		f.second(this);
+	}
+}
+void BasicShellContext::NotifyTextChange() {
+	for (auto&& f : m_text_change_listeners) {
+		f.second(this);
+	}
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

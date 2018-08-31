@@ -40,6 +40,7 @@ namespace tignear::sakura {
 		size_t m_cursorY;
 		size_t m_cursorY_save;
 		size_t m_viewpos;
+		size_t m_viewendpos;
 		size_t m_origin;
 		size_t m_viewcount;
 		int32_t m_cursorX;
@@ -48,17 +49,23 @@ namespace tignear::sakura {
 		ColorTable m_color_sys;
 		Attribute m_current_attr;
 		Attribute m_default_attr;
+		std::function<void(void)> m_layout_change_callback;
+		std::function<void(void)> m_text_change_callback;
 		bool FixCursorY();
+		void NotifyLayoutChange();
+		void NotifyTextChange();
 	public:
 		BasicShellContextDocument(
 			const ColorTable& color_sys,
 			const ColorTable& color_256,
-			const Attribute& def) :
+			const Attribute& def,
+			std::function<void(void)> layout_change,
+			std::function<void(void)> text_change) :
 			m_color_256(color_256),
 			m_color_sys(color_sys),
 			m_default_attr(def),
 			m_current_attr(def),
-			m_max_line(30),
+			m_max_line(100),
 			m_cursorY(0),
 			m_cursorY_itr(m_text.begin()),
 			m_origin(0),
@@ -66,7 +73,11 @@ namespace tignear::sakura {
 			m_viewpos(0),
 			m_viewpos_itr(m_text.begin()),
 			m_viewend_itr(m_text.end()),
-			m_cursorX(0)
+			m_viewendpos(0),
+			m_viewcount(0),
+			m_cursorX(0),
+			m_layout_change_callback(layout_change),
+			m_text_change_callback(text_change)
 		{
 
 		}
@@ -83,7 +94,7 @@ namespace tignear::sakura {
 		size_t GetLineCount()const;
 		void SetLineCountMax(size_t max);
 		size_t GetViewCount()const;
-		void SetViewCount(size_t count);
+		void SetPageSize(size_t count);
 		void ViewPositionUp(size_t count);
 		void ViewPositionDown(size_t count);
 		size_t GetViewPosition()const;

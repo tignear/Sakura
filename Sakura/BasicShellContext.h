@@ -32,13 +32,17 @@ namespace tignear::sakura {
 		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
 		HWND m_hwnd;
-		mutable std::unordered_map<std::uintptr_t,std::function<void(ShellContext*)>> m_text_change_listeners;
 		std::wstring m_title;
 		std::recursive_mutex m_lock;
 		BasicShellContextDocument m_document;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_text_change_listeners;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_layout_change_listeners;
 		bool Init(stdex::tstring);
+		void NotifyLayoutChange();
+		void NotifyTextChange();
 		//out pipe temp
 		std::string m_outbuf;
+
 	public:
 
 		BasicShellContext(
@@ -50,7 +54,7 @@ namespace tignear::sakura {
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
 			m_codepage(codepage),
-			m_document(BasicShellContextDocument(c_sys,c_256, def))
+			m_document(BasicShellContextDocument(c_sys,c_256, def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this))))
 		{
 		}
 		~BasicShellContext() {
@@ -66,13 +70,13 @@ namespace tignear::sakura {
 		std::wstring_view GetTitle()const override;
 		size_t GetViewCount()const override;
 		size_t GetLineCount()const override;
-		void SetViewCount(size_t count)override;
+		void SetPageSize(size_t count)override;
 		size_t GetViewStart()const override;
 		void SetViewStart(size_t)override;
 		uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const override;
 		void RemoveTextChangeListener(uintptr_t)const override;
-		uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const override;
-		void RemoveCursorChangeListener(uintptr_t)const override;
+		uintptr_t AddLayoutChangeListener(std::function<void(ShellContext*)>)const override;
+		void RemoveLayoutChangeListener(uintptr_t)const override;
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
