@@ -190,7 +190,7 @@ HRESULT DWriteDrawer::DrawUnderline(
 		case LineStyle_Squiggle:
 		{
 			if (underline->readingDirection == DWRITE_READING_DIRECTION_TOP_TO_BOTTOM || underline->readingDirection == DWRITE_READING_DIRECTION_BOTTOM_TO_TOP) {
-				throw "NotImpl";
+				throw std::runtime_error("NotImpl");
 			}
 			else
 			{

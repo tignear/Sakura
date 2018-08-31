@@ -1,67 +1,59 @@
 #include "stdafx.h"
-#include "BasicShellContext.h"
-using tignear::sakura::BasicShellContext;
+#include "BasicShellContextDocument.h"
 using tignear::ansi::AttributeText;
-void BasicShellContext::attrtext_iterator_impl::operator++() {
-	++m_line_itr;
-	if (m_line_itr == m_base_itr->end()) {
-		++m_base_itr;
-		if (m_base_itr == m_base_itr_end) {
+using tignear::sakura::attrtext_iterator_impl;
+void attrtext_iterator_impl::operator++() {
+	++m_line;
+	if (m_main->Value().end() == m_line) {
+		++m_main;
+		if (m_main == m_main_end) {
 			return;
 		}
-		m_line_itr = m_base_itr->begin();
-
+		m_line = m_main->Value().begin();
 	}
-}
-BasicShellContext::attrtext_iterator_impl* BasicShellContext::attrtext_iterator_impl::operator++(int) {
-	auto temp = new attrtext_iterator_impl (*this);
-	this->operator++();
-	return temp;
+	return;
 }
 
-BasicShellContext::attrtext_iterator_impl::reference BasicShellContext::attrtext_iterator_impl::operator*()const {
-	return (*m_line_itr);
+attrtext_iterator_impl* attrtext_iterator_impl::operator++(int) {
+	auto self = clone();
+	operator++();
+	return self;
 }
-BasicShellContext::attrtext_iterator_impl::pointer BasicShellContext::attrtext_iterator_impl::operator->()const {
-	return m_line_itr.operator->();
+
+attrtext_iterator_impl::reference attrtext_iterator_impl::operator*()const {
+	return *m_line;
 }
-bool BasicShellContext::attrtext_iterator_impl::operator==(const attrtext_iterator_innner& iterator)const {
-	auto* pitr=dynamic_cast<decltype(this)>(&iterator);
-	if (pitr == nullptr) {
+attrtext_iterator_impl::pointer attrtext_iterator_impl::operator->()const {
+	return m_line.operator->();
+}
+bool attrtext_iterator_impl::operator==(const attrtext_iterator_innner& iterator)const {
+	auto obj=dynamic_cast<const attrtext_iterator_impl*>(&iterator);
+	if (obj == nullptr) {
 		return false;
 	}
-	if (m_base_itr != pitr->m_base_itr) {
+	if (obj->m_main != m_main) {
 		return false;
 	}
-	if (m_base_itr_end != pitr->m_base_itr_end) {
+	if (m_main_end != obj->m_main_end) {
 		return false;
 	}
-	if (m_base_itr == m_base_itr_end) {
+	if (m_main == m_main_end) {
 		return true;
 	}
-	return m_line_itr == pitr->m_line_itr;
+	if (obj->m_line != m_line) {
+		return false;
+	}
+	return true;
 }
-bool BasicShellContext::attrtext_iterator_impl::operator!=(const attrtext_iterator_innner& iterator)const {
+bool attrtext_iterator_impl::operator!=(const attrtext_iterator_innner& iterator)const {
 	return !operator==(iterator);
 }
-BasicShellContext::attrtext_iterator_impl* BasicShellContext::attrtext_iterator_impl::clone()const {
+attrtext_iterator_impl* attrtext_iterator_impl::clone()const {
 	return new attrtext_iterator_impl(*this);
 }
-BasicShellContext::attrtext_iterator_impl ::attrtext_iterator_impl(const BasicShellContext::attrtext_iterator_impl& from)
+attrtext_iterator_impl::attrtext_iterator_impl(const attrtext_iterator_impl& from)
 {
-	m_base_itr = from.m_base_itr;
-	m_line_itr = from.m_line_itr;
-}
-BasicShellContext::attrtext_iterator_impl::attrtext_iterator_impl(std::list<std::list<AttributeText>>::const_iterator base_itr, std::list<std::list<AttributeText>>::const_iterator end_itr, std::list<AttributeText>::const_iterator line_itr) {
-	m_base_itr = base_itr;
-	m_base_itr_end = end_itr;
-	m_line_itr = line_itr;
-}
-BasicShellContext::attrtext_iterator_impl::attrtext_iterator_impl(std::list<std::list<AttributeText>>::const_iterator base_itr, std::list<std::list<AttributeText>>::const_iterator end_itr) {
-	m_base_itr = base_itr;
-	m_base_itr_end = end_itr;
-	if (m_base_itr == m_base_itr_end) {
-		return;
-	}
-	m_line_itr = m_base_itr->begin();
+	m_line = from.m_line;
+	m_main = from.m_main;
+	m_main_end = from.m_main_end;
 }

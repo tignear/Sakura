@@ -4,6 +4,7 @@
 #include <atomic>
 #include <mutex>
 #include "IOCPMgr.h"
+#include "BasicShellContextDocument.h"
 #include "ShellContext.h"
 #include "ansi/AttributeText.h"
 #include "ansi/AnsiParser.h"
@@ -11,49 +12,19 @@
 namespace tignear::sakura {
 	class BasicShellContext:public ShellContext {
 	private:
-
-		struct Attribute {
-			std::uint32_t textColor;
-			std::uint32_t backgroundColor;
-			bool bold;
-			bool faint;
-			bool italic;
-			bool underline;
-			bool fluktur;
-			ansi::Blink blink;
-			bool conceal;//âBÇ∑
-			bool crossed_out;
-			unsigned int font;//0-9
-			bool reverse;
-		};
-		static ansi::AttributeText CreateAttrText(icu::UnicodeString& str,const Attribute& attr);
-		static ansi::AttributeText CreateAttrText(icu::UnicodeString&& str,const Attribute& attr);
 		//ansi parser call backs
 		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
 		void FindCSI(std::wstring_view);
 		void FindString(std::wstring_view);
 		void FindOSC(std::wstring_view);
 		void FindBS();
-		void FindFF();
-		//ansi parser work helpers
-		void RemoveRows(std::list<std::list<ansi::AttributeText>>::size_type count);
-		void RemoveRowsR(std::list<std::list<ansi::AttributeText>>::size_type count);
-		void RemoveColumns();
-		void RemoveColumnsR();
-		void RemoveCursorBefore();
-		void RemoveCursorAfter();
-		void ParseColor(std::wstring_view);
-		void InsertCursorPos(const std::wstring&);
-		int32_t CurosorLineLength();
+		void FindFF();		
+		void ParseColor(std::wstring_view sv);
 		//other class members
 		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
 		void AddString(std::wstring_view);
-		void MoveCurosorYUp(std::list<std::list<ansi::AttributeText>>::size_type count);
-		void MoveCurosorYDown(std::list<std::list<ansi::AttributeText>>::size_type count);
-		void NotifyUpdateText();
-		void NotifyUpdateString();
 		constexpr static unsigned int BUFFER_SIZE = 4096;
 		const unsigned int m_codepage;
 		static std::atomic_uintmax_t m_process_count;
@@ -61,55 +32,30 @@ namespace tignear::sakura {
 		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
 		HWND m_hwnd;
-		std::list<std::list<ansi::AttributeText>> m_text;
-		std::list<std::list<ansi::AttributeText>>::iterator m_viewstartY_itr;
-		std::list<std::list<ansi::AttributeText>>::iterator m_cursorY_itr;
-		int32_t m_cursorX;
-		std::list<std::list<ansi::AttributeText>>::size_type m_viewline_count;//âÊñ Ç…âfÇÈçsÇÃêî
-		mutable std::unordered_map<std::uintptr_t,std::function<void(ShellContext*)>> m_text_change_listeners;
 		std::wstring m_title;
-		Attribute m_current_attr;
-		Attribute m_def_attr;
-		bool m_attr_updated;
 		std::recursive_mutex m_lock;
-		std::unordered_map<unsigned int, std::uint32_t> m_system_color_table;
-		std::unordered_map<unsigned int, std::uint32_t> m_256_color_table;
+		BasicShellContextDocument m_document;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_text_change_listeners;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_layout_change_listeners;
 		bool Init(stdex::tstring);
+		void NotifyLayoutChange();
+		void NotifyTextChange();
 		//out pipe temp
 		std::string m_outbuf;
+
 	public:
-		class attrtext_iterator_impl :public attrtext_iterator_innner {
-		public:
-			attrtext_iterator_impl(const attrtext_iterator_impl&);
-			attrtext_iterator_impl(std::list<std::list<ansi::AttributeText>>::const_iterator, std::list<std::list<ansi::AttributeText>>::const_iterator);
 
-			void operator++()override;
-			attrtext_iterator_impl* operator++(int) override;
-			reference operator*()const override;
-			pointer operator->()const override;
-			bool operator==(const attrtext_iterator_innner& iterator)const override;
-			bool operator!=(const attrtext_iterator_innner& iterator)const override;
-			attrtext_iterator_impl* clone()const override;
-		private:
-			attrtext_iterator_impl(std::list<std::list<ansi::AttributeText>>::const_iterator, std::list<std::list<ansi::AttributeText>>::const_iterator,std::list<ansi::AttributeText>::const_iterator);
-
-			std::list<std::list<ansi::AttributeText>>::const_iterator m_base_itr;
-			std::list<std::list<ansi::AttributeText>>::const_iterator m_base_itr_end;
-
-			std::list<ansi::AttributeText>::const_iterator m_line_itr;
-		};
-		BasicShellContext(std::shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage):
+		BasicShellContext(
+			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+			unsigned int codepage,
+			const ColorTable& c_sys,
+			const ColorTable& c_256,
+			Attribute& def):
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
-			m_text{ {ansi::AttributeText(icu::UnicodeString())} },
-			m_current_attr{ 0,0xFFB6C1,false,false,false,false,false,ansi::Blink::None,false,false,0,false },
-			m_def_attr{ 0,0xFFB6C1,false,false,false,false,false,ansi::Blink::None,false,false,0,false },
-			m_codepage(codepage)
+			m_codepage(codepage),
+			m_document(BasicShellContextDocument(c_sys,c_256, def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this))))
 		{
-			m_viewstartY_itr = m_text.begin();
-			m_cursorY_itr = m_text.begin();
-			m_viewline_count = 20;
-			m_cursorX = 0;
 		}
 		~BasicShellContext() {
 			CloseHandle(m_out_pipe);
@@ -122,12 +68,15 @@ namespace tignear::sakura {
 		void InputString(std::wstring_view) override;
 		void ConfirmString(std::wstring_view) override;
 		std::wstring_view GetTitle()const override;
-		std::wstring::size_type GetViewLineCount()const override;
-		void SetViewLineCount(std::wstring::size_type count)override;
+		size_t GetViewCount()const override;
+		size_t GetLineCount()const override;
+		void SetPageSize(size_t count)override;
+		size_t GetViewStart()const override;
+		void SetViewStart(size_t)override;
 		uintptr_t AddTextChangeListener(std::function<void(ShellContext*)>)const override;
 		void RemoveTextChangeListener(uintptr_t)const override;
-		uintptr_t AddCursorChangeListener(std::function<void(ShellContext*)>)const override;
-		void RemoveCursorChangeListener(uintptr_t)const override;
+		uintptr_t AddLayoutChangeListener(std::function<void(ShellContext*)>)const override;
+		void RemoveLayoutChangeListener(uintptr_t)const override;
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;

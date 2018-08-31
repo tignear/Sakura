@@ -5,155 +5,24 @@
 #include <functional>
 namespace tignear::ansi {
 
-	enum class Blink {
-		None, Slow, Fast
+	enum class Blink:unsigned char{
+		None=0, Slow=1, Fast=2
 	};
 	struct AttributeText {
-		AttributeText() :
-			m_text(u""),
-			m_update_length_eaw(true),
-			m_textColor(0x000000),
-			m_backgroundColor(0xffffff),
-			m_bold(false),
-			m_faint(false),
-			m_italic(false),
-			m_underline(false),
-			m_blink(Blink::None),
-			m_conceal(false),
-			m_crossed_out(false),
-			m_font(0) {}
-		AttributeText(icu::UnicodeString text):
-			m_text(text),
-			m_update_length_eaw(true),
-			m_textColor(0x000000),
-			m_backgroundColor(0xffffff),
-			m_bold(false),
-			m_faint(false),
-			m_italic(false),
-			m_underline(false),
-			m_blink(Blink::None),
-			m_conceal(false),
-			m_crossed_out(false),
-			m_font(0){}
-		AttributeText(icu::UnicodeString text, std::uint32_t textcolor, std::uint32_t bgcolor, bool bold, bool faint, bool italic, bool underline, Blink blink, bool conceal,bool crossed_out,unsigned int font) :
-			m_text(text),
-			m_textColor(textcolor),
-			m_backgroundColor(bgcolor),
-			m_bold(bold),
-			m_faint(faint),
-			m_italic(italic),
-			m_underline(underline),
-			m_blink(blink),
-			m_conceal(conceal),
-			m_crossed_out(crossed_out),
-			m_font(font) {}
-		const icu::UnicodeString& text()const{
-			return m_text;
-		}
-		void textE(std::function<bool(AttributeText&,icu::UnicodeString&)> fn) {
-			if (fn(*this,m_text)) {
-				m_update_length_eaw=true;
-			}
-		}
-#if U_SIZEOF_WCHAR_T==2
-		std::wstring_view textW()const {
-			return std::wstring_view(reinterpret_cast<const wchar_t*>(m_text.getTerminatedBuffer()),length());
-		}
-#endif
-
-		int32_t length()const {
-			return m_text.length();
-		}
-		uint32_t lengthEAW() const{
-			if (m_update_length_eaw) {
-				m_length_eaw = tignear::icuex::EastAsianWidth(text());
-				m_update_length_eaw = false;
-			}
-			return m_length_eaw;
-		}
-		std::uint32_t textColor()const  {
-			return m_textColor;
-		}
-		std::uint32_t backgroundColor()const {
-			return m_backgroundColor;
-		}
-		bool bold()const  {
-			return m_bold;
-		}
-		bool faint()const  {
-			return m_faint;
-		}
-		bool italic()const  {
-			return m_italic;
-		}
-		bool underline()const  {
-			return m_underline;
-		}
-		bool fluktur()const {
-			return m_fluktur;
-		}
-		Blink blink()const  {
-			return m_blink;
-		}
-		bool conceal() const {
-			return m_conceal;
-		}//‰B‚·
-		bool crossed_out()const {
-			return m_crossed_out;
-		}
-		unsigned int font()const  {
-			return m_font;
-		}//0-9
-
-		void textColor(std::uint32_t color) {
-			m_textColor = color;
-		}
-		void backgroundColor(std::uint32_t color) {
-			m_backgroundColor = color;
-		}
-		void bold(bool bold) {
-			m_bold = bold;
-		}
-		void faint(bool faint) {
-			m_faint = faint;
-		}
-		void italic(bool italic) {
-			m_italic = italic;
-		}
-		void underline(bool underline) {
-			m_underline = underline;
-		}
-		void fluktur(bool fluktur) {
-			m_fluktur = fluktur;
-		}
-		void blink(Blink blink) {
-			m_blink = blink;
-		}
-		void conceal(bool conceal) {
-			m_conceal = conceal;
-		}
-		void crossed_out(bool crossed_out) {
-			m_crossed_out = crossed_out;
-		}
-		void font(unsigned int font) {
-			m_font = font;
-		}
-
-	private:
-		mutable icu::UnicodeString m_text;
-		std::uint32_t m_textColor;
-		std::uint32_t m_backgroundColor;
-		mutable bool m_update_length_eaw;
-		mutable uint32_t m_length_eaw;
-		bool m_bold;
-		bool m_faint;
-		bool m_italic;
-		bool m_underline;
-		bool m_fluktur;
-		Blink m_blink;
-		bool m_conceal;//‰B‚·
-		bool m_crossed_out;
-		unsigned int m_font;//0-9
+		virtual std::wstring_view textW()const=0;
+		virtual int32_t length()const=0;
+		virtual std::uint32_t textColor()const = 0;
+		virtual std::uint32_t backgroundColor()const = 0;
+		virtual bool bold()const = 0;
+		virtual bool faint()const = 0;
+		virtual bool italic()const = 0;
+		virtual bool underline()const = 0;
+		virtual bool fluktur()const = 0;
+		virtual Blink blink()const = 0;
+		virtual bool conceal() const = 0;
+		virtual bool crossed_out()const = 0;
+		virtual unsigned int font()const = 0;
+		virtual ~AttributeText() {};
 	};
 #pragma warning(disable:4505)
 	static bool EqAttr(AttributeText& a, AttributeText& b) {

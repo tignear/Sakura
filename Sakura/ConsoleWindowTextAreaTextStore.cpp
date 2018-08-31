@@ -5,25 +5,25 @@
 #include <msctf.h>
 #include <wrl.h>
 #include "FailToThrow.h"
-#include "ConsoleWindow.h"
+#include "ConsoleWindowTextArea.h"
 #undef min
 
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
-using tignear::sakura::ConsoleWindow;
-HRESULT STDMETHODCALLTYPE ConsoleWindow::GetWnd(
+using tignear::sakura::ConsoleWindowTextArea;
+HRESULT STDMETHODCALLTYPE ConsoleWindowTextArea::GetWnd(
 	TsViewCookie vcView,
 	HWND         *phwnd
 ) {
 	if (vcView==1) {
-		*phwnd = m_hwnd;
+		*phwnd = m_textarea_hwnd;
 		return S_OK;
 	}
 	else {
 		return E_INVALIDARG;
 	}
 }
-HRESULT ConsoleWindow::AdviseSink(
+HRESULT ConsoleWindowTextArea::AdviseSink(
 	REFIID   riid,
 	IUnknown *punk,
 	DWORD    dwMask
@@ -52,7 +52,7 @@ HRESULT ConsoleWindow::AdviseSink(
 		return S_OK;
 	}
 }
-HRESULT ConsoleWindow::UnadviseSink(
+HRESULT ConsoleWindowTextArea::UnadviseSink(
 	IUnknown *punk
 ) {
 	if (m_sink.Get() == punk) {
@@ -65,7 +65,7 @@ HRESULT ConsoleWindow::UnadviseSink(
 		return CONNECT_E_NOCONNECTION;
 	}
 }
-HRESULT ConsoleWindow::RequestLock(DWORD dwLockFlags, HRESULT *phrSession)
+HRESULT ConsoleWindowTextArea::RequestLock(DWORD dwLockFlags, HRESULT *phrSession)
 {
 	OutputDebugString(_T("TSF:RequestLock\n"));
 
@@ -101,7 +101,7 @@ HRESULT ConsoleWindow::RequestLock(DWORD dwLockFlags, HRESULT *phrSession)
 	CallAsync();
 	return S_OK;
 }
-HRESULT ConsoleWindow::GetStatus(TS_STATUS *pdcs)
+HRESULT ConsoleWindowTextArea::GetStatus(TS_STATUS *pdcs)
 {
 	OutputDebugString(_T("TSF:GetStatus\n"));
 
@@ -112,7 +112,7 @@ HRESULT ConsoleWindow::GetStatus(TS_STATUS *pdcs)
 	pdcs->dwStaticFlags = TS_SS_NOHIDDENTEXT;
 	return S_OK;
 }
-HRESULT ConsoleWindow::GetActiveView(
+HRESULT ConsoleWindowTextArea::GetActiveView(
 	TsViewCookie *pvcView
 ) 
 {
@@ -121,7 +121,7 @@ HRESULT ConsoleWindow::GetActiveView(
 	*pvcView = 1;
 	return S_OK;
 }
-HRESULT ConsoleWindow::QueryInsert(
+HRESULT ConsoleWindowTextArea::QueryInsert(
 	LONG  acpTestStart,
 	LONG  acpTestEnd,
 	ULONG cch,
@@ -144,7 +144,7 @@ HRESULT ConsoleWindow::QueryInsert(
 		return S_OK;
 	}
 }
-HRESULT ConsoleWindow::GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_ACP *pSelection, ULONG *pcFetched)
+HRESULT ConsoleWindowTextArea::GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_ACP *pSelection, ULONG *pcFetched)
 {
 	OutputDebugString(_T("TSF:GetSelection\n"));
 	if (!m_lock.IsLock(false))return TS_E_NOLOCK;
@@ -181,7 +181,7 @@ HRESULT ConsoleWindow::GetSelection(ULONG ulIndex, ULONG ulCount, TS_SELECTION_A
 	*pcFetched = 1;
 	return S_OK;
 }
-HRESULT ConsoleWindow::SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSelection)
+HRESULT ConsoleWindowTextArea::SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSelection)
 {
 	OutputDebugString(_T("TSF:SetSelection\n"));
 
@@ -210,7 +210,7 @@ HRESULT ConsoleWindow::SetSelection(ULONG ulCount, const TS_SELECTION_ACP *pSele
 	//UpdateText();
 	return S_OK;
 }
-HRESULT ConsoleWindow::GetText(
+HRESULT ConsoleWindowTextArea::GetText(
 	LONG       acpStart,
 	LONG       acpEnd,
 	WCHAR      *pchPlain,
@@ -256,7 +256,7 @@ HRESULT ConsoleWindow::GetText(
 	OutputDebugString(_T("\n"));
 	return S_OK;
 }
-HRESULT ConsoleWindow::SetText(
+HRESULT ConsoleWindowTextArea::SetText(
 	DWORD         dwFlags,
 	LONG          acpStart,
 	LONG          acpEnd,
@@ -288,7 +288,7 @@ HRESULT ConsoleWindow::SetText(
 	//UpdateText();
 	return S_OK;
 }
-HRESULT ConsoleWindow::GetEndACP(
+HRESULT ConsoleWindowTextArea::GetEndACP(
 	LONG *pacp
 )
 {
@@ -300,7 +300,7 @@ HRESULT ConsoleWindow::GetEndACP(
 	*pacp=SelectionEnd();
 	return S_OK;
 }
-HRESULT ConsoleWindow::FindNextAttrTransition(LONG acpStart, LONG acpHalt, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags, LONG *pacpNext, BOOL *pfFound, LONG *plFoundOffset)
+HRESULT ConsoleWindowTextArea::FindNextAttrTransition(LONG acpStart, LONG acpHalt, ULONG cFilterAttrs, const TS_ATTRID *paFilterAttrs, DWORD dwFlags, LONG *pacpNext, BOOL *pfFound, LONG *plFoundOffset)
 {
 	OutputDebugString(_T("TSF:FindNextAttrTransition\n"));
 
@@ -309,16 +309,16 @@ HRESULT ConsoleWindow::FindNextAttrTransition(LONG acpStart, LONG acpHalt, ULONG
 	*plFoundOffset = 0;
 	return S_OK;
 }
-HRESULT ConsoleWindow::GetScreenExt(
+HRESULT ConsoleWindowTextArea::GetScreenExt(
 	TsViewCookie vcView,
 	RECT         *prc
 ) {
 	OutputDebugString(_T("TSF:GetScreenExt\n"));
 
-	GetClientRect(m_hwnd, prc);
+	GetClientRect(m_textarea_hwnd, prc);
 	return S_OK;
 }
-HRESULT ConsoleWindow::GetTextExt(
+HRESULT ConsoleWindowTextArea::GetTextExt(
 	TsViewCookie vcView,
 	LONG         acpStart,
 	LONG         acpEnd,
@@ -347,7 +347,7 @@ HRESULT ConsoleWindow::GetTextExt(
 	shellstr.erase(shellstr.end() - 2, shellstr.end());
 	auto shelllen=static_cast<UINT32>(shellstr.length());
 	RECT rc;
-	GetClientRect(m_hwnd, &rc);
+	GetClientRect(m_textarea_hwnd, &rc);
 	auto layout = m_tbuilder->CreateTextLayout(shellstr+InputtingString(), static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
 	UINT32 count;
 	layout->HitTestTextRange(shelllen+ SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, NULL, 0, &count);
@@ -365,11 +365,11 @@ HRESULT ConsoleWindow::GetTextExt(
 	}
 	RECT localrc{ left, top, right, bottom};
 	*prc = localrc;
-	MapWindowPoints(m_hwnd, 0, reinterpret_cast<POINT*>(prc), 2); 
+	MapWindowPoints(m_textarea_hwnd, 0, reinterpret_cast<POINT*>(prc), 2);
 	*pfClipped = FALSE;
 	return S_OK;
 }
-HRESULT ConsoleWindow::InsertTextAtSelection(
+HRESULT ConsoleWindowTextArea::InsertTextAtSelection(
 	DWORD         dwFlags,
 	const WCHAR   *pchText,
 	ULONG         cch,
@@ -382,7 +382,7 @@ HRESULT ConsoleWindow::InsertTextAtSelection(
 	//UpdateText();
 	return r;
 }
-HRESULT ConsoleWindow::_InsertTextAtSelection(
+HRESULT ConsoleWindowTextArea::_InsertTextAtSelection(
 	DWORD         dwFlags,
 	const WCHAR   *pchText,
 	ULONG         cch,
@@ -450,13 +450,13 @@ HRESULT ConsoleWindow::_InsertTextAtSelection(
 
 }
 
-void ConsoleWindow::RequestAsyncLock(DWORD dwLockFlags) {
+void ConsoleWindowTextArea::RequestAsyncLock(DWORD dwLockFlags) {
 	unsigned long expect = TS_LF_READ;
 	m_request_lock_async.compare_exchange_strong(expect, dwLockFlags);
 	unsigned long expect2 = 0;
 	m_request_lock_async.compare_exchange_strong(expect2, dwLockFlags);
 }
-void ConsoleWindow::PushAsyncCallQueue(bool write, std::function<void()> fn) {
+void ConsoleWindowTextArea::PushAsyncCallQueue(bool write, std::function<void()> fn) {
 	std::lock_guard lock(m_queue_lock);
 	if (write) {
 		m_write_queue.push(fn);
@@ -465,7 +465,7 @@ void ConsoleWindow::PushAsyncCallQueue(bool write, std::function<void()> fn) {
 		m_read_queue.push(fn);
 	}
 }
-void ConsoleWindow::CallAsync() {
+void ConsoleWindowTextArea::CallAsync() {
 	std::lock_guard lock(m_queue_lock);
 	m_lock.TryWriteLockToCallApp([this] {
 		while (!m_write_queue.empty()) {

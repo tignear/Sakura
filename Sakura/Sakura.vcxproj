@@ -108,6 +108,9 @@
       <AdditionalDependencies>Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\lua\x86;</AdditionalLibraryDirectories>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -131,6 +134,9 @@
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -158,6 +164,9 @@
       <AdditionalDependencies>Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\lua\x86;</AdditionalLibraryDirectories>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -185,6 +194,9 @@
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(ProjectDir)lib\lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ansi\AnsiParser.h" />
@@ -192,12 +204,18 @@
     <ClInclude Include="ansi\BasicColorTable.h" />
     <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
+    <ClInclude Include="BasicShellContextAttributeText.h" />
+    <ClInclude Include="BasicShellContextDocument.h" />
+    <ClInclude Include="BasicShellContextLineText.h" />
     <ClInclude Include="ConsoleWindow.h" />
+    <ClInclude Include="ConsoleWindowContext.h" />
+    <ClInclude Include="ConsoleWindowTextArea.h" />
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="EastAsianWidth.h" />
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />
     <ClInclude Include="IOCPMgr.h" />
+    <ClInclude Include="Looper.h" />
     <ClInclude Include="SakuraMain.h" />
     <ClInclude Include="shared_recursive_mutex.h" />
     <ClInclude Include="ShellContext.h" />
@@ -214,10 +232,14 @@
   <ItemGroup>
     <ClCompile Include="BasicShellContext.cpp" />
     <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
+    <ClCompile Include="BasicShellContextAttributeText.cpp" />
     <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
+    <ClCompile Include="BasicShellContextDocument.cpp" />
+    <ClCompile Include="BasicShellContextLineText.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
-    <ClCompile Include="ConsoleWindowCompositionSink.cpp" />
-    <ClCompile Include="ConsoleWindowTextStore.cpp" />
+    <ClCompile Include="ConsoleWindowTextArea.cpp" />
+    <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
+    <ClCompile Include="ConsoleWindowTextAreaTextStore.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="SakuraMain.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -228,6 +250,9 @@
     </ClCompile>
     <ClCompile Include="TextBuilder.cpp" />
     <ClCompile Include="TextDrawer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="DpiAware.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
