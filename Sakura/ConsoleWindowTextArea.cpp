@@ -683,6 +683,7 @@ void ConsoleWindowTextArea::OnPaint() {
 	});
 }
 void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::cwnd::Context> console) {
+	
 	m_console =console;
 	m_tbuilder->UpdateFontName(m_console->textarea_context.fontname.c_str());
 	m_tbuilder->UpdateFontSize(m_console->textarea_context.fontsize);

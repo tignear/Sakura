@@ -93,6 +93,9 @@ namespace tignear::sakura {
 		);
 		FLOAT m_linespacing;
 		FLOAT m_baseline;
+		uintptr_t m_layout_change_listener_removekey;
+		uintptr_t m_text_change_listener_removekey;
+
 	public:
 		// void OnSize(ConsoleWindow*, LPARAM);
 		static bool RegisterConsoleWindowTextAreaClass(HINSTANCE hinst);//call once.but automatic call when create.

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <memory>
 #include <stdexcept>
+#include <algorithm>
 #include "BasicShellContextDocument.h"
 #include "Looper.h"
 #include "split.h"
@@ -78,8 +79,7 @@ namespace tignear::sakura {
 				++m_origin;
 				++m_origin_itr;
 			}
-			m_viewpos = m_origin;
-			m_viewpos_itr = m_origin_itr;
+
 			m_viewend_itr = m_text.end();
 			m_viewendpos = m_text.size();
 		}
@@ -98,36 +98,12 @@ namespace tignear::sakura {
 		if (count > m_max_line) {
 			throw std::out_of_range("count must be less than or equal to m_max_line.");
 		}
-		auto c = m_viewendpos - m_viewpos;
-		if (c==count) {
-			m_viewcount = count;
-			return;
-		}
-		if (c > count) {
-			for (auto i = 0_z; m_viewendpos-m_viewpos != count&&m_viewend_itr != m_viewpos_itr; ++i) {
-				++m_viewpos;
-				++m_viewpos_itr;
-				++m_origin;
-				++m_origin_itr;
-			}
-
-		}
-		else {
-			for (auto i = 0_z; m_viewendpos - m_viewpos != count &&m_text.begin() != m_viewpos_itr; ++i) {
-					--m_viewpos;
-					--m_viewpos_itr;
-					--m_origin;
-					--m_origin_itr;
-				}
-			}
 		m_viewcount = count;
 		NotifyLayoutChange();
 
 	}
 	void BasicShellContextDocument::ViewPositionUp(size_t count) {
-		for (auto i = 0_z; i < count&&m_viewpos_itr != m_text.begin();++i) {
-			--m_viewpos;
-			--m_viewpos_itr;
+		for (auto i = 0_z; i < count&&m_viewend_itr != m_text.begin();++i) {
 			--m_viewend_itr;
 			--m_viewendpos;
 		}
@@ -135,10 +111,6 @@ namespace tignear::sakura {
 	}
 	void BasicShellContextDocument::ViewPositionDown(size_t count) {
 		for (auto i = 0_z; i < count&&m_viewend_itr != m_text.end(); ++i) {
-			if (m_viewendpos - m_viewpos>m_viewcount) {
-				++m_viewpos;
-				++m_viewpos_itr;
-			}
 
 			++m_viewend_itr;
 			++m_viewendpos;
@@ -146,15 +118,20 @@ namespace tignear::sakura {
 		NotifyLayoutChange();
 	}
 	size_t BasicShellContextDocument::GetViewPosition()const {
-		return m_viewpos;
+		if (m_viewendpos > m_viewcount) {
+			return m_viewendpos - m_viewcount;
+		}
+		else {
+			return 0;
+		}
 	}
 	void BasicShellContextDocument::SetViewPosition(size_t y) {
-		if (m_viewpos > y) {
-			auto c = m_viewpos - y;
+		if (GetViewPosition() > y) {
+			auto c = GetViewPosition() - y;
 			ViewPositionUp(c);
 		}
 		else {
-			auto c =y- m_viewpos;
+			auto c =y- GetViewPosition();
 			ViewPositionDown(c);
 		}
 	}
@@ -196,9 +173,12 @@ namespace tignear::sakura {
 	}
 	void BasicShellContextDocument::RemoveAll() {
 		m_text.clear();
-		m_cursorY_itr = m_viewpos_itr = m_origin_itr =m_viewend_itr=m_text.begin();
-		m_cursorY  = m_origin = m_viewpos =m_viewendpos= 0;
+		//m_text.resize(0);
+		m_cursorY_itr = m_origin_itr = m_text.begin();
+		m_viewend_itr=m_text.end();
+		m_cursorY  = m_origin  =m_viewendpos= 0;
 		m_cursorX = 0;
+		NotifyLayoutChange();
 		NotifyTextChange();
 	}
 	void BasicShellContextDocument::Remove() {
@@ -238,10 +218,6 @@ namespace tignear::sakura {
 		 m_cursorY =m_cursorY_save;
 	}
 	void BasicShellContextDocument::Insert(const std::wstring& wstr) {
-		if (m_viewpos_itr == m_text.end()) {
-			m_viewpos_itr = m_text.begin();
-			m_viewpos = 0;
-		}
 		if (m_origin_itr == m_text.end()) {
 			m_origin_itr = m_text.begin();
 			m_origin = 0;
@@ -267,7 +243,11 @@ namespace tignear::sakura {
 		NotifyTextChange();
 	}
 	ShellContext::attrtext_iterator BasicShellContextDocument::begin()const {
-		return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_viewpos_itr,m_viewend_itr));
+		auto sitr = m_viewend_itr;
+		for (auto i = 0_z; i<m_viewcount &&sitr != m_text.begin();++i,--sitr) {
+
+		}
+		return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(sitr,m_viewend_itr));
 	}
 	ShellContext::attrtext_iterator BasicShellContextDocument::end()const {
 		return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_viewend_itr, m_viewend_itr));
