@@ -43,8 +43,8 @@ namespace tignear::sakura {
 		NotifyLayoutChange();
 	}
 	void BasicShellContextDocument::SetCursorY(size_t y) {
-		m_cursorY = m_origin;
-		m_cursorY_itr = m_origin_itr;
+		m_cursorY =0;
+		m_cursorY_itr = m_text.begin();
 		MoveCursorYDown(y);
 	}
 	void BasicShellContextDocument::MoveCursorX(int32_t x) {
@@ -71,15 +71,7 @@ namespace tignear::sakura {
 				}
 			}
 		}
-		if (m_cursorY - m_origin > m_viewcount) {
-			if (m_origin_itr == m_text.end()) {
-				m_origin_itr = m_text.begin();
-			}
-			for (auto i = 0_z; i < m_cursorY - m_origin-m_viewcount; i++) {
-				++m_origin;
-				++m_origin_itr;
-			}
-
+		if (m_cursorY  > m_viewcount) {
 			m_viewend_itr = m_text.end();
 			m_viewendpos = m_text.size();
 		}
@@ -174,15 +166,15 @@ namespace tignear::sakura {
 	void BasicShellContextDocument::RemoveAll() {
 		m_text.clear();
 		//m_text.resize(0);
-		m_cursorY_itr = m_origin_itr = m_text.begin();
+		m_cursorY_itr  = m_text.begin();
 		m_viewend_itr=m_text.end();
-		m_cursorY  = m_origin  =m_viewendpos= 0;
+		m_cursorY   =m_viewendpos= 0;
 		m_cursorX = 0;
 		NotifyLayoutChange();
 		NotifyTextChange();
 	}
 	void BasicShellContextDocument::Remove() {
-		for (auto itr = m_origin_itr; itr != m_text.end();++itr) {
+		for (auto itr = m_text.begin(); itr != m_text.end();++itr) {
 			itr->Remove();
 		}
 		NotifyTextChange();
@@ -193,7 +185,7 @@ namespace tignear::sakura {
 			return;
 		}
 		auto end=std::prev(m_cursorY_itr);
-		for (auto itr = m_origin_itr; itr !=end ; ++itr) {
+		for (auto itr = m_text.begin(); itr !=end ; ++itr) {
 			itr->Remove();
 		}
 		RemoveLineBefore();
@@ -218,10 +210,6 @@ namespace tignear::sakura {
 		 m_cursorY =m_cursorY_save;
 	}
 	void BasicShellContextDocument::Insert(const std::wstring& wstr) {
-		if (m_origin_itr == m_text.end()) {
-			m_origin_itr = m_text.begin();
-			m_origin = 0;
-		}
 		using tignear::stdex::split;
 		auto r=split<wchar_t,std::vector<std::wstring>>(wstr,L"\n");
 		auto back = r.back();
