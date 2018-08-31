@@ -125,6 +125,7 @@ void ConsoleWindow::UpdateScrollBar() {
 	sbinfo.nMax = static_cast<UINT>(m_console->shell->GetLineCount());
 	sbinfo.nPage = static_cast<UINT>( m_textarea->GetPageSize());
 	SetScrollInfo(m_scrollbar_hwnd, SB_CTL, &sbinfo, FALSE);
+	
 	InvalidateRect(m_scrollbar_hwnd,NULL,TRUE);
 }
 //static fields

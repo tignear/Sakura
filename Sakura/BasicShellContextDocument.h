@@ -33,15 +33,13 @@ namespace tignear::sakura {
 		std::list<BasicShellContextLineText> m_text;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr_save;
-		std::list<BasicShellContextLineText>::iterator m_viewpos_itr;
 		std::list<BasicShellContextLineText>::iterator m_viewend_itr;
 		std::list<BasicShellContextLineText>::iterator m_origin_itr;
 		size_t m_max_line;
 		size_t m_cursorY;
 		size_t m_cursorY_save;
-		size_t m_viewpos;
-		size_t m_viewendpos;
 		size_t m_origin;
+		size_t m_viewendpos;
 		size_t m_viewcount;
 		int32_t m_cursorX;
 		int32_t m_curorX_save;
@@ -70,8 +68,6 @@ namespace tignear::sakura {
 			m_cursorY_itr(m_text.begin()),
 			m_origin(0),
 			m_origin_itr(m_text.begin()),
-			m_viewpos(0),
-			m_viewpos_itr(m_text.begin()),
 			m_viewend_itr(m_text.end()),
 			m_viewendpos(0),
 			m_viewcount(0),

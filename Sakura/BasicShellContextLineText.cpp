@@ -128,4 +128,4 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 }
 //
 using tignear::sakura::ColorTable;
-const std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"\n", ColorTable(), ColorTable()) };
+const std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable()) };
