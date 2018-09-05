@@ -46,6 +46,9 @@ namespace tignear::sakura {
 		std::wstring m_title;
 		std::recursive_mutex m_lock;
 		BasicShellContextDocument m_document;
+		bool m_use_terminal_echoback;
+		std::vector<std::wstring> m_fontmap;
+		double m_fontsize;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_text_change_listeners;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_layout_change_listeners;
 		bool Init(stdex::tstring,const Options& opt);
@@ -61,18 +64,34 @@ namespace tignear::sakura {
 			unsigned int codepage,
 			const ColorTable& c_sys,
 			const ColorTable& c_256,
+			bool use_terminal_echoback,
+			std::vector<std::wstring> fontmap,
+			double fontsize,
 			Attribute& def):
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
 			m_codepage(codepage),
-			m_document(BasicShellContextDocument(c_sys,c_256, def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this))))
+			m_document(BasicShellContextDocument(c_sys,c_256, def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this)))),
+			m_use_terminal_echoback(use_terminal_echoback),
+			m_fontmap(fontmap),
+			m_fontsize(fontsize)
 		{
 		}
 		~BasicShellContext() {
 			CloseHandle(m_out_pipe);
 			CloseHandle(m_childProcess);
 		}
-		static std::shared_ptr<BasicShellContext> Create(stdex::tstring,std::shared_ptr<iocp::IOCPMgr>,unsigned int codepage, std::unordered_map<unsigned int, uint32_t>, std::unordered_map<unsigned int, uint32_t>,const Options& opt);
+		static std::shared_ptr<BasicShellContext> Create(
+			stdex::tstring,
+			std::shared_ptr<iocp::IOCPMgr>,
+			unsigned int codepage, 
+			std::unordered_map<unsigned int, uint32_t>,
+			std::unordered_map<unsigned int, uint32_t>,
+			bool use_terminal_echoback,
+			std::vector<std::wstring> fontmap,
+			double fontsize,
+			const Options& opt
+		);
 		void InputChar(WPARAM c) override;
 		void InputKey(WPARAM keycode) override;
 		void InputKey(WPARAM keycode, unsigned int count) override;
@@ -95,6 +114,9 @@ namespace tignear::sakura {
 		void Resize(UINT w, UINT h)override;
 		attrtext_iterator begin()const override;
 		attrtext_iterator end()const override;
+		double FontSize()const override;
+		bool UseTerminalEchoBack()const override;
+		const std::wstring& DefaultFont()const override;
 		void Lock()override;
 		void Unlock()override;
 };

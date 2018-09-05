@@ -82,6 +82,9 @@ namespace tignear::sakura {
 		virtual void Lock()=0;//no lock call
 		virtual void Unlock()=0;//lock call
 		virtual void Resize(UINT w,UINT h)=0;
+		virtual const std::wstring& DefaultFont()const=0;
+		virtual double FontSize()const =0;
+		virtual bool UseTerminalEchoBack()const=0;
 		virtual ~ShellContext() {};//no lock call
 	};
 

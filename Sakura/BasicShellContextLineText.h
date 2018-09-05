@@ -14,6 +14,7 @@ namespace tignear::sakura {
 		std::list<AttributeTextImpl> m_value;
 		const ColorTable& m_ct_sys;
 		const ColorTable& m_ct_256;
+		const std::vector<std::wstring> m_fontmap;
 		static const std::list<AttributeTextImpl> empty;
 	};
 }

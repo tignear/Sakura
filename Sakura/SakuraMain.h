@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <unordered_map>
 #include <wrl.h>
 #include "BasicShellContextAttributeText.h"
 #include "ConsoleWindow.h"
@@ -23,7 +24,7 @@ namespace tignear::sakura {
 		static TfClientId m_clientId;
 		static Microsoft::WRL::ComPtr<ITfCategoryMgr> m_category_mgr;
 		static Microsoft::WRL::ComPtr<ITfDisplayAttributeMgr> m_attribute_mgr;
-		static ColorTable ct_sys;
-		static ColorTable ct_256;
+		static std::unordered_map<std::string,std::shared_ptr<void>>  m_resource;
+		static std::unordered_map<std::string, std::unique_ptr<ShellContextFactory>> m_factory;
 };
 }

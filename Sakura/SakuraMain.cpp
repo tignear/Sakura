@@ -4,8 +4,9 @@
 #include "SakuraMain.h"
 #include "ConsoleWindow.h"
 #include "IOCPMgr.h"
-#include "BasicShellContext.h"
+#include "BasicShellContextFactory.h"
 #include "ansi/BasicColorTable.h"
+#include "DefinedResource.h"
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
 using Microsoft::WRL::ComPtr;
@@ -114,10 +115,35 @@ int Sakura::Main(HINSTANCE hInstance,
 	RECT rect;
 	GetClientRect(m_sakura, (LPRECT)&rect);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<ShellContext> shell = tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr, 65001, ct_sys, ct_256, {NULL,NULL,false,0,0,false,0,0});
-
-	auto console = std::make_shared<cwnd::Context>(shell, false, 16.0f, L"Cica");
-	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),console);
+	m_resource[resource::IOCPMgr] = iocpmgr;
+	m_factory.emplace("BasicShellContextFactory",std::make_unique<BasicShellContextFactory>());
+	m_console = ConsoleWindow::Create(
+		hInstance, 
+		m_sakura,
+		0, 0, rect.right - rect.left, rect.bottom - rect.top,
+		(HMENU)0x20,
+		m_thread_mgr.Get(), 
+		m_clientId, 
+		m_category_mgr.Get(),
+		m_attribute_mgr.Get(),
+		m_d2d_factory.Get(),
+		m_dwrite_factory.Get(),
+		std::move(LoadConfig("config.lua")),
+		[](std::string k)->ShellContextFactory* {
+			auto itr=Sakura::m_factory.find(k);
+			if (itr == Sakura::m_factory.end()) {
+				return nullptr;
+			}
+			return itr->second.get();
+		},
+		[](std::string k) {
+			auto itr=Sakura::m_resource.find(k);
+			if (itr == Sakura::m_resource.end()) {
+				return std::shared_ptr<void>();
+			}
+			return itr->second;
+		}
+	);
 
 	ShowWindow(m_sakura, SW_SHOWDEFAULT);
 	UpdateWindow(m_sakura);
@@ -196,5 +222,5 @@ int Sakura::Run() {
  std::unique_ptr<ConsoleWindow> Sakura::m_console;
  ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
  ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
- ColorTable Sakura::ct_sys = tignear::ansi::BasicSystemColorTable();
- ColorTable Sakura::ct_256 = tignear::ansi::Basic256ColorTable();
+ std::unordered_map<std::string, std::shared_ptr<void>> Sakura::m_resource;
+ std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory;

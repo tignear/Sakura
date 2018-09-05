@@ -21,7 +21,7 @@ namespace tignear::ansi {
 		virtual Blink blink()const = 0;
 		virtual bool conceal() const = 0;
 		virtual bool crossed_out()const = 0;
-		virtual unsigned int font()const = 0;
+		virtual const std::wstring& font()const = 0;
 		virtual ~AttributeText() {};
 	};
 #pragma warning(disable:4505)

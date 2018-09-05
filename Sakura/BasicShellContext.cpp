@@ -12,13 +12,23 @@ using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
-shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256,const Options& opt) {
+shared_ptr<BasicShellContext> BasicShellContext::Create(
+	tstring cmdstr,
+	shared_ptr<iocp::IOCPMgr> iocpmgr,
+	unsigned int codepage,
+	std::unordered_map<unsigned int,uint32_t> colorsys,
+	std::unordered_map<unsigned int, uint32_t> color256,
+	bool use_terminal_echoback,
+	std::vector<std::wstring> fontmap,
+	double fontsize,
+	const Options& opt
+) {
 	Attribute attr{};
 	attr.frColor.type = ColorType::ColorSystem;
 	attr.frColor.color_system = 30;
 	attr.bgColor.type = ColorType::ColorSystem;
 	attr.bgColor.color_system = 47;
-	auto r = make_shared<BasicShellContext>(iocpmgr,codepage,colorsys, color256,attr);
+	auto r = make_shared<BasicShellContext>(iocpmgr,codepage,colorsys, color256, use_terminal_echoback, fontmap,fontsize,attr);
 	r->SetSystemColor(colorsys);
 	r->Set256Color(color256);
 	if (r->Init(cmdstr,opt))
@@ -241,6 +251,15 @@ void BasicShellContext::NotifyTextChange() {
 }
 void BasicShellContext::Resize(UINT w,UINT h) {
 	SetWindowPos(m_hwnd, NULL,0,0,w,h, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_HIDEWINDOW| SWP_ASYNCWINDOWPOS);
+}
+double BasicShellContext::FontSize()const {
+	return m_fontsize;
+};
+bool BasicShellContext::UseTerminalEchoBack()const {
+	return m_use_terminal_echoback;
+};
+const std::wstring& BasicShellContext::DefaultFont()const {
+	return m_fontmap.at(m_document.GetDefaultAttribute().font);
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

@@ -97,7 +97,21 @@ public:
      * Copy assignment is not allowed
      */
     LuaContext& operator = (const LuaContext&) = delete;
-
+	/**
+	 * 
+	 */
+	LuaContext& operator=(LuaContext&& other) noexcept {
+		if (this != &other) {
+			m_own = other.m_own;
+			other.m_own = false;
+			L = other.L;
+			other.L = nullptr;
+		}
+		return *this;
+	}
+	LuaContext(LuaContext&& other) noexcept {
+		*this = std::move(other);
+	}
     /**
      * Implicit conversion for lua_State*
      */

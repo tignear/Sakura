@@ -84,11 +84,11 @@ void ConsoleWindowTextArea::Init(int x, int y, int w, int h, HMENU m, ID2D1Facto
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_textarea_hwnd);
 	tignear::dwrite::DWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
-		console->textarea_context.fontname.c_str(),
+		console->shell->DefaultFont().c_str(),
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
-		static_cast<FLOAT>(console->textarea_context.fontsize),
+		static_cast<FLOAT>(console->shell->FontSize()),
 		L"ja-jp");
 	SetConsoleContext(console);
 	FailToThrowHR(m_docmgr->Push(m_context.Get()));
@@ -213,7 +213,7 @@ bool& ConsoleWindowTextArea::InterimChar() {
 	return m_console->textarea_context.interim_char;
 }
 bool ConsoleWindowTextArea::UseTerminalEchoBack() {
-	return m_console->textarea_context.use_terminal_echoback;
+	return m_console->shell->UseTerminalEchoBack();
 }
 void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 
@@ -695,14 +695,14 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 	};
 	m_layout_change_listener_removekey = m_console->shell->AddLayoutChangeListener(fn);
 	m_text_change_listener_removekey = m_console->shell->AddTextChangeListener(fn);
-	m_tbuilder->UpdateFontName(m_console->textarea_context.fontname.c_str());
-	m_tbuilder->UpdateFontSize(m_console->textarea_context.fontsize);
+	m_tbuilder->UpdateFontName(m_console->shell->DefaultFont().c_str());
+	m_tbuilder->UpdateFontSize(static_cast<FLOAT>(m_console->shell->FontSize()));
 	auto format=m_tbuilder->GetTextFormat();
 	ComPtr<IDWriteFontCollection> collection;
 	format->GetFontCollection(&collection);
 	UINT32 font_index;
 	BOOL font_exit = FALSE;
-	collection->FindFamilyName(m_console->textarea_context.fontname.c_str(), &font_index, &font_exit);
+	collection->FindFamilyName(m_console->shell->DefaultFont().c_str(), &font_index, &font_exit);
 	FailToThrowB(font_exit);
 	ComPtr<IDWriteFontFamily> font_family;
 	collection->GetFontFamily(font_index, &font_family);
@@ -715,7 +715,7 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 	m_baseline = metrics.ascent*ratio;
 	m_console->shell->SetPageSize(GetPageSize());
 }
-void ConsoleWindowTextArea::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
+void ConsoleWindowTextArea::Create(HINSTANCE hinst, HWND pwnd, int x, int y, unsigned int w, unsigned int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
 	auto r = new ConsoleWindowTextArea();
 	r->AddRef();
 	r->m_hinst = hinst;

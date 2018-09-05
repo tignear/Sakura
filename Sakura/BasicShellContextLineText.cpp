@@ -73,7 +73,7 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 	auto r2 = p + eaw;
 	auto itr = m_value.begin();
 	if (itr == m_value.end()) {
-		m_value.emplace_back(ustr, m_ct_sys, m_ct_256, attr);
+		m_value.emplace_back(ustr, m_ct_sys, m_ct_256,m_fontmap, attr);
 		return r2;
 	}
 	uint32_t r = 0;
@@ -104,16 +104,16 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 							return r2;
 						}
 					}
-					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, attr);
+					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, m_fontmap, attr);
 					return r2;
 				}
 				else {
 					auto n = std::next(itr);
-					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, attr);
+					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 					if (n != m_value.end()) {
 						n=std::next(itr);
 					}
-					m_value.emplace(n,icu::UnicodeString(itr->ustr(),cnt),m_ct_sys,m_ct_256,attr);
+					m_value.emplace(n,icu::UnicodeString(itr->ustr(),cnt),m_ct_sys,m_ct_256,m_fontmap,attr);
 					itr->ustr().removeBetween(cnt);
 				}
 				return r2;
@@ -123,9 +123,9 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 		}
 		++itr;
 	}
-	m_value.emplace_back(ustr, m_ct_sys, m_ct_256, attr);
+	m_value.emplace_back(ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 	return r2;
 }
 //
 using tignear::sakura::ColorTable;
-const std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable()) };
+const std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable(),std::vector<std::wstring>()) };

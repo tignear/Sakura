@@ -139,7 +139,8 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -194,12 +195,13 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -210,8 +212,10 @@
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="BasicShellContextAttributeText.h" />
     <ClInclude Include="BasicShellContextDocument.h" />
+    <ClInclude Include="BasicShellContextFactory.h" />
     <ClInclude Include="BasicShellContextLineText.h" />
-    <ClInclude Include="ConfigLoader.h" />
+    <ClInclude Include="DefinedResource.h" />
+    <ClInclude Include="SakuraConfig.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="ConsoleWindowContext.h" />
     <ClInclude Include="ConsoleWindowTextArea.h" />
@@ -241,8 +245,8 @@
     <ClCompile Include="BasicShellContextAttributeText.cpp" />
     <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
     <ClCompile Include="BasicShellContextDocument.cpp" />
+    <ClCompile Include="BasicShellContextFactory.cpp" />
     <ClCompile Include="BasicShellContextLineText.cpp" />
-    <ClCompile Include="ConfigLoader.cpp" />
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowTextArea.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
