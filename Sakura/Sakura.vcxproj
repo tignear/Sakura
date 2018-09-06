@@ -243,7 +243,6 @@
     <ClCompile Include="BasicShellContext.cpp" />
     <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
     <ClCompile Include="BasicShellContextAttributeText.cpp" />
-    <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp" />
     <ClCompile Include="BasicShellContextDocument.cpp" />
     <ClCompile Include="BasicShellContextFactory.cpp" />
     <ClCompile Include="BasicShellContextLineText.cpp" />

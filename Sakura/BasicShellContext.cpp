@@ -229,10 +229,10 @@ void BasicShellContext::Lock() {
 void BasicShellContext::Unlock() {
 	m_lock.unlock();
 }
-BasicShellContext::attrtext_iterator BasicShellContext::begin()const {
+BasicShellContext::attrtext_line_iterator BasicShellContext::begin()const {
 	return m_document.begin();
 }
-BasicShellContext::attrtext_iterator BasicShellContext::end() const{
+BasicShellContext::attrtext_line_iterator BasicShellContext::end() const{
 	return m_document.end();
 
 }

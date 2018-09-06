@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <commctrl.h>
 #include "ConsoleWindow.h"
 #include "FailToThrow.h"
 using tignear::sakura::ShellContextFactory;
@@ -27,12 +28,13 @@ std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(
 	if (!f) {
 		throw std::runtime_error("factory is not found!");
 	}
-	
+	auto tareaW = w - m_scrollbar_width;
+	auto tareaH = h - m_tab_width;
 	r->m_console = std::make_shared<Context>(
 		f->Create(
 			ShellContextFactory::Information{
-				w - m_scrollbar_width ,
-				h,
+				tareaW ,
+				tareaH,
 				std::get<2>(sinfo),
 				getResourceFn
 			}
@@ -42,15 +44,17 @@ std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(
 	FailToThrowB(RegisterConsoleWindowClass(hinst));
 	r->m_parent_hwnd = pwnd;
 	r->m_hwnd=CreateWindowEx(0, m_classname, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, pwnd,hmenu, hinst, r.get());
-	r->m_scrollbar_hwnd=CreateWindowEx(0, _T("SCROLLBAR"), NULL,WS_CHILD|WS_VISIBLE| SBS_VERT, w-m_scrollbar_width,0, m_scrollbar_width,h,r->m_hwnd,m_hmenu_scrollbar,hinst,NULL);
+	r->m_scrollbar_column_hwnd =CreateWindowEx(0, WC_SCROLLBAR, NULL,WS_CHILD|WS_VISIBLE| SBS_VERT, tareaW,m_tab_width, m_scrollbar_width, tareaH,r->m_hwnd,m_hmenu_column_scrollbar,hinst,NULL);
+	r->m_scrollbar_row_hwnd = CreateWindowEx(0, WC_SCROLLBAR, NULL, WS_CHILD | WS_VISIBLE | SBS_VERT,0, tareaH, tareaW, m_scrollbar_width, r->m_hwnd, m_hmenu_column_scrollbar, hinst, NULL);
+	r->m_tab_hwnd = CreateWindowEx(0, WC_TABCONTROL, NULL, WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE, 0, 0, w, m_tab_width,r->m_hwnd,m_hmenu_tab,hinst,NULL);
 	SCROLLINFO sbinfo{};
 	sbinfo.cbSize = sizeof(sbinfo);
 	sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
 	sbinfo.nMin = 0;
 	sbinfo.nMax = 20;
 	sbinfo.nPage = 10;
-	SetScrollInfo(r->m_scrollbar_hwnd, SB_VERT, &sbinfo, TRUE);
-	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, w- m_scrollbar_width, h, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f,r->m_console, &(r->m_textarea));
+	SetScrollInfo(r->m_scrollbar_column_hwnd, SB_VERT, &sbinfo, TRUE);
+	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, m_tab_width, tareaW, tareaH, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f,r->m_console, &(r->m_textarea));
 	r->UpdateScrollBar();
 	r->m_console->shell->AddLayoutChangeListener(std::bind(&ConsoleWindow::OnLayoutChange,std::ref(*r), std::placeholders::_1));
 	return r;
@@ -100,8 +104,8 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 			SetWindowPos(self->m_textarea->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left - m_scrollbar_width, rect.bottom - rect.top, SWP_NOOWNERZORDER);
 
 		}
-		if (self->m_scrollbar_hwnd) {
-			FailToThrowB(SetWindowPos(self->m_scrollbar_hwnd,0, rect.right-m_scrollbar_width, rect.top, m_scrollbar_width, rect.bottom - rect.top, SWP_NOOWNERZORDER));
+		if (self->m_scrollbar_column_hwnd) {
+			FailToThrowB(SetWindowPos(self->m_scrollbar_column_hwnd,0, rect.right-m_scrollbar_width, rect.top, m_scrollbar_width, rect.bottom - rect.top, SWP_NOOWNERZORDER));
 
 		}
 		break;
@@ -113,7 +117,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		SCROLLINFO info{};
 		info.cbSize = sizeof(info);
 		info.fMask = SIF_TRACKPOS;
-		GetScrollInfo(self->m_scrollbar_hwnd, SB_CTL, &info);
+		GetScrollInfo(self->m_scrollbar_column_hwnd, SB_CTL, &info);
 		self->m_textarea->SetViewPosition(info.nTrackPos);
 		break;
 	}
@@ -122,7 +126,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		SCROLLINFO info{};
 		info.cbSize = sizeof(info);
 		info.fMask = SIF_POS;
-		GetScrollInfo(self->m_scrollbar_hwnd, SB_CTL, &info);
+		GetScrollInfo(self->m_scrollbar_column_hwnd, SB_CTL, &info);
 		self->m_textarea->SetViewPosition(info.nPos);
 		break;
 	}
@@ -152,9 +156,9 @@ void ConsoleWindow::UpdateScrollBar() {
 	sbinfo.nPos = static_cast<UINT>( m_console->shell->GetViewStart());
 	sbinfo.nMax = static_cast<UINT>(m_console->shell->GetLineCount());
 	sbinfo.nPage = static_cast<UINT>( m_textarea->GetPageSize());
-	SetScrollInfo(m_scrollbar_hwnd, SB_CTL, &sbinfo, FALSE);
+	SetScrollInfo(m_scrollbar_column_hwnd, SB_CTL, &sbinfo, FALSE);
 	
-	InvalidateRect(m_scrollbar_hwnd,NULL,TRUE);
+	InvalidateRect(m_scrollbar_column_hwnd,NULL,TRUE);
 }
 //static fields
 bool ConsoleWindow::m_registerstate = false;

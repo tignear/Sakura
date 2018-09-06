@@ -71,7 +71,7 @@ namespace tignear::sakura {
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
 			m_codepage(codepage),
-			m_document(BasicShellContextDocument(c_sys,c_256, def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this)))),
+			m_document(BasicShellContextDocument(c_sys,c_256, fontmap,def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this)))),
 			m_use_terminal_echoback(use_terminal_echoback),
 			m_fontmap(fontmap),
 			m_fontsize(fontsize)
@@ -112,8 +112,8 @@ namespace tignear::sakura {
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void Resize(UINT w, UINT h)override;
-		attrtext_iterator begin()const override;
-		attrtext_iterator end()const override;
+		attrtext_line_iterator begin()const override;
+		attrtext_line_iterator end()const override;
 		double FontSize()const override;
 		bool UseTerminalEchoBack()const override;
 		const std::wstring& DefaultFont()const override;

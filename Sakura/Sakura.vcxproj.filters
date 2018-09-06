@@ -143,9 +143,6 @@
     <ClCompile Include="TextDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="BasicShellContextAttrTextIteratorImpl.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="ConsoleWindowTextAreaTextStore.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>

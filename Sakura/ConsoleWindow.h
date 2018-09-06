@@ -8,14 +8,19 @@
 namespace tignear::sakura {
 	class ConsoleWindow {
 		static constexpr HMENU m_hmenu_textarea=(HMENU)0x01;
-		static constexpr HMENU m_hmenu_scrollbar =(HMENU)0x02;
+		static constexpr HMENU m_hmenu_column_scrollbar =(HMENU)0x02;
+		static constexpr HMENU m_hmenu_row_scrollbar = (HMENU)0x03;
+		static constexpr HMENU m_hmenu_tab = (HMENU)0x04;
 		static constexpr UINT m_scrollbar_width = 15;
+		static constexpr UINT m_tab_width = 20;
+
 		static constexpr UINT WM_UPDATE_SCROLLBAR = WM_USER + 0x0001;
 		Microsoft::WRL::ComPtr<ConsoleWindowTextArea> m_textarea;
 		HWND m_parent_hwnd;
 		HWND m_hwnd;
-		HWND m_scrollbar_hwnd;
 		HWND m_tab_hwnd;
+		HWND m_scrollbar_column_hwnd;
+		HWND m_scrollbar_row_hwnd;
 		HINSTANCE m_hinst;
 		static bool m_registerstate;
 		static bool RegisterConsoleWindowClass(HINSTANCE hinst);

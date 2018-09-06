@@ -117,6 +117,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	auto iocpmgr = std::make_shared<IOCPMgr>();
 	m_resource[resource::IOCPMgr] = iocpmgr;
 	m_factory.emplace("BasicShellContextFactory",std::make_unique<BasicShellContextFactory>());
+	
 	m_console = ConsoleWindow::Create(
 		hInstance, 
 		m_sakura,

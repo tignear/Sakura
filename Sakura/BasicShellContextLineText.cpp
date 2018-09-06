@@ -126,6 +126,49 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 	m_value.emplace_back(ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 	return r2;
 }
+
+using tignear::sakura::ShellContext;
+ShellContext::attrtext_iterator BasicShellContextLineText::begin() const{
+	return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(Value().begin()));
+}
+ShellContext::attrtext_iterator BasicShellContextLineText::end() const{
+	return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(Value().end()));
+}
 //
 using tignear::sakura::ColorTable;
 const std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable(),std::vector<std::wstring>()) };
+using tignear::sakura::attrtext_iterator_impl;
+void attrtext_iterator_impl::operator++() {
+	++m_elem;
+	return;
+}
+
+attrtext_iterator_impl* attrtext_iterator_impl::operator++(int) {
+	auto self = clone();
+	operator++();
+	return self;
+}
+
+attrtext_iterator_impl::reference attrtext_iterator_impl::operator*()const {
+	return *m_elem;
+}
+attrtext_iterator_impl::pointer attrtext_iterator_impl::operator->()const {
+	return m_elem.operator->();
+}
+bool attrtext_iterator_impl::operator==(const attrtext_iterator_innner& iterator)const {
+	auto obj = dynamic_cast<const attrtext_iterator_impl*>(&iterator);
+	if (obj == nullptr) {
+		return false;
+	}
+	return obj->m_elem == m_elem;
+}
+bool attrtext_iterator_impl::operator!=(const attrtext_iterator_innner& iterator)const {
+	return !operator==(iterator);
+}
+attrtext_iterator_impl* attrtext_iterator_impl::clone()const {
+	return new attrtext_iterator_impl(*this);
+}
+attrtext_iterator_impl::attrtext_iterator_impl(const attrtext_iterator_impl& from)
+{
+	m_elem = from.m_elem;
+}

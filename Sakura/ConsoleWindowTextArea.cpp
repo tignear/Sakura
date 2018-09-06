@@ -521,9 +521,12 @@ void ConsoleWindowTextArea::OnPaint() {
 			std::wstring ftext;
 			{
 				auto end = m_console->shell->end();
-				for (auto itr = m_console->shell->begin(); itr != end; ++itr) {
-					ftext += itr->textW();
+				for (auto&& l : (*m_console->shell)) {
+					for (auto itr = l.begin(); itr != l.end(); ++itr) {
+						ftext += itr->textW();
+					}
 				}
+
 			}
 			lengthShell = static_cast<UINT32>(ftext.length());
 			ftext += InputtingString();
@@ -584,44 +587,47 @@ void ConsoleWindowTextArea::OnPaint() {
 				//shell string
 				auto end = m_console->shell->end();
 				int32_t strcnt = 0;
-				for (auto itr = m_console->shell->begin(); itr != end; ++itr) {
-					auto nstrcnt = strcnt + itr->length();
-					DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
-					if (itr->bold()) {
-						layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
-					}
-					if (itr->italic()) {
-						layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
-					}
-					if (itr->underline()) {
-						layout->SetUnderline(true, range);
-					}
-					if (itr->crossed_out()) {
-						layout->SetStrikethrough(true, range);
-					}
-					ComPtr<ID2D1SolidColorBrush> bgbrush;
-					t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()), &bgbrush);
-					ComPtr<ID2D1SolidColorBrush> frbrush;
-					auto fralpha = 1.0f;
+				for (auto&& l: (*m_console->shell)) {
+					for (auto itr = l.begin(); itr != l.end(); ++itr) {
+						auto nstrcnt = strcnt + itr->length();
+						DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
+						if (itr->bold()) {
+							layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
+						}
+						if (itr->italic()) {
+							layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
+						}
+						if (itr->underline()) {
+							layout->SetUnderline(true, range);
+						}
+						if (itr->crossed_out()) {
+							layout->SetStrikethrough(true, range);
+						}
+						ComPtr<ID2D1SolidColorBrush> bgbrush;
+						t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()), &bgbrush);
+						ComPtr<ID2D1SolidColorBrush> frbrush;
+						auto fralpha = 1.0f;
 
-					if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
-						fralpha = 0;
+						if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+							fralpha = 0;
+						}
+						else if (itr->faint()) {
+							fralpha = 0.75f;
+						}
+						t->CreateSolidColorBrush(D2D1::ColorF(itr->textColor(), fralpha), &frbrush);
+						ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
+							bgbrush.Get(),
+							frbrush.Get(),
+							itr->underline() ? std::make_unique<DWriteDrawerEffectUnderline>(
+								LineStyle_Solid,
+								false,
+								frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
+						);
+						layout->SetDrawingEffect(effect.Get(), range);
+						strcnt = nstrcnt;
 					}
-					else if (itr->faint()) {
-						fralpha = 0.75f;
-					}
-					t->CreateSolidColorBrush(D2D1::ColorF(itr->textColor(), fralpha), &frbrush);
-					ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
-						bgbrush.Get(),
-						frbrush.Get(),
-						itr->underline() ? std::make_unique<DWriteDrawerEffectUnderline>(
-							LineStyle_Solid,
-							false,
-							frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
-					);
-					layout->SetDrawingEffect(effect.Get(), range);
-					strcnt = nstrcnt;
 				}
+
 			}
 		}
 
