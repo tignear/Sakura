@@ -340,12 +340,11 @@ namespace tignear::sakura {
 		D2D1_SIZE_F GetAreaDip() {
 			return m_d2d->GetRenderTarget()->GetSize();
 		}
-		size_t GetLineLengthMax() {
 
+		float GetTextWidthDip() {
+			throw std::runtime_error("not impl");//TODO
 		}
-		size_t GetLineLengthView() {
 
-		}
 		size_t GetPageSize() {
 			return static_cast<size_t>(GetAreaDip().height / m_linespacing);
 		}

@@ -66,7 +66,8 @@ LRESULT CALLBACK ConsoleWindowTextArea::WndProc(HWND hwnd, UINT message, WPARAM 
 		PostQuitMessage(0);
 		break;
 	case WM_LBUTTONDOWN:
-		OutputDebugStringW(self->InputtingString().c_str());
+		SetFocus(hwnd);
+		break;
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -697,10 +698,12 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 
 	m_console =console;
 	auto fn = [this](ShellContext*) {
+
 		InvalidateRect(this->GetHWnd(), NULL, FALSE);
 	};
 	m_layout_change_listener_removekey = m_console->shell->AddLayoutChangeListener(fn);
 	m_text_change_listener_removekey = m_console->shell->AddTextChangeListener(fn);
+	
 	m_tbuilder->UpdateFontName(m_console->shell->DefaultFont().c_str());
 	m_tbuilder->UpdateFontSize(static_cast<FLOAT>(m_console->shell->FontSize()));
 	auto format=m_tbuilder->GetTextFormat();

@@ -129,6 +129,8 @@ namespace tignear::sakura {
 		virtual void RemoveTextChangeListener(uintptr_t)const = 0;//no lock call
 		virtual uintptr_t AddLayoutChangeListener(std::function<void(ShellContext*)>)const = 0;//no lock call
 		virtual void RemoveLayoutChangeListener(uintptr_t)const = 0;//no lock call
+		virtual uintptr_t AddExitListener(std::function<void(ShellContext*)>)const = 0;
+		virtual void RemoveExitListener(uintptr_t)const = 0;
 		virtual void Set256Color(const std::unordered_map<unsigned int,uint32_t>&)=0;//no lock call
 		virtual void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
 		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&)=0;//no lock call

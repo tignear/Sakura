@@ -114,8 +114,14 @@ bool BasicShellContext::Init(tstring cmdstr,const Options& opt) {
 	CloseHandle(out_client_pipe);
 	CloseHandle(pi.hThread);
 	m_childProcess = pi.hProcess;
-	Sleep(2000);
-	m_hwnd=GetHwndFromProcess(pi.dwProcessId);
+	std::thread th([this,pid=pi.dwProcessId,hProcess=pi.hProcess]() {
+		while ((!m_hwnd)&& WaitForSingleObject(hProcess,200)== WAIT_TIMEOUT) {
+			m_hwnd = GetHwndFromProcess(pid);
+		}
+		WaitForSingleObject(hProcess, INFINITE);
+		NotifyExit();
+	});
+	th.detach();
 	return true;
 }
 
@@ -151,6 +157,9 @@ bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContex
 	return s->OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
+	if (!m_hwnd) {
+		return;
+	}
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
@@ -162,6 +171,9 @@ void BasicShellContext::InputChar(WPARAM charcode) {
 	/*if (0x08 == charcode) {
 		return;
 	}*/
+	if (!m_hwnd) {
+		return;
+	}
 	if (charcode <= 127) {
 		return;
 	}
@@ -195,6 +207,14 @@ uintptr_t BasicShellContext::AddLayoutChangeListener(std::function<void(ShellCon
 }
 void BasicShellContext::RemoveLayoutChangeListener(uintptr_t key)const{
 	m_layout_change_listeners.erase(key);
+}
+uintptr_t BasicShellContext::AddExitListener(std::function<void(ShellContext*)> f)const {
+	auto key = reinterpret_cast<uintptr_t>(&f);
+	m_exit_listeners[key] = f;
+	return key;
+}
+void BasicShellContext::RemoveExitListener(uintptr_t key)const {
+	m_exit_listeners.erase(key);
 }
 std::wstring::size_type BasicShellContext::GetViewCount()const {
 	return m_document.GetViewCount();
@@ -249,8 +269,16 @@ void BasicShellContext::NotifyTextChange() {
 		f.second(this);
 	}
 }
+void BasicShellContext::NotifyExit() {
+	for (auto&& f : m_exit_listeners) {
+		f.second(this);
+	}
+}
 void BasicShellContext::Resize(UINT w,UINT h) {
-	SetWindowPos(m_hwnd, NULL,0,0,w,h, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_HIDEWINDOW| SWP_ASYNCWINDOWPOS);
+	if (m_hwnd) {
+		SetWindowPos(m_hwnd, NULL, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_ASYNCWINDOWPOS);
+
+	}
 }
 double BasicShellContext::FontSize()const {
 	return m_fontsize;

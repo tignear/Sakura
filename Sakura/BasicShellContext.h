@@ -42,7 +42,7 @@ namespace tignear::sakura {
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
 		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
-		HWND m_hwnd;
+		std::atomic<HWND> m_hwnd;
 		std::wstring m_title;
 		std::recursive_mutex m_lock;
 		BasicShellContextDocument m_document;
@@ -51,9 +51,12 @@ namespace tignear::sakura {
 		double m_fontsize;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_text_change_listeners;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_layout_change_listeners;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_exit_listeners;
+
 		bool Init(stdex::tstring,const Options& opt);
 		void NotifyLayoutChange();
 		void NotifyTextChange();
+		void NotifyExit();
 		//out pipe temp
 		std::string m_outbuf;
 
@@ -74,7 +77,8 @@ namespace tignear::sakura {
 			m_document(BasicShellContextDocument(c_sys,c_256, fontmap,def,std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this)), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this)))),
 			m_use_terminal_echoback(use_terminal_echoback),
 			m_fontmap(fontmap),
-			m_fontsize(fontsize)
+			m_fontsize(fontsize),
+			m_hwnd(0)
 		{
 		}
 		~BasicShellContext() {
@@ -107,6 +111,8 @@ namespace tignear::sakura {
 		void RemoveTextChangeListener(uintptr_t)const override;
 		uintptr_t AddLayoutChangeListener(std::function<void(ShellContext*)>)const override;
 		void RemoveLayoutChangeListener(uintptr_t)const override;
+		uintptr_t AddExitListener(std::function<void(ShellContext*)>)const override;
+		void RemoveExitListener(uintptr_t)const override;
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;

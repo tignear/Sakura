@@ -120,6 +120,12 @@
     <ClInclude Include="DefinedResource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="MenuWindow.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecutableFilePath.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -167,6 +173,9 @@
     <ClCompile Include="BasicShellContextFactory.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MenuWindow.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="DpiAware.manifest">
@@ -175,5 +184,10 @@
     <Manifest Include="ComCtrl.manifest">
       <Filter>リソース ファイル</Filter>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\font\menu.ttf">
+      <Filter>リソース ファイル</Filter>
+    </Font>
   </ItemGroup>
 </Project>
