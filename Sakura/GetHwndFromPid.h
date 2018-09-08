@@ -23,6 +23,7 @@ namespace tignear::win32 {
 	
 	HWND GetHwndFromProcess(DWORD pid){
 		Info info;
+		info.hwnd = 0;
 		info.pid = pid;
 		EnumWindows(EnumWindowsProc,reinterpret_cast<LPARAM>(&info));
 		return info.hwnd;

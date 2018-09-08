@@ -1,21 +1,13 @@
 #include "stdafx.h"
 #include <string>
-#include <selene.h>
 #include "FailToThrow.h"
 #include "SakuraMain.h"
-#include "ConsoleWindow.h"
 #include "IOCPMgr.h"
-#include "BasicShellContext.h"
-#include "ansi/BasicColorTable.h"
-#pragma comment(linker, \
-  "\"/manifestdependency:type='Win32' "\
-  "name='Microsoft.Windows.Common-Controls' "\
-  "version='6.0.0.0' "\
-  "processorArchitecture='*' "\
-  "publicKeyToken='6595b64144ccf1df' "\
-  "language='*'\"")
+#include "BasicShellContextFactory.h"
+#include "DefinedResource.h"
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
+using tignear::sakura::MenuWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
 using tignear::sakura::iocp::IOCPMgr;
@@ -46,14 +38,24 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			}
 		}
 		break;
+
 	case WM_SIZING:
 	case WM_SIZE:
+	{
+		RECT rect;
+
+		GetClientRect(m_sakura, &rect);
+
 		if (m_console) {
-			RECT rect;
-			GetClientRect(m_sakura, &rect);
-			SetWindowPos(m_console->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOOWNERZORDER);
+			SetWindowPos(m_console->GetHWnd(), 0, rect.left, rect.top + MenuWindow::m_menu_height, rect.right - rect.left, rect.bottom - rect.top - MenuWindow::m_menu_height, SWP_NOOWNERZORDER);
+		}
+		if (m_menu) {
+			SetWindowPos(m_menu->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, MenuWindow::m_menu_height, SWP_NOOWNERZORDER);
 		}
 		break;
+
+	}
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -122,10 +124,49 @@ int Sakura::Main(HINSTANCE hInstance,
 	RECT rect;
 	GetClientRect(m_sakura, (LPRECT)&rect);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<ShellContext> shell = tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr, 65001, ct_sys, ct_256);
+	m_resource[resource::IOCPMgr] = iocpmgr;
+	m_factory.emplace("BasicShellContextFactory", std::make_unique<BasicShellContextFactory>());
 
-	auto console = std::make_shared<cwnd::Context>(shell, false, 16.0f, L"Cica");
-	m_console=ConsoleWindow::Create(hInstance,m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),console);
+	auto config = LoadConfig("config.lua");
+	auto ishell = config.shells[config.initshell];
+	m_menu = MenuWindow::Create(
+		hInstance,
+		m_sakura,
+		0,
+		0,
+		rect.right - rect.left,
+		m_menu_hmenu,
+		[]() {
+			if (m_console) {
+				Sakura::m_console->ReGetConsoleContext();
+			}
+		},
+		config,
+		[](std::string k) {
+		return Sakura::m_factory.at(k).get();
+		},
+		[](std::string k) {
+		return Sakura::m_resource.at(k);
+	}
+	);
+	m_console = ConsoleWindow::Create(
+		hInstance,
+		m_sakura,
+		0, 
+		MenuWindow::m_menu_height, 
+		rect.right - rect.left, 
+		rect.bottom - rect.top - MenuWindow::m_menu_height,
+		m_console_hmenu,
+		m_thread_mgr.Get(),
+		m_clientId,
+		m_category_mgr.Get(),
+		m_attribute_mgr.Get(),
+		m_d2d_factory.Get(),
+		m_dwrite_factory.Get(),
+		std::function([](unsigned int w,unsigned int h) {
+			return Sakura::m_menu->GetCurrentContext(w, h);
+		})
+	);
 
 	ShowWindow(m_sakura, SW_SHOWDEFAULT);
 	UpdateWindow(m_sakura);
@@ -153,7 +194,7 @@ int Sakura::Run() {
 		BOOL fEaten;
 		BOOL focus;
 		m_thread_mgr->IsThreadFocus(&focus);
-		OutputDebugStringA(focus ? "" : "~");
+		OutputDebugString(focus ? _T("") : _T("~"));
 		try {
 			if (FAILED(msgPump->GetMessage(&msg, 0, 0, 0, &fResult)))
 			{
@@ -195,14 +236,15 @@ int Sakura::Run() {
 	}
 }
 //static fields
- HWND Sakura::m_sakura;
- HINSTANCE Sakura::appInstance;
- Microsoft::WRL::ComPtr<ITfThreadMgr> Sakura::m_thread_mgr;
- TfClientId Sakura::m_clientId;
- Microsoft::WRL::ComPtr<ID2D1Factory> Sakura::m_d2d_factory;
- Microsoft::WRL::ComPtr<IDWriteFactory> Sakura::m_dwrite_factory;
- std::unique_ptr<ConsoleWindow> Sakura::m_console;
- ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
- ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
- ColorTable Sakura::ct_sys = tignear::ansi::BasicSystemColorTable();
- ColorTable Sakura::ct_256 = tignear::ansi::Basic256ColorTable();
+HWND Sakura::m_sakura;
+HINSTANCE Sakura::appInstance;
+Microsoft::WRL::ComPtr<ITfThreadMgr> Sakura::m_thread_mgr;
+TfClientId Sakura::m_clientId;
+Microsoft::WRL::ComPtr<ID2D1Factory> Sakura::m_d2d_factory;
+Microsoft::WRL::ComPtr<IDWriteFactory> Sakura::m_dwrite_factory;
+std::unique_ptr<ConsoleWindow> Sakura::m_console;
+std::unique_ptr<MenuWindow> Sakura::m_menu;
+ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
+ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
+std::unordered_map<std::string, std::shared_ptr<void>> Sakura::m_resource;
+std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory;

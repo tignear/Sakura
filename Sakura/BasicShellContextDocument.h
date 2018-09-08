@@ -4,30 +4,24 @@
 #include "ShellContext.h"
 #include "BasicShellContextLineText.h"
 namespace tignear::sakura {
-	class attrtext_iterator_impl :public ShellContext::attrtext_iterator_innner {
+
+
+	class attrtext_line_iterator_impl :public ShellContext::attrtext_line_iterator_inner {
+		attrtext_line_iterator_impl(const attrtext_line_iterator_impl&);
+		std::list<BasicShellContextLineText>::const_iterator m_elem;
 	public:
-		attrtext_iterator_impl(std::list<BasicShellContextLineText>::const_iterator main,
-			std::list<BasicShellContextLineText>::const_iterator main_end) :
-			m_main(main),
-			m_main_end(main_end) 
-		{
-			if (main != main_end) {
-				auto l =main->Value().begin();
-				m_line = l;
-			}
+		attrtext_line_iterator_impl(std::list<BasicShellContextLineText>::const_iterator e) :m_elem(e) {
+
 		}
-		void operator++()override;
-		attrtext_iterator_impl* operator++(int) override;
+		void operator++() override;
+		attrtext_line_iterator_impl* operator++(int) override;
 		reference operator*()const override;
 		pointer operator->()const override;
-		bool operator==(const attrtext_iterator_innner& iterator)const override;
-		bool operator!=(const attrtext_iterator_innner& iterator)const override;
-		attrtext_iterator_impl* clone()const override;
-	private:
-		attrtext_iterator_impl(const attrtext_iterator_impl&);
-		std::list<BasicShellContextLineText>::const_iterator m_main;
-		std::list<BasicShellContextLineText>::const_iterator m_main_end;
-		std::list<AttributeTextImpl>::const_iterator m_line;
+		bool operator==(const attrtext_line_iterator_inner& iterator)const override;
+		bool operator!=(const attrtext_line_iterator_inner& iterator)const override;
+		attrtext_line_iterator_impl* clone()const override;
+		~attrtext_line_iterator_impl() {};
+
 	};
 	class BasicShellContextDocument {
 		std::list<BasicShellContextLineText> m_text;
@@ -45,6 +39,7 @@ namespace tignear::sakura {
 		int32_t m_curorX_save;
 		ColorTable m_color_256;
 		ColorTable m_color_sys;
+		std::vector<std::wstring> m_fontmap;
 		Attribute m_current_attr;
 		Attribute m_default_attr;
 		std::function<void(void)> m_layout_change_callback;
@@ -56,11 +51,13 @@ namespace tignear::sakura {
 		BasicShellContextDocument(
 			const ColorTable& color_sys,
 			const ColorTable& color_256,
+			const std::vector<std::wstring>& fontmap,
 			const Attribute& def,
 			std::function<void(void)> layout_change,
 			std::function<void(void)> text_change) :
 			m_color_256(color_256),
 			m_color_sys(color_sys),
+			m_fontmap(fontmap),
 			m_default_attr(def),
 			m_current_attr(def),
 			m_max_line(100),
@@ -107,8 +104,8 @@ namespace tignear::sakura {
 		void RemoveAfter();
 		void SaveCursor();
 		void RestoreCursor();
-		ShellContext::attrtext_iterator begin()const;
-		ShellContext::attrtext_iterator end()const ;
+		ShellContext::attrtext_line_iterator begin()const;
+		ShellContext::attrtext_line_iterator end()const ;
 		void Insert(const std::wstring&);
 	};
 }

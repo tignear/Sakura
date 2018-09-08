@@ -66,7 +66,8 @@ LRESULT CALLBACK ConsoleWindowTextArea::WndProc(HWND hwnd, UINT message, WPARAM 
 		PostQuitMessage(0);
 		break;
 	case WM_LBUTTONDOWN:
-		OutputDebugStringW(self->InputtingString().c_str());
+		SetFocus(hwnd);
+		break;
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -84,11 +85,11 @@ void ConsoleWindowTextArea::Init(int x, int y, int w, int h, HMENU m, ID2D1Facto
 	m_d2d = Direct2DWithHWnd::Create(d2d_f, m_textarea_hwnd);
 	tignear::dwrite::DWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
-		console->textarea_context.fontname.c_str(),
+		console->shell->DefaultFont().c_str(),
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
-		static_cast<FLOAT>(console->textarea_context.fontsize),
+		static_cast<FLOAT>(console->shell->FontSize()),
 		L"ja-jp");
 	SetConsoleContext(console);
 	FailToThrowHR(m_docmgr->Push(m_context.Get()));
@@ -213,7 +214,7 @@ bool& ConsoleWindowTextArea::InterimChar() {
 	return m_console->textarea_context.interim_char;
 }
 bool ConsoleWindowTextArea::UseTerminalEchoBack() {
-	return m_console->textarea_context.use_terminal_echoback;
+	return m_console->shell->UseTerminalEchoBack();
 }
 void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 
@@ -521,9 +522,12 @@ void ConsoleWindowTextArea::OnPaint() {
 			std::wstring ftext;
 			{
 				auto end = m_console->shell->end();
-				for (auto itr = m_console->shell->begin(); itr != end; ++itr) {
-					ftext += itr->textW();
+				for (auto&& l : (*m_console->shell)) {
+					for (auto itr = l.begin(); itr != l.end(); ++itr) {
+						ftext += itr->textW();
+					}
 				}
+
 			}
 			lengthShell = static_cast<UINT32>(ftext.length());
 			ftext += InputtingString();
@@ -584,44 +588,47 @@ void ConsoleWindowTextArea::OnPaint() {
 				//shell string
 				auto end = m_console->shell->end();
 				int32_t strcnt = 0;
-				for (auto itr = m_console->shell->begin(); itr != end; ++itr) {
-					auto nstrcnt = strcnt + itr->length();
-					DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
-					if (itr->bold()) {
-						layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
-					}
-					if (itr->italic()) {
-						layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
-					}
-					if (itr->underline()) {
-						layout->SetUnderline(true, range);
-					}
-					if (itr->crossed_out()) {
-						layout->SetStrikethrough(true, range);
-					}
-					ComPtr<ID2D1SolidColorBrush> bgbrush;
-					t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()), &bgbrush);
-					ComPtr<ID2D1SolidColorBrush> frbrush;
-					auto fralpha = 1.0f;
+				for (auto&& l: (*m_console->shell)) {
+					for (auto itr = l.begin(); itr != l.end(); ++itr) {
+						auto nstrcnt = strcnt + itr->length();
+						DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
+						if (itr->bold()) {
+							layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
+						}
+						if (itr->italic()) {
+							layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
+						}
+						if (itr->underline()) {
+							layout->SetUnderline(true, range);
+						}
+						if (itr->crossed_out()) {
+							layout->SetStrikethrough(true, range);
+						}
+						ComPtr<ID2D1SolidColorBrush> bgbrush;
+						t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()), &bgbrush);
+						ComPtr<ID2D1SolidColorBrush> frbrush;
+						auto fralpha = 1.0f;
 
-					if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
-						fralpha = 0;
+						if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+							fralpha = 0;
+						}
+						else if (itr->faint()) {
+							fralpha = 0.75f;
+						}
+						t->CreateSolidColorBrush(D2D1::ColorF(itr->textColor(), fralpha), &frbrush);
+						ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
+							bgbrush.Get(),
+							frbrush.Get(),
+							itr->underline() ? std::make_unique<DWriteDrawerEffectUnderline>(
+								LineStyle_Solid,
+								false,
+								frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
+						);
+						layout->SetDrawingEffect(effect.Get(), range);
+						strcnt = nstrcnt;
 					}
-					else if (itr->faint()) {
-						fralpha = 0.75f;
-					}
-					t->CreateSolidColorBrush(D2D1::ColorF(itr->textColor(), fralpha), &frbrush);
-					ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
-						bgbrush.Get(),
-						frbrush.Get(),
-						itr->underline() ? std::make_unique<DWriteDrawerEffectUnderline>(
-							LineStyle_Solid,
-							false,
-							frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
-					);
-					layout->SetDrawingEffect(effect.Get(), range);
-					strcnt = nstrcnt;
 				}
+
 			}
 		}
 
@@ -691,18 +698,20 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 
 	m_console =console;
 	auto fn = [this](ShellContext*) {
+
 		InvalidateRect(this->GetHWnd(), NULL, FALSE);
 	};
 	m_layout_change_listener_removekey = m_console->shell->AddLayoutChangeListener(fn);
 	m_text_change_listener_removekey = m_console->shell->AddTextChangeListener(fn);
-	m_tbuilder->UpdateFontName(m_console->textarea_context.fontname.c_str());
-	m_tbuilder->UpdateFontSize(m_console->textarea_context.fontsize);
+	
+	m_tbuilder->UpdateFontName(m_console->shell->DefaultFont().c_str());
+	m_tbuilder->UpdateFontSize(static_cast<FLOAT>(m_console->shell->FontSize()));
 	auto format=m_tbuilder->GetTextFormat();
 	ComPtr<IDWriteFontCollection> collection;
 	format->GetFontCollection(&collection);
 	UINT32 font_index;
 	BOOL font_exit = FALSE;
-	collection->FindFamilyName(m_console->textarea_context.fontname.c_str(), &font_index, &font_exit);
+	collection->FindFamilyName(m_console->shell->DefaultFont().c_str(), &font_index, &font_exit);
 	FailToThrowB(font_exit);
 	ComPtr<IDWriteFontFamily> font_family;
 	collection->GetFontFamily(font_index, &font_family);
@@ -714,8 +723,9 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 	m_linespacing = (metrics.ascent + metrics.descent + metrics.lineGap) * ratio;
 	m_baseline = metrics.ascent*ratio;
 	m_console->shell->SetPageSize(GetPageSize());
+	SetFocus(m_textarea_hwnd);
 }
-void ConsoleWindowTextArea::Create(HINSTANCE hinst, HWND pwnd, int x, int y, int w, int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
+void ConsoleWindowTextArea::Create(HINSTANCE hinst, HWND pwnd, int x, int y, unsigned int w, unsigned int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
 	auto r = new ConsoleWindowTextArea();
 	r->AddRef();
 	r->m_hinst = hinst;

@@ -1,4 +1,4 @@
-TSFの適当なサンプル
+Sakura
 ===
 
-c++の新しい機能が割と使われているので読みやすいはず。
+Terminal on Windows

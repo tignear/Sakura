@@ -12,16 +12,26 @@ using std::shared_ptr;
 using std::make_shared;
 using iocp::IOCPInfo;
 using tignear::win32::GetHwndFromProcess;
-shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_ptr<iocp::IOCPMgr> iocpmgr,unsigned int codepage,std::unordered_map<unsigned int,uint32_t> colorsys, std::unordered_map<unsigned int, uint32_t> color256) {
+shared_ptr<BasicShellContext> BasicShellContext::Create(
+	tstring cmdstr,
+	shared_ptr<iocp::IOCPMgr> iocpmgr,
+	unsigned int codepage,
+	std::unordered_map<unsigned int,uint32_t> colorsys,
+	std::unordered_map<unsigned int, uint32_t> color256,
+	bool use_terminal_echoback,
+	std::vector<std::wstring> fontmap,
+	double fontsize,
+	const Options& opt
+) {
 	Attribute attr{};
 	attr.frColor.type = ColorType::ColorSystem;
 	attr.frColor.color_system = 30;
 	attr.bgColor.type = ColorType::ColorSystem;
 	attr.bgColor.color_system = 47;
-	auto r = make_shared<BasicShellContext>(iocpmgr,codepage,colorsys, color256,attr);
+	auto r = make_shared<BasicShellContext>(iocpmgr,codepage,colorsys, color256, use_terminal_echoback, fontmap,fontsize,attr);
 	r->SetSystemColor(colorsys);
 	r->Set256Color(color256);
-	if (r->Init(cmdstr))
+	if (r->Init(cmdstr,opt))
 	{
 		if (!r->IOWorkerStart(r)) {
 			r.reset();
@@ -36,7 +46,7 @@ shared_ptr<BasicShellContext> BasicShellContext::Create(tstring cmdstr, shared_p
 	}
 
 }
-bool BasicShellContext::Init(tstring cmdstr) {
+bool BasicShellContext::Init(tstring cmdstr,const Options& opt) {
 	//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(sa);
@@ -80,6 +90,15 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	si.hStdError = out_client_pipe;
 	si.hStdInput = NULL;
 	si.wShowWindow = SW_HIDE;
+	if (opt.use_count_chars) {
+		si.dwFlags |= STARTF_USECOUNTCHARS;
+		si.dwXCountChars = opt.x_count_chars;
+		si.dwXCountChars = opt.y_count_chars;
+	}
+	if (opt.use_size) {
+		si.dwXSize = opt.width;
+		si.dwYSize = opt.height;
+	}
 	auto len = cmdstr.length();
 	auto cmd = std::make_unique<TCHAR[]>(len+1);
 #pragma warning(disable:4996)
@@ -87,7 +106,7 @@ bool BasicShellContext::Init(tstring cmdstr) {
 #pragma warning(default:4996)
 	m_iocpmgr->Attach(m_out_pipe);
 
-	if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, NULL, _T("C:\\users\\tignear"), &si, &pi)) {
+	if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, opt.environment,opt.current_directory, &si, &pi)) {
 		auto le=GetLastError();
 		OutputDebugStringW(std::to_wstring(le).c_str());
 		return false;
@@ -95,8 +114,14 @@ bool BasicShellContext::Init(tstring cmdstr) {
 	CloseHandle(out_client_pipe);
 	CloseHandle(pi.hThread);
 	m_childProcess = pi.hProcess;
-	Sleep(2000);
-	m_hwnd=GetHwndFromProcess(pi.dwProcessId);
+	std::thread th([this,pid=pi.dwProcessId,hProcess=pi.hProcess]() {
+		while ((!m_hwnd)&& WaitForSingleObject(hProcess,200)== WAIT_TIMEOUT) {
+			m_hwnd = GetHwndFromProcess(pid);
+		}
+		WaitForSingleObject(hProcess, INFINITE);
+		NotifyExit();
+	});
+	th.detach();
 	return true;
 }
 
@@ -111,7 +136,6 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 		}
 	};
 	s->m_outbuf.assign(BUFFER_SIZE, '\0');
-	//DWORD cnt;
 	if(!ReadFile(
 		s->m_out_pipe,
 		s->m_outbuf.data(), 
@@ -127,11 +151,13 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	//OutputDebugStringA(s->m_outbuf.c_str());
 	s->AddString(cp_to_wide(s->m_outbuf.c_str(),s->m_codepage,cnt));
 	return s->OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode) {
+	if (!m_hwnd) {
+		return;
+	}
 	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
@@ -140,9 +166,9 @@ void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
 	}
 }
 void BasicShellContext::InputChar(WPARAM charcode) {
-	/*if (0x08 == charcode) {
+	if (!m_hwnd) {
 		return;
-	}*/
+	}
 	if (charcode <= 127) {
 		return;
 	}
@@ -177,6 +203,14 @@ uintptr_t BasicShellContext::AddLayoutChangeListener(std::function<void(ShellCon
 void BasicShellContext::RemoveLayoutChangeListener(uintptr_t key)const{
 	m_layout_change_listeners.erase(key);
 }
+uintptr_t BasicShellContext::AddExitListener(std::function<void(ShellContext*)> f)const {
+	auto key = reinterpret_cast<uintptr_t>(&f);
+	m_exit_listeners[key] = f;
+	return key;
+}
+void BasicShellContext::RemoveExitListener(uintptr_t key)const {
+	m_exit_listeners.erase(key);
+}
 std::wstring::size_type BasicShellContext::GetViewCount()const {
 	return m_document.GetViewCount();
 }
@@ -210,10 +244,10 @@ void BasicShellContext::Lock() {
 void BasicShellContext::Unlock() {
 	m_lock.unlock();
 }
-BasicShellContext::attrtext_iterator BasicShellContext::begin()const {
+BasicShellContext::attrtext_line_iterator BasicShellContext::begin()const {
 	return m_document.begin();
 }
-BasicShellContext::attrtext_iterator BasicShellContext::end() const{
+BasicShellContext::attrtext_line_iterator BasicShellContext::end() const{
 	return m_document.end();
 
 }
@@ -229,6 +263,26 @@ void BasicShellContext::NotifyTextChange() {
 	for (auto&& f : m_text_change_listeners) {
 		f.second(this);
 	}
+}
+void BasicShellContext::NotifyExit() {
+	for (auto&& f : m_exit_listeners) {
+		f.second(this);
+	}
+}
+void BasicShellContext::Resize(UINT w,UINT h) {
+	if (m_hwnd) {
+		SetWindowPos(m_hwnd, NULL, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_ASYNCWINDOWPOS);
+
+	}
+}
+double BasicShellContext::FontSize()const {
+	return m_fontsize;
+};
+bool BasicShellContext::UseTerminalEchoBack()const {
+	return m_use_terminal_echoback;
+};
+const std::wstring& BasicShellContext::DefaultFont()const {
+	return m_fontmap.at(m_document.GetDefaultAttribute().font);
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

@@ -70,10 +70,11 @@ namespace tignear::sakura {
 		const Attribute m_attr;
 		const ColorTable& m_system_color_table;
 		const ColorTable& m_256_color_table;
+		const std::vector<std::wstring>& m_font_map;
 		mutable icu::UnicodeString m_ustr;
 	public:
-		AttributeTextImpl(const icu::UnicodeString& ustr, const ColorTable& c_system, const ColorTable&c_256) :m_ustr(ustr),m_system_color_table(c_system),m_256_color_table(c_256),m_attr(){}
-		AttributeTextImpl(const icu::UnicodeString& ustr, const ColorTable& c_system, const ColorTable&c_256,const  Attribute& attr) :m_ustr(ustr), m_system_color_table(c_system), m_256_color_table(c_256), m_attr(attr) {}
+		AttributeTextImpl(const icu::UnicodeString& ustr, const ColorTable& c_system, const ColorTable&c_256,const std::vector<std::wstring>& font) :m_ustr(ustr),m_system_color_table(c_system),m_256_color_table(c_256),m_font_map(font),m_attr(){}
+		AttributeTextImpl(const icu::UnicodeString& ustr, const ColorTable& c_system, const ColorTable&c_256,const std::vector<std::wstring>& font,const  Attribute& attr ) :m_ustr(ustr), m_system_color_table(c_system), m_256_color_table(c_256),m_font_map(font), m_attr(attr) {}
 
 		std::wstring_view textW()const override;
 		int32_t length()const override;
@@ -87,7 +88,7 @@ namespace tignear::sakura {
 		ansi::Blink blink()const override;
 		bool conceal() const override;
 		bool crossed_out()const override;
-		unsigned int font()const override;
+		const std::wstring& font()const override;
 		const Attribute& attribute()const;
 		const icu::UnicodeString& ustr()const;
 		icu::UnicodeString& ustr();

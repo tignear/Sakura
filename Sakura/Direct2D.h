@@ -11,7 +11,7 @@ namespace tignear {
 		virtual void ReSize()=0;
 		virtual ~Direct2D() {};
 	};
-	class Direct2DWithHWnd:Direct2D{
+	class Direct2DWithHWnd:public Direct2D{
 	private:
 		HWND m_hwnd;
 		void InitInternal();

@@ -63,8 +63,8 @@ bool AttributeTextImpl::conceal() const{
 bool AttributeTextImpl::crossed_out()const{
 	return m_attr.crossed_out;
 }
-unsigned int AttributeTextImpl::font()const{
-	return m_attr.font;
+const std::wstring& AttributeTextImpl::font()const{
+	return m_font_map.at(m_attr.font);
 }
 const Attribute& AttributeTextImpl::attribute()const {
 	return m_attr;

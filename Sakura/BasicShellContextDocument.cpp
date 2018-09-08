@@ -64,7 +64,7 @@ namespace tignear::sakura {
 			++m_cursorY;
 
 			if (m_cursorY_itr == m_text.end()) {
-				m_text.emplace_back(m_color_sys,m_color_256);
+				m_text.emplace_back(m_color_sys,m_color_256,m_fontmap);
 				--m_cursorY_itr;
 				if (m_text.size() > m_max_line) {
 					m_text.pop_front();
@@ -215,7 +215,7 @@ namespace tignear::sakura {
 		auto back = r.back();
 		r.pop_back();
 		if (m_cursorY_itr == m_text.end()) {
-			m_text.emplace_back(m_color_sys,m_color_256);
+			m_text.emplace_back(m_color_sys,m_color_256,m_fontmap);
 			--m_cursorY_itr;
 			if (m_text.size() > m_max_line) {
 				m_text.pop_front();
@@ -230,15 +230,48 @@ namespace tignear::sakura {
 		SetCursorX(m_cursorY_itr->Insert(m_cursorX, icu::UnicodeString(back.c_str()), m_current_attr));
 		NotifyTextChange();
 	}
-	ShellContext::attrtext_iterator BasicShellContextDocument::begin()const {
+	ShellContext::attrtext_line_iterator BasicShellContextDocument::begin()const {
 		auto sitr = m_viewend_itr;
 		for (auto i = 0_z; i<m_viewcount &&sitr != m_text.begin();++i,--sitr) {
 
 		}
-		return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(sitr,m_viewend_itr));
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(sitr));
 	}
-	ShellContext::attrtext_iterator BasicShellContextDocument::end()const {
-		return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_viewend_itr, m_viewend_itr));
+	ShellContext::attrtext_line_iterator BasicShellContextDocument::end()const {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_viewend_itr));
 
+	}
+
+
+	void attrtext_line_iterator_impl::operator++() {
+		m_elem++;
+	}
+	attrtext_line_iterator_impl* attrtext_line_iterator_impl::operator++(int) {
+		auto temp = clone();
+		operator++();
+		return temp;
+	}
+	attrtext_line_iterator_impl::reference attrtext_line_iterator_impl::operator*()const {
+		return (*m_elem);
+	}
+	attrtext_line_iterator_impl::pointer attrtext_line_iterator_impl::operator->()const {
+		auto r=m_elem.operator->();
+		return r;
+	}
+	bool attrtext_line_iterator_impl::operator==(const attrtext_line_iterator_inner& iterator)const {
+		auto r=dynamic_cast<const attrtext_line_iterator_impl*>(&iterator);
+		if (r == nullptr) {
+			return false;
+		}
+		return r->m_elem == m_elem;
+	}
+	bool attrtext_line_iterator_impl::operator!=(const attrtext_line_iterator_inner& iterator)const {
+		return !operator==(iterator);
+	}
+	attrtext_line_iterator_impl* attrtext_line_iterator_impl::clone()const {
+		return new attrtext_line_iterator_impl(*this);
+	}
+	attrtext_line_iterator_impl::attrtext_line_iterator_impl(const attrtext_line_iterator_impl& from) {
+		m_elem = from.m_elem;
 	}
 }

@@ -99,8 +99,8 @@ namespace tignear::sakura {
 	public:
 		// void OnSize(ConsoleWindow*, LPARAM);
 		static bool RegisterConsoleWindowTextAreaClass(HINSTANCE hinst);//call once.but automatic call when create.
-		static void Create(HINSTANCE, HWND, int x, int y, int w, int h, HMENU, ITfThreadMgr* threadmgr, TfClientId, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory*, IDWriteFactory*, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea**);
-		inline static void Create(HWND parent, int x, int y, int w, int h, HMENU menu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
+		static void Create(HINSTANCE, HWND, int x, int y, unsigned int w, unsigned int h, HMENU, ITfThreadMgr* threadmgr, TfClientId, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory*, IDWriteFactory*, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea**);
+		inline static void Create(HWND parent, int x, int y,unsigned int w,unsigned int h, HMENU menu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
 			return Create(reinterpret_cast<HINSTANCE>(GetWindowLongPtr(parent, GWLP_HINSTANCE)), parent, x, y, w, h, menu, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, console,pr);
 		}
 		const HWND GetParentHwnd()
@@ -340,6 +340,11 @@ namespace tignear::sakura {
 		D2D1_SIZE_F GetAreaDip() {
 			return m_d2d->GetRenderTarget()->GetSize();
 		}
+
+		float GetTextWidthDip() {
+			throw std::runtime_error("not impl");//TODO
+		}
+
 		size_t GetPageSize() {
 			return static_cast<size_t>(GetAreaDip().height / m_linespacing);
 		}

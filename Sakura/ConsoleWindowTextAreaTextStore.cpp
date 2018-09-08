@@ -341,9 +341,12 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 	}
 	std::wstring shellstr;
 	auto end = m_console->shell->end();
-	for (auto itr =m_console->shell->begin(); itr !=end ; ++itr) {
-		shellstr += itr->textW();
+	for (auto&& l : (*m_console->shell)) {
+		for (auto itr = l.begin(); itr != l.end(); ++itr) {
+			shellstr += itr->textW();
+		}
 	}
+
 	shellstr.erase(shellstr.end() - 2, shellstr.end());
 	auto shelllen=static_cast<UINT32>(shellstr.length());
 	RECT rc;
