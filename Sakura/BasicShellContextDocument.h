@@ -23,11 +23,33 @@ namespace tignear::sakura {
 		~attrtext_line_iterator_impl() {};
 
 	};
+
+	class attrtext_document_all_impl:public ShellContext::attrtext_document {
+		const std::list<BasicShellContextLineText>& m_text;
+	public:
+		attrtext_document_all_impl(const std::list<BasicShellContextLineText>& text):m_text(text){}
+		ShellContext::attrtext_line_iterator begin()const override;
+		ShellContext::attrtext_line_iterator end()const override;
+
+	};
+	class attrtext_document_view_impl :public ShellContext::attrtext_document {
+		const std::list<BasicShellContextLineText>::iterator& m_viewend_itr;
+		const size_t& m_viewcount;
+		const std::list<BasicShellContextLineText>& m_text;
+
+	public:
+		attrtext_document_view_impl(const std::list<BasicShellContextLineText>& text,const std::list<BasicShellContextLineText>::iterator& viewend_itr, const size_t& viewcount) :m_text(text),m_viewend_itr(viewend_itr),m_viewcount(viewcount) {}
+		ShellContext::attrtext_line_iterator begin()const override;
+		ShellContext::attrtext_line_iterator end()const override;
+
+	};
 	class BasicShellContextDocument {
 		std::list<BasicShellContextLineText> m_text;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr_save;
 		std::list<BasicShellContextLineText>::iterator m_viewend_itr;
+		const attrtext_document_all_impl m_all;
+		const attrtext_document_view_impl m_view;
 		//std::list<BasicShellContextLineText>::iterator m_origin_itr;
 		size_t m_max_line;
 		size_t m_cursorY;
@@ -68,7 +90,9 @@ namespace tignear::sakura {
 			m_viewcount(0),
 			m_cursorX(0),
 			m_layout_change_callback(layout_change),
-			m_text_change_callback(text_change)
+			m_text_change_callback(text_change),
+			m_all(m_text),
+			m_view(m_text,m_viewend_itr,m_viewcount)
 		{
 
 		}
@@ -104,8 +128,8 @@ namespace tignear::sakura {
 		void RemoveAfter();
 		void SaveCursor();
 		void RestoreCursor();
-		ShellContext::attrtext_line_iterator begin()const;
-		ShellContext::attrtext_line_iterator end()const ;
+		const attrtext_document_all_impl& GetAll()const;
+		const attrtext_document_view_impl& GetView()const;
 		void Insert(const std::wstring&);
 	};
 }

@@ -2,7 +2,7 @@
 #include <functional>
 #include <optional>
 #include <atomic>
-#include "shared_recursive_mutex.h"
+#include "../shared_recursive_mutex.h"
 namespace tignear::tsf {
 	class TextStoreLock {
 	public:

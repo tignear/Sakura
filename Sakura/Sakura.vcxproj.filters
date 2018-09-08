@@ -16,8 +16,11 @@
     <Filter Include="ヘッダー ファイル\ansi">
       <UniqueIdentifier>{1e8ad8e2-b666-44ca-b941-66a6bf97738c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="lua">
-      <UniqueIdentifier>{cd85b519-d902-4bac-b44f-24a2ea15e944}</UniqueIdentifier>
+    <Filter Include="ヘッダー ファイル\tsf">
+      <UniqueIdentifier>{b7be02e0-c82f-49e0-832b-74f7a9f0e56b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\tsf">
+      <UniqueIdentifier>{04d3606a-5fb3-40b1-bf75-a4e32c4b47d8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -40,9 +43,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="shared_recursive_mutex.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="TextStoreLock.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="D2DLineUtil.h">
@@ -126,6 +126,18 @@
     <ClInclude Include="ExecutableFilePath.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="ConsoleWindowTextAreaRender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf\TextStore.h">
+      <Filter>ヘッダー ファイル\tsf</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf\TextStoreLock.h">
+      <Filter>ヘッダー ファイル\tsf</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf\stdafx.h">
+      <Filter>ヘッダー ファイル\tsf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -147,9 +159,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="TextDrawer.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="ConsoleWindowTextAreaTextStore.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp">
@@ -175,6 +184,12 @@
     </ClCompile>
     <ClCompile Include="MenuWindow.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsoleWindowTextAreaRender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="tsf\TextStore.cpp">
+      <Filter>ソース ファイル\tsf</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

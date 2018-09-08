@@ -75,6 +75,63 @@ LRESULT CALLBACK ConsoleWindowTextArea::WndProc(HWND hwnd, UINT message, WPARAM 
 	return 0;
 
 }
+HRESULT ConsoleWindowTextArea::GetTextExt(
+	TsViewCookie vcView,
+	LONG         acpStart,
+	LONG         acpEnd,
+	RECT         *prc,
+	BOOL         *pfClipped
+) {
+	OutputDebugString(_T("TSF:GetTextExt\n"));
+
+	if (!Lock().IsLock(false)) {
+		return TS_E_NOLOCK;
+	}
+	if (acpStart == acpEnd)
+	{
+		return E_INVALIDARG;
+	}
+
+	if (acpStart > acpEnd)
+	{
+		std::swap(acpStart, acpEnd);
+	}
+	std::wstring shellstr;
+	for (auto&& l : (m_console->shell->GetView())) {
+		for (auto itr = l.begin(); itr != l.end(); ++itr) {
+			shellstr += itr->textW();
+		}
+	}
+	
+	//shellstr.erase(shellstr.end() - 2, shellstr.end());
+	auto shelllen = static_cast<UINT32>(shellstr.length());
+	RECT rc;
+	GetClientRect(m_textarea_hwnd, &rc);
+	shellstr += InputtingString();
+	auto layout = m_tbuilder->CreateTextLayout(shellstr, static_cast<FLOAT> (rc.right - rc.left), static_cast<FLOAT> (rc.right - rc.left));
+	UINT32 count;
+	HRESULT hr;
+	if (( hr=layout->HitTestTextRange(shelllen + acpStart, acpEnd- acpStart, 0, 0, NULL, 0, &count))!=E_NOT_SUFFICIENT_BUFFER) {
+		FailToThrowHR(hr);
+	}
+	auto mats = std::make_unique<DWRITE_HIT_TEST_METRICS[]>(count);
+	FailToThrowHR(layout->HitTestTextRange(shelllen + acpStart, acpEnd - acpStart, 0, 0, mats.get(), count, &count));
+	LONG left = LONG_MAX, top = LONG_MAX, right = 0, bottom = 0;
+	for (auto i = 0UL; i < count; ++i)
+	{
+		left = left < mats[i].left ? left : static_cast<LONG>(mats[i].left);
+		top = top < mats[i].top ? top : static_cast<LONG>(mats[i].top);
+		auto r = static_cast<LONG>(mats[i].left + mats[i].width);
+		right = right > r ? right : r;
+		auto b = static_cast<LONG>(mats[i].top + mats[i].height);
+		bottom = bottom > b ? bottom : b;
+	}
+	RECT localrc{ left, top, right, bottom };
+	*prc = localrc;
+	MapWindowPoints(m_textarea_hwnd, 0, reinterpret_cast<POINT*>(prc), 2);
+	*pfClipped = FALSE;
+	return S_OK;
+}
 void ConsoleWindowTextArea::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f,std::shared_ptr<tignear::sakura::cwnd::Context> console) {
 	FailToThrowHR(m_threadmgr->CreateDocumentMgr(&m_docmgr));
 	FailToThrowHR(m_docmgr->CreateContext(m_clientId, 0, dynamic_cast<ITextStoreACP*>(this), &m_context, &m_edit_cookie));
@@ -106,9 +163,9 @@ void ConsoleWindowTextArea::OnSize() {
 	{
 		m_d2d->ReSize();
 	}
-	if (m_sink)
+	if (Sink())
 	{
-		m_sink->OnLayoutChange(TS_LC_CHANGE, 0UL);
+		Sink()->OnLayoutChange(TS_LC_CHANGE, 0UL);
 	}
 	if (m_console) {
 		m_console->shell->SetPageSize(GetPageSize());
@@ -124,29 +181,37 @@ void ConsoleWindowTextArea::OnChar(WPARAM wp) {
 	wchar_t wc = std::btowc(c);
 #endif
 	CallWithAppLock(true, [this, wc]()->void {
-		switch (wc) {
-		case '\b'://back space
-		case VK_RETURN:
-			return;
-		default:
-			if (SelectionStart() == SelectionEnd())
-			{
-				if (UseTerminalEchoBack()) {
-					InputtingString().insert(InputtingString().begin() + SelectionStart(), wc);
-					++SelectionStart();
-					++SelectionEnd();
+		InputtingString([this, wc](auto& str) {
+			Selection([this, wc, &str](auto& start, auto& end, auto& ase, auto&) {
+				switch (wc) {
+				case '\b'://back space
+				case VK_RETURN:
+					return;
+				default:
+					if (start == end)
+					{
+						if (UseTerminalEchoBack()) {
+
+							str.insert(str.begin() + start, wc);
+							++start;
+							++end;
+
+
+						}
+
+					}
+					else
+					{
+						str.replace(str.begin() + start, str.begin() + end, 1, wc);
+						++start;
+						end = start;
+						ase = TS_AE_NONE;
+					}
 				}
 
-			}
-			else
-			{
-				InputtingString().replace(InputtingString().begin() + SelectionStart(), InputtingString().begin() + SelectionEnd(), 1, wc);
-				++SelectionStart();
-				SelectionEnd()=SelectionStart();
-				ActiveSelEnd()=TS_AE_NONE;
-			}
-		}
-		m_sink->OnSelectionChange();
+			});
+		});
+		Sink()->OnSelectionChange();
 		UpdateText();
 	});
 }
@@ -198,19 +263,32 @@ void ConsoleWindowTextArea::BlinkUpdate() {
 		m_fast_blink_update_time = now;
 	}
 }
-LONG& ConsoleWindowTextArea::SelectionStart() {
-	return m_console->textarea_context.inputarea_selection_start;
+void ConsoleWindowTextArea::Selection(std::function<void(LONG&,LONG&,TsActiveSelEnd&,bool&)> f) {
+	f(m_console->textarea_context.inputarea_selection_start,m_console->textarea_context.inputarea_selection_end,m_console->textarea_context.selend,m_console->textarea_context.interim_char);
+	OutputDebugString(_T(""));
+};
+void ConsoleWindowTextArea::Selection(std::function<void(LONG&, LONG&)> f) {
+	f(m_console->textarea_context.inputarea_selection_start, m_console->textarea_context.inputarea_selection_end);
+	OutputDebugString(_T(""));
+
 }
-LONG& ConsoleWindowTextArea::SelectionEnd() {
-	return m_console->textarea_context.inputarea_selection_end;
-}
-TsActiveSelEnd& ConsoleWindowTextArea::ActiveSelEnd() {
-	return m_console->textarea_context.selend;
-}
-std::wstring& ConsoleWindowTextArea::InputtingString() {
+
+void ConsoleWindowTextArea::InputtingString(std::function<void(std::wstring&)> f) {
+	f(m_console->textarea_context.input_string);
+};
+const std::wstring& ConsoleWindowTextArea::InputtingString()const {
 	return m_console->textarea_context.input_string;
 }
-bool& ConsoleWindowTextArea::InterimChar() {
+LONG ConsoleWindowTextArea::SelectionStart()const {
+	return m_console->textarea_context.inputarea_selection_start;
+}
+LONG ConsoleWindowTextArea::SelectionEnd()const {
+	return m_console->textarea_context.inputarea_selection_end;
+}
+TsActiveSelEnd ConsoleWindowTextArea::ActiveSelEnd()const {
+	return m_console->textarea_context.selend;
+}
+bool ConsoleWindowTextArea::InterimChar()const {
 	return m_console->textarea_context.interim_char;
 }
 bool ConsoleWindowTextArea::UseTerminalEchoBack() {
@@ -218,219 +296,225 @@ bool ConsoleWindowTextArea::UseTerminalEchoBack() {
 }
 void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 
-	CallWithAppLock(true, [this,param]() {
-		if (GetKeyState(VK_LEFT) & 0x80) 
-		{
-			if (GetKeyState(VK_SHIFT) & 0x80)
-			{
-				if (SelectionStart() == SelectionEnd())
-				{
-					if (SelectionStart() == 0)
-					{
-						return;
-					}
-					--SelectionStart();
-					ActiveSelEnd()= TS_AE_START;
-				}
-				else
-				{
-					switch (ActiveSelEnd()) {
-					case TS_AE_NONE:
-						if (SelectionStart() == 0)
-						{
-							return;
-						}
-						--SelectionStart();
-						ActiveSelEnd()=TS_AE_START;
-						break;
-					case TS_AE_START:
-						if (SelectionStart() == 0)
-						{
-							return;
-						}
-						--SelectionStart();
-						break;
-					case TS_AE_END:
-						--SelectionEnd();
-						if (SelectionStart() == SelectionEnd())
-						{
-							ActiveSelEnd()= TS_AE_NONE;
-						}
-						break;
-					}
-				}
-			}
-			else
-			{
-				if (SelectionStart() != SelectionEnd()) 
-				{
-					auto cnt = SelectionEnd() - SelectionStart();
-					if (ActiveSelEnd() == TS_AE_START) {
-						m_console->shell->InputKey(VK_LEFT, cnt);
-					}
-					SelectionEnd()=SelectionStart();
-					ActiveSelEnd()=TS_AE_NONE;
-				}
-				else if (SelectionStart() == 0 || SelectionEnd() == 0)
-				{
-					m_console->shell->InputKey(VK_LEFT);
-					return;
-				}
-				else
-				{
-					--SelectionStart();
-					--SelectionEnd();
-					m_console->shell->InputKey(VK_LEFT);
-				}
-			}
-			m_sink->OnSelectionChange();
-			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
-		}
-		else if (GetKeyState(VK_RIGHT) & 0x80)
-		{
-			if (GetKeyState(VK_SHIFT) & 0x80) 
-			{
-				if (SelectionStart() == SelectionEnd())
-				{
-					if (SelectionEnd() == InputtingString().length())
-					{
-						return;
-					}
-					++SelectionEnd();
-					ActiveSelEnd()=TS_AE_END;
-				}
-				else
-				{
-					switch (ActiveSelEnd()) {
-					case TS_AE_NONE:
-						if (InputtingString().length() == SelectionEnd())
-						{
-							return;
-						}
-						++SelectionEnd();
-						ActiveSelEnd()=TS_AE_END;
-						break;
-					case TS_AE_END:
-						if (SelectionEnd() == InputtingString().length())
-						{
-							return;
-						}
-						++SelectionEnd();
-						break;
-					case TS_AE_START:
-						++SelectionStart();
-						if (SelectionStart() == SelectionEnd())
-						{
-							ActiveSelEnd()=TS_AE_NONE;
-						}
-					}
-				}
-			}
-			else
-			{
-				if (SelectionStart() != SelectionEnd())
-				{
-					auto cnt = SelectionEnd() - SelectionStart();
-					if (ActiveSelEnd() == TS_AE_END) {
-						m_console->shell->InputKey(VK_RIGHT,cnt);
-					}
-					SelectionStart()=SelectionEnd();
-					ActiveSelEnd()=TS_AE_NONE;
-				}
-				else if (SelectionEnd() == InputtingString().length())
-				{
-					m_console->shell->InputKey(VK_RIGHT);
-					return;
-				}
-				else
-				{
-					++SelectionStart(); 
-					++SelectionEnd();
-					m_console->shell->InputKey(VK_RIGHT);
-				}
-			}
-			m_sink->OnSelectionChange();
-			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
-		}
-		else if (GetKeyState(VK_DELETE)&0x80) {
-			if (InputtingString().empty())
-			{
-				m_console->shell->InputKey(VK_DELETE);
-				return;
-			}
-			if (SelectionStart() == SelectionEnd())
-			{
-				if (SelectionEnd() == InputtingString().length())
-				{
-					return;
-				}
-				if (UseTerminalEchoBack()) {
-					InputtingString().erase(SelectionStart(), 1);
-					m_console->shell->InputKey(VK_RIGHT);
-					m_console->shell->InputKey(VK_BACK);
-				}
+	CallWithAppLock(true, [this, param]() {
+		InputtingString([this, param](auto&str) {
+			Selection([this,param,&str](auto& start, auto& end, auto& ase, auto& interim) {
+			
 
-			}
-			else
-			{
-				auto cnt = SelectionEnd() - SelectionStart();
-				InputtingString().erase(SelectionStart(), cnt);
-				if (ActiveSelEnd() == TS_AE_END) {
-					m_console->shell->InputKey(VK_RIGHT, cnt);
-				}
-				m_console->shell->InputKey(VK_BACK,cnt);
-
-				SelectionEnd()=SelectionStart();
-				ActiveSelEnd()=TS_AE_NONE;
-			}
-			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
-		}
-		else if (GetKeyState(VK_BACK) & 0x80) {
-			if (!InputtingString().empty())
-			{
-				if (SelectionStart() == SelectionEnd())
+				if (GetKeyState(VK_LEFT) & 0x80)
 				{
-					if (SelectionStart() == 0)
+					if (GetKeyState(VK_SHIFT) & 0x80)
 					{
+						if (start == end)
+						{
+							if (start == 0)
+							{
+								return;
+							}
+							--start;
+							ase = TS_AE_START;
+						}
+						else
+						{
+							switch (ase) {
+							case TS_AE_NONE:
+								if (start == 0)
+								{
+									return;
+								}
+								--start;
+								ase = TS_AE_START;
+								break;
+							case TS_AE_START:
+								if (start == 0)
+								{
+									return;
+								}
+								--start;
+								break;
+							case TS_AE_END:
+								--end;
+								if (start == end)
+								{
+									ase= TS_AE_NONE;
+								}
+								break;
+							}
+						}
+					}
+					else
+					{
+						if (start !=end)
+						{
+							auto cnt = end -start;
+							if (ase == TS_AE_START) {
+								m_console->shell->InputKey(VK_LEFT, cnt);
+							}
+							end = start;
+							ase = TS_AE_NONE;
+						}
+						else if (start == 0 || end== 0)
+						{
+							m_console->shell->InputKey(VK_LEFT);
+							return;
+						}
+						else
+						{
+							--start;
+							--end;
+							m_console->shell->InputKey(VK_LEFT);
+						}
+					}
+					Sink()->OnSelectionChange();
+					InvalidateRect(m_textarea_hwnd, NULL, FALSE);
+				}
+				else if (GetKeyState(VK_RIGHT) & 0x80)
+				{
+					if (GetKeyState(VK_SHIFT) & 0x80)
+					{
+						if (start == end)
+						{
+							if (end == str.length())
+							{
+								return;
+							}
+							++end;
+							ase= TS_AE_END;
+						}
+						else
+						{
+							switch (ase) {
+							case TS_AE_NONE:
+								if (str.length() == end)
+								{
+									return;
+								}
+								++end;
+								ase = TS_AE_END;
+								break;
+							case TS_AE_END:
+								if (end == str.length())
+								{
+									return;
+								}
+								++end;
+								break;
+							case TS_AE_START:
+								++start;
+								if (start ==end)
+								{
+									ase = TS_AE_NONE;
+								}
+							}
+						}
+					}
+					else
+					{
+						if (start != end)
+						{
+							auto cnt = end - start;
+							if (ase == TS_AE_END) {
+								m_console->shell->InputKey(VK_RIGHT, cnt);
+							}
+							start= end;
+							ase= TS_AE_NONE;
+						}
+						else if (end == str.length())
+						{
+							m_console->shell->InputKey(VK_RIGHT);
+							return;
+						}
+						else
+						{
+							++start;
+							++end;
+							m_console->shell->InputKey(VK_RIGHT);
+						}
+					}
+					Sink()->OnSelectionChange();
+					InvalidateRect(m_textarea_hwnd, NULL, FALSE);
+				}
+				else if (GetKeyState(VK_DELETE) & 0x80) {
+					if (str.empty())
+					{
+						m_console->shell->InputKey(VK_DELETE);
 						return;
 					}
-					if (UseTerminalEchoBack()) {
-						--SelectionStart();
-						--SelectionEnd();
-						InputtingString().erase(SelectionStart(), 1);
+					if (start == end)
+					{
+						if (end == str.length())
+						{
+							return;
+						}
+						if (UseTerminalEchoBack()) {
+							str.erase(start, 1);
+							m_console->shell->InputKey(VK_RIGHT);
+							m_console->shell->InputKey(VK_BACK);
+						}
+
+					}
+					else
+					{
+						auto cnt = end - start;
+						str.erase(start, cnt);
+						if (ase == TS_AE_END) {
+							m_console->shell->InputKey(VK_RIGHT, cnt);
+						}
+						m_console->shell->InputKey(VK_BACK, cnt);
+
+						end = start;
+						ase = TS_AE_NONE;
+					}
+					InvalidateRect(m_textarea_hwnd, NULL, FALSE);
+				}
+				else if (GetKeyState(VK_BACK) & 0x80) {
+					if (!str.empty())
+					{
+						if (start== end)
+						{
+							if (start == 0)
+							{
+								return;
+							}
+							if (UseTerminalEchoBack()) {
+								--start;
+								--end;
+								str.erase(start, 1);
+								m_console->shell->InputKey(VK_BACK);
+							}
+
+						}
+						else
+						{
+							auto cnt = end -start;
+							str.erase(start, cnt);
+							end = SelectionStart();
+							if (ActiveSelEnd() == TS_AE_END) {
+								m_console->shell->InputKey(VK_RIGHT, cnt);
+							}
+							m_console->shell->InputKey(VK_BACK, cnt);
+							ase = TS_AE_NONE;
+						}
+					}
+					else {
 						m_console->shell->InputKey(VK_BACK);
 					}
-
+					InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 				}
-				else
-				{
-					auto cnt = SelectionEnd() - SelectionStart();
-					InputtingString().erase(SelectionStart(), cnt);
-					SelectionEnd() = SelectionStart();
-					if (ActiveSelEnd() == TS_AE_END) {
-						m_console->shell->InputKey(VK_RIGHT, cnt);
+				else if (GetKeyState(VK_RETURN) & 0x80) {
+					if (UseTerminalEchoBack()) {
+						str += L'\n';
 					}
-					m_console->shell->InputKey(VK_BACK, cnt);
-					ActiveSelEnd() = TS_AE_NONE;
+					ConfirmCommand();
+					m_console->shell->InputKey(VK_RETURN);
+					InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 				}
-			}
-			else {
-				m_console->shell->InputKey(VK_BACK);
-			}
-			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
-		}
-		else if (GetKeyState(VK_RETURN)&0x80) {
-			if (UseTerminalEchoBack()) {
-				InputtingString() += L'\n';
-			}
-			ConfirmCommand();
-			m_console->shell->InputKey(VK_RETURN);
-			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
-		}
-		else {
-			m_console->shell->InputKey(param);
-			InvalidateRect(m_textarea_hwnd, NULL, FALSE);
-		}
+				else {
+					m_console->shell->InputKey(param);
+					InvalidateRect(m_textarea_hwnd, NULL, FALSE);
+				}
+			});
+		});
 	});
 }
 void ConsoleWindowTextArea::ConfirmCommand() {
@@ -440,12 +524,17 @@ void ConsoleWindowTextArea::ConfirmCommand() {
 		m_console->shell->Unlock();
 
 	}
-	SelectionStart() = 0;
-	SelectionEnd() = 0;
+	Selection([](auto&start,auto&end) {
+		start = 0;
+		end = 0;
+	});
+
 	auto oldEnd = static_cast<LONG>(InputtingString().length());
-	InputtingString().clear();
+	InputtingString([](auto& str) {
+		str.clear();
+	});
 	TS_TEXTCHANGE change{ 0,oldEnd,0 };
-	m_sink->OnTextChange(0, &change);
+	Sink()->OnTextChange(0, &change);
 }
 void ConsoleWindowTextArea::UpdateText() {
 	InvalidateRect(m_textarea_hwnd, NULL, FALSE);
@@ -521,8 +610,7 @@ void ConsoleWindowTextArea::OnPaint() {
 			LockHolder lock(*(m_console->shell));
 			std::wstring ftext;
 			{
-				auto end = m_console->shell->end();
-				for (auto&& l : (*m_console->shell)) {
+				for (auto&& l : (m_console->shell->GetView())) {
 					for (auto itr = l.begin(); itr != l.end(); ++itr) {
 						ftext += itr->textW();
 					}
@@ -586,9 +674,8 @@ void ConsoleWindowTextArea::OnPaint() {
 			{
 				//draw string
 				//shell string
-				auto end = m_console->shell->end();
 				int32_t strcnt = 0;
-				for (auto&& l: (*m_console->shell)) {
+				for (auto&& l: (m_console->shell->GetView())) {
 					for (auto itr = l.begin(); itr != l.end(); ++itr) {
 						auto nstrcnt = strcnt + itr->length();
 						DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };

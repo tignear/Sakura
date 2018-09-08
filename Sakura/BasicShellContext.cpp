@@ -244,13 +244,6 @@ void BasicShellContext::Lock() {
 void BasicShellContext::Unlock() {
 	m_lock.unlock();
 }
-BasicShellContext::attrtext_line_iterator BasicShellContext::begin()const {
-	return m_document.begin();
-}
-BasicShellContext::attrtext_line_iterator BasicShellContext::end() const{
-	return m_document.end();
-
-}
 size_t BasicShellContext::GetLineCount()const {
 	return m_document.GetLineCount();
 }
@@ -283,6 +276,12 @@ bool BasicShellContext::UseTerminalEchoBack()const {
 };
 const std::wstring& BasicShellContext::DefaultFont()const {
 	return m_fontmap.at(m_document.GetDefaultAttribute().font);
+}
+const ShellContext::attrtext_document& BasicShellContext::GetAll()const {
+	return m_document.GetAll();
+}
+const ShellContext::attrtext_document& BasicShellContext::GetView()const {
+	return m_document.GetView();
 }
 //static fields
 std::atomic_uintmax_t BasicShellContext::m_process_count = 0;

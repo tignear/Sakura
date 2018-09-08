@@ -230,19 +230,12 @@ namespace tignear::sakura {
 		SetCursorX(m_cursorY_itr->Insert(m_cursorX, icu::UnicodeString(back.c_str()), m_current_attr));
 		NotifyTextChange();
 	}
-	ShellContext::attrtext_line_iterator BasicShellContextDocument::begin()const {
-		auto sitr = m_viewend_itr;
-		for (auto i = 0_z; i<m_viewcount &&sitr != m_text.begin();++i,--sitr) {
-
-		}
-		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(sitr));
+	const attrtext_document_all_impl& BasicShellContextDocument::GetAll()const {
+		return m_all;
 	}
-	ShellContext::attrtext_line_iterator BasicShellContextDocument::end()const {
-		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_viewend_itr));
-
+	const attrtext_document_view_impl& BasicShellContextDocument::GetView()const {
+		return m_view;
 	}
-
-
 	void attrtext_line_iterator_impl::operator++() {
 		m_elem++;
 	}
@@ -273,5 +266,21 @@ namespace tignear::sakura {
 	}
 	attrtext_line_iterator_impl::attrtext_line_iterator_impl(const attrtext_line_iterator_impl& from) {
 		m_elem = from.m_elem;
+	}
+	ShellContext::attrtext_line_iterator attrtext_document_all_impl::end()const {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_text.end()));
+	}
+	ShellContext::attrtext_line_iterator attrtext_document_all_impl::begin()const {
+		return  ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_text.begin()));
+	}
+	ShellContext::attrtext_line_iterator attrtext_document_view_impl::end()const {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_viewend_itr));
+	}
+	ShellContext::attrtext_line_iterator attrtext_document_view_impl::begin()const {
+		auto cp = m_viewend_itr;
+		for (auto i = 0_z; i < m_viewcount&&cp!=m_text.begin();++i) {
+			--cp;
+		}
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(cp));
 	}
 }

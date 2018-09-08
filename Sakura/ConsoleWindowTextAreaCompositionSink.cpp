@@ -58,11 +58,16 @@ HRESULT ConsoleWindowTextArea::OnEndComposition(ITfCompositionView *pComposition
 		if (!UseTerminalEchoBack()) {
 			PushAsyncCallQueue(true, [this]() {
 				auto oldend = static_cast<LONG>(InputtingString().length());
-				InputtingString().clear();
-				SelectionStart() = 0;
-				SelectionEnd() = 0;
+				InputtingString([](auto&str) {
+					str.clear();
+				});
+				Selection([](auto&start, auto&end) {
+					start = 0;
+					end = 0;
+				});
+
 				TS_TEXTCHANGE tc = { 0,oldend,0 };
-				m_sink->OnTextChange(0,&tc);
+				Sink()->OnTextChange(0,&tc);
 			});
 		}
 

@@ -214,6 +214,7 @@
     <ClInclude Include="BasicShellContextDocument.h" />
     <ClInclude Include="BasicShellContextFactory.h" />
     <ClInclude Include="BasicShellContextLineText.h" />
+    <ClInclude Include="ConsoleWindowTextAreaRender.h" />
     <ClInclude Include="ExecutableFilePath.h" />
     <ClInclude Include="MenuWindow.h" />
     <ClInclude Include="DefinedResource.h" />
@@ -236,9 +237,11 @@
     <ClInclude Include="strconv.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TextBuilder.h" />
-    <ClInclude Include="TextStoreLock.h" />
     <ClInclude Include="TextDrawer.h" />
     <ClInclude Include="D2DLineUtil.h" />
+    <ClInclude Include="tsf\stdafx.h" />
+    <ClInclude Include="tsf\TextStore.h" />
+    <ClInclude Include="tsf\TextStoreLock.h" />
     <ClInclude Include="tstring.h" />
   </ItemGroup>
   <ItemGroup>
@@ -251,7 +254,7 @@
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowTextArea.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
-    <ClCompile Include="ConsoleWindowTextAreaTextStore.cpp" />
+    <ClCompile Include="ConsoleWindowTextAreaRender.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="MenuWindow.cpp" />
     <ClCompile Include="SakuraMain.cpp" />
@@ -263,6 +266,7 @@
     </ClCompile>
     <ClCompile Include="TextBuilder.cpp" />
     <ClCompile Include="TextDrawer.cpp" />
+    <ClCompile Include="tsf\TextStore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="ComCtrl.manifest" />
