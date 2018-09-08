@@ -723,6 +723,7 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 	m_linespacing = (metrics.ascent + metrics.descent + metrics.lineGap) * ratio;
 	m_baseline = metrics.ascent*ratio;
 	m_console->shell->SetPageSize(GetPageSize());
+	SetFocus(m_textarea_hwnd);
 }
 void ConsoleWindowTextArea::Create(HINSTANCE hinst, HWND pwnd, int x, int y, unsigned int w, unsigned int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
 	auto r = new ConsoleWindowTextArea();

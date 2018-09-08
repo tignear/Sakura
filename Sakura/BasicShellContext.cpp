@@ -136,7 +136,6 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 		}
 	};
 	s->m_outbuf.assign(BUFFER_SIZE, '\0');
-	//DWORD cnt;
 	if(!ReadFile(
 		s->m_out_pipe,
 		s->m_outbuf.data(), 
@@ -152,7 +151,6 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	//OutputDebugStringA(s->m_outbuf.c_str());
 	s->AddString(cp_to_wide(s->m_outbuf.c_str(),s->m_codepage,cnt));
 	return s->OutputWorker(s);
 }
@@ -168,9 +166,6 @@ void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
 	}
 }
 void BasicShellContext::InputChar(WPARAM charcode) {
-	/*if (0x08 == charcode) {
-		return;
-	}*/
 	if (!m_hwnd) {
 		return;
 	}

@@ -136,13 +136,18 @@ int Sakura::Main(HINSTANCE hInstance,
 		0,
 		rect.right - rect.left,
 		m_menu_hmenu,
+		[]() {
+			if (m_console) {
+				Sakura::m_console->ReGetConsoleContext();
+			}
+		},
 		config,
 		[](std::string k) {
-			return Sakura::m_factory.at(k).get();
+		return Sakura::m_factory.at(k).get();
 		},
 		[](std::string k) {
-			return Sakura::m_resource.at(k);
-		}
+		return Sakura::m_resource.at(k);
+	}
 	);
 	m_console = ConsoleWindow::Create(
 		hInstance,

@@ -3,13 +3,14 @@
 #include <tchar.h>
 namespace tignear::win {
 
-
+	//http://www7.plala.or.jp/kfb/program/exedir.html
+	//を改変して使用
 	class ExecutableFilePath
 	{
 	public:
 		ExecutableFilePath()
 		{
-			if (::GetModuleFileName(NULL, m_Path, MAX_PATH))    //実行ファイルのフルパスを取得
+			if (GetModuleFileName(NULL, m_Path, MAX_PATH))    //実行ファイルのフルパスを取得
 			{   //取得に成功
 				TCHAR* ptmp = _tcsrchr(m_Path, _T('\\')); // \の最後の出現位置を取得
 				if (ptmp != NULL)
@@ -19,12 +20,12 @@ namespace tignear::win {
 				}
 				else
 				{
-					//エラー：\が無い
+					std::terminate();
 				}
 			}
 			else
 			{
-				//エラー：取得に失敗
+				std::terminate();
 			}
 		}
 		const TCHAR* GetPath() const
