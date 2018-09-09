@@ -97,27 +97,50 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 		break;
 	}
 	case WM_VSCROLL:
-	switch(LOWORD(wParam)){
-	case SB_THUMBTRACK:
-	{
-		SCROLLINFO info{};
-		info.cbSize = sizeof(info);
-		info.fMask = SIF_TRACKPOS;
-		GetScrollInfo(self->m_scrollbar_column_hwnd, SB_CTL, &info);
-		self->m_textarea->SetViewPosition(info.nTrackPos);
-		break;
-	}
-	default:
-	{
-		SCROLLINFO info{};
-		info.cbSize = sizeof(info);
-		info.fMask = SIF_POS;
-		GetScrollInfo(self->m_scrollbar_column_hwnd, SB_CTL, &info);
-		self->m_textarea->SetViewPosition(info.nPos);
-		break;
-	}
+		switch (LOWORD(wParam)) {
+		case SB_THUMBTRACK:
+		{
+			SCROLLINFO info{};
+			info.cbSize = sizeof(info);
+			info.fMask = SIF_TRACKPOS;
+			GetScrollInfo(self->m_scrollbar_column_hwnd, SB_CTL, &info);
+			self->m_textarea->SetViewPosition(info.nTrackPos);
+			break;
+		}
+		default:
+		{
+			SCROLLINFO info{};
+			info.cbSize = sizeof(info);
+			info.fMask = SIF_POS;
+			GetScrollInfo(self->m_scrollbar_column_hwnd, SB_CTL, &info);
+			self->m_textarea->SetViewPosition(info.nPos);
+			break;
+		}
 
-	}
+		}
+		break;
+	case WM_HSCROLL:
+		switch (LOWORD(wParam)) {
+		case SB_THUMBTRACK:
+		{
+			SCROLLINFO info{};
+			info.cbSize = sizeof(info);
+			info.fMask = SIF_TRACKPOS;
+			GetScrollInfo(self->m_scrollbar_row_hwnd, SB_CTL, &info);
+			self->m_textarea->SetOriginX(static_cast<FLOAT>(-info.nTrackPos));
+			break;
+		}
+		default:
+		{
+			SCROLLINFO info{};
+			info.cbSize = sizeof(info);
+			info.fMask = SIF_POS;
+			GetScrollInfo(self->m_scrollbar_row_hwnd, SB_CTL, &info);
+			self->m_textarea->SetOriginX(static_cast<FLOAT>(-info.nPos));
+			break;
+		}
+		}
+		self->UpdateScrollBar();
 		break;
 	case WM_UPDATE_SCROLLBAR:
 		self->UpdateScrollBar();
@@ -135,16 +158,23 @@ void ConsoleWindow::OnLayoutChange(tignear::sakura::ShellContext* shell) {
 	PostMessage(m_hwnd, WM_UPDATE_SCROLLBAR, 0, 0);
 }
 void ConsoleWindow::UpdateScrollBar() {
-	SCROLLINFO sbinfo{};
-	sbinfo.cbSize = sizeof(sbinfo);
-	sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
-	sbinfo.nMin = 0;
-	sbinfo.nPos = static_cast<UINT>( m_console->shell->GetViewStart());
-	sbinfo.nMax = static_cast<UINT>(m_console->shell->GetLineCount());
-	sbinfo.nPage = static_cast<UINT>( m_textarea->GetPageSize());
-	SetScrollInfo(m_scrollbar_column_hwnd, SB_CTL, &sbinfo, FALSE);
-	
-	InvalidateRect(m_scrollbar_column_hwnd,NULL,TRUE);
+	SCROLLINFO sbinfo_c{};
+	sbinfo_c.cbSize = sizeof(sbinfo_c);
+	sbinfo_c.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
+	sbinfo_c.nMin = 0;
+	sbinfo_c.nPos = static_cast<UINT>( m_console->shell->GetViewStart());
+	sbinfo_c.nMax = static_cast<UINT>(m_console->shell->GetLineCount());
+	sbinfo_c.nPage = static_cast<UINT>( m_textarea->GetPageSize());
+	SetScrollInfo(m_scrollbar_column_hwnd, SB_CTL, &sbinfo_c, TRUE);
+
+	SCROLLINFO sbinfo_r{};
+	sbinfo_r.cbSize = sizeof(sbinfo_r);
+	sbinfo_r.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
+	sbinfo_r.nMin = 0;
+	sbinfo_r.nPos = static_cast<UINT>(-(m_textarea->GetOriginX()+0.5f));
+	sbinfo_r.nMax = static_cast<UINT>(m_textarea->GetTextWidthDip()+0.5f);
+	sbinfo_r.nPage = static_cast<UINT>(m_textarea->GetAreaDip().height+0.5f);
+	SetScrollInfo(m_scrollbar_row_hwnd, SB_CTL, &sbinfo_r, TRUE);
 }
 void ConsoleWindow::SetConsoleContext(std::shared_ptr<tignear::sakura::cwnd::Context> c) {
 	m_console = c;

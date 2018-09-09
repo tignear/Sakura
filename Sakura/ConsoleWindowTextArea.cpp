@@ -760,7 +760,7 @@ void ConsoleWindowTextArea::OnPaint() {
 		};
 		auto context = std::make_unique<DWriteDrawerContext>(t, defaultEffect.Get());
 
-		FailToThrowHR(layout->Draw(context.get(), m_drawer.Get(), 0, m_originY));
+		FailToThrowHR(layout->Draw(context.get(), m_drawer.Get(), m_originX, m_originY));
 
 		//draw caret
 		//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
@@ -780,16 +780,16 @@ void ConsoleWindowTextArea::OnPaint() {
 			DWORD halfCaretWidth = caretWidth / 2u;
 
 			t->FillRectangle({
-				caretX - halfCaretWidth,
+				caretX - halfCaretWidth+ m_originX,
 				hitTestMetrics.top+ m_originY,
-				caretX + (caretWidth - halfCaretWidth),
+				caretX + (caretWidth - halfCaretWidth)+ m_originX,
 				hitTestMetrics.top + hitTestMetrics.height+ m_originY
 				}, m_d2d->red.Get());
 		}
 		else if (SelectionStart() != SelectionEnd())
 		{
 			UINT32 count;
-			layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), 0, m_originY, NULL, 0, &count);
+			layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX, m_originY, NULL, 0, &count);
 
 			std::unique_ptr<DWRITE_HIT_TEST_METRICS[]> mats(new DWRITE_HIT_TEST_METRICS[count]);
 			FailToThrowHR(layout->HitTestTextRange(m_lengthShell + SelectionStart(), SelectionEnd() - SelectionStart(), 0, 0, mats.get(), count, &count));
@@ -797,9 +797,9 @@ void ConsoleWindowTextArea::OnPaint() {
 			for (auto i = 0UL; i < count; ++i)
 			{
 				t->FillRectangle({
-					mats[i].left,
+					mats[i].left+ m_originX,
 					mats[i].top + m_originY,
-					mats[i].left + mats[i].width,
+					mats[i].left + mats[i].width+ m_originX,
 					mats[i].top + mats[i].height + m_originY
 					}, m_d2d->red.Get());
 			}

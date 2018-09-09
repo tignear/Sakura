@@ -58,6 +58,7 @@ namespace tignear::sakura {
 		std::wstring m_last_composition_string;
 		UINT32 m_lengthShell;
 		FLOAT m_originY=0;
+		FLOAT m_originX = 0;
 		void Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context>);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 		ConsoleWindowTextArea() {}
@@ -167,10 +168,18 @@ namespace tignear::sakura {
 			return m_d2d->GetRenderTarget()->GetSize();
 		}
 
-		float GetTextWidthDip() {
-			throw std::runtime_error("not impl");//TODO
+		FLOAT GetTextWidthDip() {
+			DWRITE_TEXT_METRICS met{};
+			GetLayout()->GetMetrics(&met);
+			return met.width;
 		}
-
+		void SetOriginX(FLOAT origX) {
+			m_originX = origX;
+			InvalidateRect(m_textarea_hwnd,NULL,FALSE);
+		}
+		FLOAT GetOriginX() {
+			return m_originX;
+		}
 		size_t GetPageSize() {
 			return static_cast<size_t>(GetAreaDip().height / m_linespacing+1);
 		}
