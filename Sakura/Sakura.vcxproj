@@ -214,6 +214,7 @@
     <ClInclude Include="BasicShellContextDocument.h" />
     <ClInclude Include="BasicShellContextFactory.h" />
     <ClInclude Include="BasicShellContextLineText.h" />
+    <ClInclude Include="ConsoleWindowTextAreaDirect2D.h" />
     <ClInclude Include="ConsoleWindowTextAreaRender.h" />
     <ClInclude Include="ExecutableFilePath.h" />
     <ClInclude Include="MenuWindow.h" />
@@ -254,6 +255,7 @@
     <ClCompile Include="ConsoleWindow.cpp" />
     <ClCompile Include="ConsoleWindowTextArea.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
+    <ClCompile Include="ConsoleWindowTextAreaDirect2D.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaRender.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="MenuWindow.cpp" />

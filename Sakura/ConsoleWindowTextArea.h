@@ -11,7 +11,7 @@
 #include <wrl.h>
 #include <chrono>
 #include "ShellContext.h"
-#include "Direct2D.h"
+#include "ConsoleWindowTextAreaDirect2D.h"
 #include "TextBuilder.h"
 #include "TextDrawer.h"
 #include "ConsoleWindowContext.h"
@@ -31,7 +31,7 @@ namespace tignear::sakura {
 				context.Unlock();
 			}
 		};
-		std::unique_ptr<Direct2DWithHWnd> m_d2d;
+		std::unique_ptr<ConsoleWindowTextAreaDirect2D> m_d2d;
 		std::unique_ptr<tignear::dwrite::TextBuilder> m_tbuilder;
 		Microsoft::WRL::ComPtr<tignear::dwrite::DWriteDrawer> m_drawer;
 		Microsoft::WRL::ComPtr<ITfDocumentMgr> m_docmgr;
@@ -46,7 +46,6 @@ namespace tignear::sakura {
 		HINSTANCE m_hinst;
 		HWND m_parentHwnd;
 		HWND m_textarea_hwnd;
-
 		bool m_caret_display;
 		bool m_fast_blink_display;
 		bool m_slow_blink_display;
@@ -57,6 +56,8 @@ namespace tignear::sakura {
 		std::shared_ptr<cwnd::Context> m_console;
 		LONG m_composition_start_pos;
 		std::wstring m_last_composition_string;
+		UINT32 m_lengthShell;
+		FLOAT m_originY=0;
 		void Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context>);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 		ConsoleWindowTextArea() {}
@@ -71,6 +72,9 @@ namespace tignear::sakura {
 		void BlinkUpdate();
 		void ConfirmCommand();
 		bool UseTerminalEchoBack();
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetLayout();
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildLayout(const std::wstring& text,UINT32 lengthShell);
+		void CalcOrigin();
 		void Selection(std::function<void(LONG&,LONG&, TsActiveSelEnd&,bool&)>) override;
 		void Selection(std::function<void(LONG&, LONG&)>)override;
 		void InputtingString(std::function<void(std::wstring&)>)override;
@@ -168,7 +172,7 @@ namespace tignear::sakura {
 		}
 
 		size_t GetPageSize() {
-			return static_cast<size_t>(GetAreaDip().height / m_linespacing);
+			return static_cast<size_t>(GetAreaDip().height / m_linespacing+1);
 		}
 	};
 }
