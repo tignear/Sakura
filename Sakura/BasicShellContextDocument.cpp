@@ -7,11 +7,15 @@
 #include "split.h"
 namespace tignear::sakura {
 	using stdex::For;
-	void BasicShellContextDocument::NotifyLayoutChange() {
-		m_layout_change_callback();
+	BasicShellContextDocument::TextUpdateInfoLine BasicShellContextDocument::BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus s, ShellContext::attrtext_line& l) {
+		return TextUpdateInfoLine(std::make_unique<TextUpdateInfoImpl>(s,l));
 	}
-	void BasicShellContextDocument::NotifyTextChange() {
-		m_text_change_callback();
+
+	void BasicShellContextDocument::NotifyLayoutChange(bool x,bool y) {
+		m_layout_change_callback(x,y);
+	}
+	void BasicShellContextDocument::NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine> v) {
+		m_text_change_callback(v);
 	}
 	bool BasicShellContextDocument::FixCursorY() {
 		if (m_cursorY_itr == m_text.end()) {
@@ -40,7 +44,7 @@ namespace tignear::sakura {
 	}
 	void BasicShellContextDocument::SetCursorX(int32_t x) {
 		m_cursorX = x;
-		NotifyLayoutChange();
+		NotifyLayoutChange(true, false);
 	}
 	void BasicShellContextDocument::SetCursorY(size_t y) {
 		m_cursorY =0;
@@ -49,24 +53,25 @@ namespace tignear::sakura {
 	}
 	void BasicShellContextDocument::MoveCursorX(int32_t x) {
 		m_cursorX += x;
-		NotifyLayoutChange();
+		NotifyLayoutChange(true,false);
 	}
 	void BasicShellContextDocument::MoveCursorYUp(size_t y) {
 		for (auto i = 0_z; i < y&&m_cursorY_itr!=m_text.begin(); ++i) {
 			--m_cursorY_itr;
 			--m_cursorY;
 		}
-		NotifyLayoutChange();
+		NotifyLayoutChange(false, true);
 	}
 	void BasicShellContextDocument::MoveCursorYDown(size_t y) {
 		for (auto i = 0_z; i < y; ++i) {
 			++m_cursorY_itr;
 			++m_cursorY;
-
 			if (m_cursorY_itr == m_text.end()) {
 				m_text.emplace_back(m_color_sys,m_color_256,m_fontmap);
+				NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::NEW, m_text.back())});
 				--m_cursorY_itr;
 				if (m_text.size() > m_max_line) {
+					NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, m_text.front())});
 					m_text.pop_front();
 				}
 			}
@@ -75,7 +80,7 @@ namespace tignear::sakura {
 			m_viewend_itr = m_text.end();
 			m_viewendpos = m_text.size();
 		}
-		NotifyLayoutChange();
+		NotifyLayoutChange(false,true);
 	}
 	size_t BasicShellContextDocument::GetLineCount()const {
 		return m_text.size();
@@ -91,7 +96,7 @@ namespace tignear::sakura {
 			throw std::out_of_range("count must be less than or equal to m_max_line.");
 		}
 		m_viewcount = count;
-		NotifyLayoutChange();
+		NotifyLayoutChange(false,true);
 
 	}
 	void BasicShellContextDocument::ViewPositionUp(size_t count) {
@@ -99,7 +104,7 @@ namespace tignear::sakura {
 			--m_viewend_itr;
 			--m_viewendpos;
 		}
-		NotifyLayoutChange();
+		NotifyLayoutChange(false,true);
 	}
 	void BasicShellContextDocument::ViewPositionDown(size_t count) {
 		for (auto i = 0_z; i < count&&m_viewend_itr != m_text.end(); ++i) {
@@ -107,7 +112,7 @@ namespace tignear::sakura {
 			++m_viewend_itr;
 			++m_viewendpos;
 		}
-		NotifyLayoutChange();
+		NotifyLayoutChange(false,true);
 	}
 	size_t BasicShellContextDocument::GetViewPosition()const {
 		if (m_viewendpos > m_viewcount) {
@@ -147,37 +152,47 @@ namespace tignear::sakura {
 			return;
 		}
 		m_cursorY_itr->RemoveBefore(m_cursorX);
-		NotifyTextChange();
+		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
 	}
 	void BasicShellContextDocument::RemoveLineAfter() {
 		if (!FixCursorY()) {
 			return;
 		}
 		m_cursorY_itr->RemoveAfter(m_cursorX);
-		NotifyTextChange();
+		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
 	}
 	void BasicShellContextDocument::RemoveLine() {
 		if (!FixCursorY()) {
 			return;
 		}
 		m_cursorY_itr->Remove();
-		NotifyTextChange();
+		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
+
 	}
 	void BasicShellContextDocument::RemoveAll() {
+		std::vector<TextUpdateInfoLine> vec;
+		vec.reserve(m_text.size());
+		for (auto&& e : m_text) {
+			vec.push_back(BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, e));
+		}
+		NotifyTextChange(vec);
+
 		m_text.clear();
 		//m_text.resize(0);
 		m_cursorY_itr  = m_text.begin();
 		m_viewend_itr=m_text.end();
 		m_cursorY   =m_viewendpos= 0;
 		m_cursorX = 0;
-		NotifyLayoutChange();
-		NotifyTextChange();
+		NotifyLayoutChange(true,true);
 	}
 	void BasicShellContextDocument::Remove() {
+		std::vector<TextUpdateInfoLine> vec;
+		vec.reserve(m_text.size());
 		for (auto itr = m_text.begin(); itr != m_text.end();++itr) {
 			itr->Remove();
+			vec.push_back(BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *itr));
 		}
-		NotifyTextChange();
+		NotifyTextChange(vec);
 	}
 	void BasicShellContextDocument::RemoveBefore() {
 		if (m_text.begin() == m_cursorY_itr) {
@@ -212,38 +227,56 @@ namespace tignear::sakura {
 	void BasicShellContextDocument::Insert(const std::wstring& wstr) {
 		using tignear::stdex::split;
 		auto r=split<wchar_t,std::vector<std::wstring>>(wstr,L"\n");
+
 		auto back = r.back();
 		r.pop_back();
 		if (m_cursorY_itr == m_text.end()) {
 			m_text.emplace_back(m_color_sys,m_color_256,m_fontmap);
+			NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::NEW, m_text.back())});
 			--m_cursorY_itr;
 			if (m_text.size() > m_max_line) {
+				NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, m_text.front())});
 				m_text.pop_front();
 			}
 		}
 		for (auto&& e : r) {
-			e += L"\n";
+			//e += L"\n";
+			if (!e.empty()&&L'\r'==e.back()){
+				e.pop_back();
+			}
 			m_cursorY_itr->Insert(m_cursorX,icu::UnicodeString(e.c_str()),m_current_attr);
+			NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
 			MoveCursorYDown(1);
 			SetCursorX(0);
 		}
 		SetCursorX(m_cursorY_itr->Insert(m_cursorX, icu::UnicodeString(back.c_str()), m_current_attr));
-		NotifyTextChange();
+		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
+
 	}
-	const attrtext_document_all_impl& BasicShellContextDocument::GetAll()const {
+	attrtext_document_all_impl& BasicShellContextDocument::GetAll() {
 		return m_all;
 	}
-	const attrtext_document_view_impl& BasicShellContextDocument::GetView()const {
+	attrtext_document_view_impl& BasicShellContextDocument::GetView() {
 		return m_view;
 	}
 	void attrtext_line_iterator_impl::operator++() {
-		m_elem++;
+		++m_elem;
 	}
+	void attrtext_line_iterator_impl::operator--() {
+		--m_elem;
+	}
+
 	attrtext_line_iterator_impl* attrtext_line_iterator_impl::operator++(int) {
 		auto temp = clone();
 		operator++();
 		return temp;
 	}
+	attrtext_line_iterator_impl* attrtext_line_iterator_impl::operator--(int) {
+		auto temp = clone();
+		operator--();
+		return temp;
+	}
+
 	attrtext_line_iterator_impl::reference attrtext_line_iterator_impl::operator*()const {
 		return (*m_elem);
 	}
@@ -267,20 +300,29 @@ namespace tignear::sakura {
 	attrtext_line_iterator_impl::attrtext_line_iterator_impl(const attrtext_line_iterator_impl& from) {
 		m_elem = from.m_elem;
 	}
-	ShellContext::attrtext_line_iterator attrtext_document_all_impl::end()const {
+	ShellContext::attrtext_line_iterator attrtext_document_all_impl::end() {
 		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_text.end()));
 	}
-	ShellContext::attrtext_line_iterator attrtext_document_all_impl::begin()const {
+	ShellContext::attrtext_line_iterator attrtext_document_all_impl::begin() {
 		return  ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_text.begin()));
 	}
-	ShellContext::attrtext_line_iterator attrtext_document_view_impl::end()const {
+	ShellContext::attrtext_line_iterator attrtext_document_view_impl::end() {
 		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_viewend_itr));
 	}
-	ShellContext::attrtext_line_iterator attrtext_document_view_impl::begin()const {
+	ShellContext::attrtext_line_iterator attrtext_document_view_impl::begin() {
 		auto cp = m_viewend_itr;
 		for (auto i = 0_z; i < m_viewcount&&cp!=m_text.begin();++i) {
 			--cp;
 		}
 		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(cp));
+	}
+	ShellContext::TextUpdateStatus TextUpdateInfoImpl::status()const {
+		return m_status;
+	}
+	ShellContext::attrtext_line& TextUpdateInfoImpl::line() {
+		return m_line;
+	}
+	TextUpdateInfoImpl* TextUpdateInfoImpl::clone()const {
+		return new TextUpdateInfoImpl(*this);
 	}
 }

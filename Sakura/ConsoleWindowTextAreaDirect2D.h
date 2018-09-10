@@ -12,7 +12,7 @@ namespace tignear::sakura {
 		virtual void InitResource()override;
 	public:
 		static D2D1::ColorF clearColor;
-		ComPtr<IDWriteTextLayout1> layout;
+		ComPtr<IDWriteTextLayout1> inputtingstring_layout;
 		ComPtr<ID2D1SolidColorBrush> red;
 		ComPtr<ID2D1SolidColorBrush> textColor;
 		ComPtr<ID2D1SolidColorBrush> clearColorBrush;

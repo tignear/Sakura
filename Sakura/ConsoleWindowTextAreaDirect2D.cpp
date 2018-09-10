@@ -4,11 +4,10 @@
 using Microsoft::WRL::ComPtr;
 namespace tignear::sakura {
 	D2D1::ColorF ConsoleWindowTextAreaDirect2D::clearColor = D2D1::ColorF(D2D1::ColorF::LightPink, 1.0f);
-	ComPtr<IDWriteTextLayout1> layout;
 
 	void ConsoleWindowTextAreaDirect2D::InitResource() {
 		auto&& t = GetRenderTarget();
-		layout.Reset();
+		inputtingstring_layout.Reset();
 		t->CreateSolidColorBrush(
 			D2D1::ColorF(D2D1::ColorF::Red, 1.0f),
 			&red

@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "BasicShellContextFactory.h"
-#include "BasicShellContext.h"
+#include "NormalShellContext.h"
 #include "strconv.h"
 #include "ansi/BasicColorTable.h"
 #include "DefinedResource.h"
@@ -17,6 +17,6 @@ namespace tignear::sakura {
 		for (auto e : fonts) {
 			fontmap.push_back(cp_to_wide(e.value().toValue<std::string>(),65001));
 		}
-		return BasicShellContext::Create(cp_to_wide(cmd, 65001), iocpMgr, cp,ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo,fontmap,fontsize,BasicShellContext::Options{});
+		return NormalShellContext::Create(cp_to_wide(cmd, 65001), iocpMgr, cp,ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo,fontmap,fontsize,NormalShellContext::Options{});
 	}
 }

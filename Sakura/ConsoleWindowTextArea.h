@@ -56,26 +56,31 @@ namespace tignear::sakura {
 		std::shared_ptr<cwnd::Context> m_console;
 		LONG m_composition_start_pos;
 		std::wstring m_last_composition_string;
-		UINT32 m_lengthShell;
 		FLOAT m_originY=0;
 		FLOAT m_originX = 0;
+		FLOAT m_text_width=0;
 		void Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context>);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 		ConsoleWindowTextArea() {}
 		void OnSetFocus();
 		void OnPaint();
+		void DrawShellText();
 		void OnSize();
 		void OnChar(WPARAM);
 		void OnTimer();
 		void OnKeyDown(WPARAM);
+		void UpdateText(ShellContext* ,std::vector<ShellContext::TextUpdateInfoLine>);
 		void UpdateText();
 		void CaretUpdate();
 		void BlinkUpdate();
 		void ConfirmCommand();
 		bool UseTerminalEchoBack();
-		Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetLayout();
-		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildLayout(const std::wstring& text,UINT32 lengthShell);
-		void CalcOrigin();
+		
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetLayout(ShellContext::attrtext_line& line);
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildLayout(ShellContext::attrtext_line& line);
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetInputtingStringLayout();
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildInputtingStringLayout();
+		void ResetInputtingStringLayout();
 		void Selection(std::function<void(LONG&,LONG&, TsActiveSelEnd&,bool&)>) override;
 		void Selection(std::function<void(LONG&, LONG&)>)override;
 		void InputtingString(std::function<void(std::wstring&)>)override;
@@ -169,9 +174,7 @@ namespace tignear::sakura {
 		}
 
 		FLOAT GetTextWidthDip() {
-			DWRITE_TEXT_METRICS met{};
-			GetLayout()->GetMetrics(&met);
-			return met.width;
+			return m_text_width;
 		}
 		void SetOriginX(FLOAT origX) {
 			m_originX = origX;

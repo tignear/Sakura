@@ -40,7 +40,7 @@ std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(
 	SetScrollInfo(r->m_scrollbar_column_hwnd, SB_VERT, &sbinfo, TRUE);
 	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, tareaW, tareaH, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f,r->m_console, &(r->m_textarea));
 	r->UpdateScrollBar();
-	r->m_console->shell->AddLayoutChangeListener(std::bind(&ConsoleWindow::OnLayoutChange,std::ref(*r), std::placeholders::_1));
+	r->m_console->shell->AddLayoutChangeListener(std::bind(&ConsoleWindow::OnLayoutChange,std::ref(*r), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	return r;
  }
 bool ConsoleWindow::RegisterConsoleWindowClass(HINSTANCE hinst) {
@@ -154,7 +154,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 HWND ConsoleWindow::GetHWnd() {
 	return m_hwnd;
 }
-void ConsoleWindow::OnLayoutChange(tignear::sakura::ShellContext* shell) {
+void ConsoleWindow::OnLayoutChange(tignear::sakura::ShellContext* shell,bool ,bool) {
 	PostMessage(m_hwnd, WM_UPDATE_SCROLLBAR, 0, 0);
 }
 void ConsoleWindow::UpdateScrollBar() {
@@ -166,7 +166,6 @@ void ConsoleWindow::UpdateScrollBar() {
 	sbinfo_c.nMax = static_cast<UINT>(m_console->shell->GetLineCount());
 	sbinfo_c.nPage = static_cast<UINT>( m_textarea->GetPageSize());
 	SetScrollInfo(m_scrollbar_column_hwnd, SB_CTL, &sbinfo_c, TRUE);
-
 	SCROLLINFO sbinfo_r{};
 	sbinfo_r.cbSize = sizeof(sbinfo_r);
 	sbinfo_r.fMask = SIF_DISABLENOSCROLL | SIF_ALL;

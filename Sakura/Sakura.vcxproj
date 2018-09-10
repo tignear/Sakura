@@ -214,11 +214,13 @@
     <ClInclude Include="BasicShellContextDocument.h" />
     <ClInclude Include="BasicShellContextFactory.h" />
     <ClInclude Include="BasicShellContextLineText.h" />
+    <ClInclude Include="ComHolder.h" />
     <ClInclude Include="ConsoleWindowTextAreaDirect2D.h" />
     <ClInclude Include="ConsoleWindowTextAreaRender.h" />
     <ClInclude Include="ExecutableFilePath.h" />
     <ClInclude Include="MenuWindow.h" />
     <ClInclude Include="DefinedResource.h" />
+    <ClInclude Include="NormalShellContext.h" />
     <ClInclude Include="SakuraConfig.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="ConsoleWindowContext.h" />
@@ -259,6 +261,7 @@
     <ClCompile Include="ConsoleWindowTextAreaRender.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="MenuWindow.cpp" />
+    <ClCompile Include="NormalShellContext.cpp" />
     <ClCompile Include="SakuraMain.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -23,7 +23,7 @@ namespace tignear::sakura {
 		static bool m_registerstate;
 		static bool RegisterConsoleWindowClass(HINSTANCE hinst);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-		void OnLayoutChange(ShellContext* shell);
+		void OnLayoutChange(ShellContext* shell,bool,bool);
 		void UpdateScrollBar();
 		std::shared_ptr<cwnd::Context> m_console;
 		void SetConsoleContext(std::shared_ptr<cwnd::Context>);

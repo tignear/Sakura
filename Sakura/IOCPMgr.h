@@ -71,7 +71,7 @@ namespace tignear::sakura::iocp {
 		}
 		~IOCPMgr() {
 			for (auto i = 0U; i < m_thread_count; ++i) {
-				PostQueuedCompletionStatus(m_iocp, 0, COMPKEY_EXIT,new OVERLAPPED());
+				PostQueuedCompletionStatus(m_iocp, 0, COMPKEY_EXIT, new OVERLAPPED());
 			}
 			CloseHandle(m_iocp);
 		}

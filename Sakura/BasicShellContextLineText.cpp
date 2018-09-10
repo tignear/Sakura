@@ -7,6 +7,12 @@ using tignear::sakura::BasicShellContextLineText;
 using tignear::sakura::AttributeTextImpl;
 using tignear::icuex::EastAsianWidth;
 using tignear::sakura::Attribute;
+std::list<AttributeTextImpl>& BasicShellContextLineText::Value(){
+	if (m_value.empty()) {
+		return empty;
+	}
+	return m_value;
+}
 const std::list<AttributeTextImpl>& BasicShellContextLineText::Value()const{
 	if (m_value.empty()) {
 		return empty;
@@ -128,15 +134,29 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 }
 
 using tignear::sakura::ShellContext;
-ShellContext::attrtext_iterator BasicShellContextLineText::begin() const{
+ShellContext::attrtext_iterator BasicShellContextLineText::begin(){
 	return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(Value().begin()));
 }
-ShellContext::attrtext_iterator BasicShellContextLineText::end() const{
+ShellContext::attrtext_iterator BasicShellContextLineText::end(){
 	return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(Value().end()));
 }
+std::shared_ptr<void>& BasicShellContextLineText::resource() {
+	return m_resource;
+}
+bool BasicShellContextLineText::operator==(const attrtext_line& obj)const {
+	auto* other = dynamic_cast<const BasicShellContextLineText*>(&obj);
+	if (!other) {
+		return false;
+	}
+	return this == other;
+}
+bool BasicShellContextLineText::operator!=(const attrtext_line& obj)const {
+	return !operator==(obj);
+}
+
 //
 using tignear::sakura::ColorTable;
-const std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable(),std::vector<std::wstring>()) };
+std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable(),std::vector<std::wstring>()) };
 using tignear::sakura::attrtext_iterator_impl;
 void attrtext_iterator_impl::operator++() {
 	++m_elem;
