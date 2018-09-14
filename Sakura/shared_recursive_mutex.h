@@ -37,7 +37,7 @@ namespace tignear::stdex {
 		void lock(void) {
 			std::thread::id this_id = std::this_thread::get_id();
 			if (this_id!=read_owner&&read_count > 0) {
-				read_variable.lock();
+				std::lock_guard lock(read_variable);
 			}
 			if (owner == this_id) {
 				// recursive locking
@@ -66,7 +66,7 @@ namespace tignear::stdex {
 	private:
 		std::atomic<std::thread::id> owner;
 		std::atomic<std::thread::id> read_owner;
-		std::atomic<unsigned int>read_count=0;
+		unsigned int read_count=0;
 		std::mutex read_variable;
 		int count;
 	};
