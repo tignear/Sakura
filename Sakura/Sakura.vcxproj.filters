@@ -87,9 +87,6 @@
     <ClInclude Include="ansi\BasicColorTable.h">
       <Filter>ヘッダー ファイル\ansi</Filter>
     </ClInclude>
-    <ClInclude Include="ConsoleWindowTextArea.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="ConsoleWindow.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -145,6 +142,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="ComHolder.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Dpi.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -208,16 +208,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="DpiAware.manifest">
-      <Filter>リソース ファイル</Filter>
-    </Manifest>
-    <Manifest Include="ComCtrl.manifest">
-      <Filter>リソース ファイル</Filter>
-    </Manifest>
-  </ItemGroup>
-  <ItemGroup>
     <Font Include="..\font\menu.ttf">
       <Filter>リソース ファイル</Filter>
     </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="Sakura.manifest">
+      <Filter>リソース ファイル</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>

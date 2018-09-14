@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "ConsoleWindowTextArea.h"
+#include "ConsoleWindow.h"
 #include "FailToThrow.h"
 using tignear::sakura::ConsoleWindowTextArea;
 using Microsoft::WRL::ComPtr;

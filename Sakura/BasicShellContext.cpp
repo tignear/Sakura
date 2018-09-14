@@ -179,6 +179,14 @@ bool BasicShellContext::UseTerminalEchoBack()const {
 const std::wstring& BasicShellContext::DefaultFont()const {
 	return m_fontmap.at(m_document.GetDefaultAttribute().font);
 }
+BasicShellContextLineText& BasicShellContext::GetCursorY()const {
+	std::lock_guard lock(m_lock);
+	return m_document.GetCursorY();
+}
+size_t BasicShellContext::GetCursorX()const {
+	std::lock_guard lock(m_lock);
+	return m_document.GetCursorX();
+}
 ShellContext::attrtext_document& BasicShellContext::GetAll() {
 	return m_document.GetAll();
 }

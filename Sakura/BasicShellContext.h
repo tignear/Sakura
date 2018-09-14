@@ -14,7 +14,9 @@ namespace tignear::sakura {
 	public:
 
 	protected:
+
 		//ansi parser call backs
+
 		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
 		void FindCSI(std::wstring_view);
 		void FindString(std::wstring_view);
@@ -36,13 +38,14 @@ namespace tignear::sakura {
 		std::atomic<HWND> m_hwnd;
 		std::wstring m_title;
 		mutable std::recursive_mutex m_lock;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*, std::vector<TextUpdateInfoLine>)>> m_text_change_listeners;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*, bool, bool)>> m_layout_change_listeners;
+		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_exit_listeners;
 		BasicShellContextDocument m_document;
 		bool m_use_terminal_echoback;
 		std::vector<std::wstring> m_fontmap;
 		double m_fontsize;
-		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)>> m_text_change_listeners;
-		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*,bool,bool)>> m_layout_change_listeners;
-		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_exit_listeners;
+
 
 		void NotifyLayoutChange(bool,bool);
 		void NotifyTextChange(std::vector<TextUpdateInfoLine>);
@@ -97,6 +100,8 @@ namespace tignear::sakura {
 		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		BasicShellContextLineText& GetCursorY()const override;
+		size_t GetCursorX()const override;
 		void Resize(UINT w, UINT h)override;
 		attrtext_document& GetAll() override;
 		attrtext_document& GetView() override;

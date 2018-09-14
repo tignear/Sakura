@@ -113,7 +113,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\lua\x86;</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+      <AdditionalManifestFiles>Sakura.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -139,8 +139,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>
-      </AdditionalManifestFiles>
+      <AdditionalManifestFiles>Sakura.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -170,7 +169,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\lua\x86;</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>DpiAware.manifest</AdditionalManifestFiles>
+      <AdditionalManifestFiles>Sakura.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -200,8 +199,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
-      <AdditionalManifestFiles>
-      </AdditionalManifestFiles>
+      <AdditionalManifestFiles>Sakura.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -217,6 +215,7 @@
     <ClInclude Include="ComHolder.h" />
     <ClInclude Include="ConsoleWindowTextAreaDirect2D.h" />
     <ClInclude Include="ConsoleWindowTextAreaRender.h" />
+    <ClInclude Include="Dpi.h" />
     <ClInclude Include="ExecutableFilePath.h" />
     <ClInclude Include="MenuWindow.h" />
     <ClInclude Include="DefinedResource.h" />
@@ -224,7 +223,6 @@
     <ClInclude Include="SakuraConfig.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="ConsoleWindowContext.h" />
-    <ClInclude Include="ConsoleWindowTextArea.h" />
     <ClInclude Include="Direct2D.h" />
     <ClInclude Include="EastAsianWidth.h" />
     <ClInclude Include="FailToThrow.h" />
@@ -274,8 +272,7 @@
     <ClCompile Include="tsf\TextStore.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="ComCtrl.manifest" />
-    <Manifest Include="DpiAware.manifest" />
+    <Manifest Include="Sakura.manifest" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="..\font\menu.ttf" />

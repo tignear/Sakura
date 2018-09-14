@@ -31,7 +31,10 @@ bool MenuWindow::RegisterMenuWindowClass(HINSTANCE hinst) {
 }
 std::unique_ptr<MenuWindow> MenuWindow::Create(
 	HINSTANCE hinst,
-	HWND parent,int x,int y,unsigned int w,HMENU hmenu,
+	HWND parent,
+	const tignear::win::dpi::Dpi& dpi,
+	DIP x,DIP y,DIP w,
+	HMENU hmenu,
 	std::function<void()> contextUpdate,
 	Config& conf,
 	std::function<ShellContextFactory*(std::string)> getFactory,
@@ -43,16 +46,16 @@ std::unique_ptr<MenuWindow> MenuWindow::Create(
 	if (cnt == 0) {
 		return std::unique_ptr < MenuWindow > ();
 	}
-	auto r = std::make_unique<MenuWindow>(contextUpdate,conf,getFactory,getResource);
+	auto r = std::make_unique<MenuWindow>(dpi,contextUpdate,conf,getFactory,getResource);
 	if (!RegisterMenuWindowClass(hinst)) {
 		r.reset();
 		return r;
 	}
 	r->m_parent_hwnd = parent;
-	r->m_hwnd = CreateWindowEx(0,m_classname,NULL,WS_VISIBLE|WS_CHILD,x,y,w,m_menu_height,parent,hmenu,hinst,r.get());
-	r->m_tab_hwnd = CreateWindowEx(0, WC_TABCONTROL, NULL, WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE| TCS_FIXEDWIDTH, 0, 0, w-m_menu_button_width, m_menu_height, r->m_hwnd, m_hmenu_tab, hinst, NULL);
-	r->m_menu_button_hwnd = CreateWindowEx(0, WC_BUTTON, _T(""), WS_CHILD | WS_VISIBLE, w - m_menu_button_width, 0, m_menu_button_width, m_menu_height, r->m_hwnd, m_hmenu_menu_button, hinst, NULL);
-	SendMessage(r->m_menu_button_hwnd, WM_SETFONT, (WPARAM)r->m_icon_font, TRUE);
+	r->m_hwnd = CreateWindowEx(0,m_classname,NULL,WS_VISIBLE|WS_CHILD,dpi.Pixel(x),dpi.Pixel(y),dpi.Pixel(w),dpi.Pixel(m_menu_height),parent,hmenu,hinst,r.get());
+	r->m_tab_hwnd = CreateWindowEx(0, WC_TABCONTROL, NULL, WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE| TCS_FIXEDWIDTH, 0, 0,dpi.Pixel(w-m_menu_button_width), dpi.Pixel(m_menu_height), r->m_hwnd, m_hmenu_tab, hinst, NULL);
+	r->m_menu_button_hwnd = CreateWindowEx(0, WC_BUTTON, _T(""), WS_CHILD | WS_VISIBLE,dpi.Pixel(w - m_menu_button_width), 0,dpi.Pixel(m_menu_button_width), dpi.Pixel(m_menu_height), r->m_hwnd, m_hmenu_menu_button, hinst, NULL);
+	r->CreateAndSetFont();
 	r->m_hmenu_menu = CreatePopupMenu();
 	for (auto i = 0U; i < conf.shells.size();++i) {
 		MENUITEMINFO mii = {};
@@ -84,8 +87,10 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	{
 		RECT rect{};
 		GetClientRect(self->m_hwnd, &rect);
-		SetWindowPos(self->m_tab_hwnd, 0,rect.left,rect.top,rect.right-rect.left-m_menu_button_width,rect.bottom-rect.top,SWP_NOZORDER);
-		SetWindowPos(self->m_menu_button_hwnd, 0, rect.right-rect.left - m_menu_button_width, 0, m_menu_button_width, m_menu_height, SWP_NOZORDER);
+		auto&& dpi = self->m_dpi;
+		auto button_w_px = dpi.Pixel(m_menu_button_width);
+		SetWindowPos(self->m_tab_hwnd, 0,rect.left,rect.top,rect.right-rect.left- button_w_px,rect.bottom-rect.top,SWP_NOZORDER);
+		SetWindowPos(self->m_menu_button_hwnd, 0, rect.right-rect.left - button_w_px, 0, button_w_px,dpi.Pixel(m_menu_height), SWP_NOZORDER);
 		break;
 	}
 	case WM_COMMAND:
@@ -111,6 +116,7 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 			self->m_contextUpdate();
 			break;
 		}
+		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
 	default:
 		return DefWindowProc(hwnd,message,wParam,lParam);
@@ -121,7 +127,7 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 HWND MenuWindow::GetHWnd() {
 	return m_hwnd;
 }
-std::shared_ptr<Context> MenuWindow::GetCurrentContext(unsigned int w,unsigned int h) {
+std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
 	if (m_new) {
 		m_new = false;
 		auto sinfo = m_config.shells.at(m_current_context_pos);
@@ -143,7 +149,23 @@ std::shared_ptr<Context> MenuWindow::GetCurrentContext(unsigned int w,unsigned i
 	}
 	TabCtrl_SetCurSel(m_tab_hwnd, m_current_context_pos);
 	return m_contexts.at(m_current_context_pos);
-	
+}
+void MenuWindow::OnDpiChange() {
+	CreateAndSetFont();
+}
+void MenuWindow::CreateAndSetFont(){
+	if (m_icon_font != NULL) {
+		DeleteObject(m_icon_font);
+	}
+	LOGFONT lf{};
+	TCHAR fname[] = _T("icomoon");
+	lf.lfOutPrecision = OUT_OUTLINE_PRECIS;
+	lf.lfQuality = CLEARTYPE_QUALITY;
+	lf.lfHeight = m_dpi.Pixel(m_menu_height);
+	memcpy(lf.lfFaceName, fname, sizeof(fname));
+	m_icon_font = CreateFontIndirect(&lf);
+	SendMessage(m_menu_button_hwnd, WM_SETFONT, (WPARAM)m_icon_font, TRUE);
+	SendMessage(m_tab_hwnd, WM_SETFONT, 0, TRUE);
 }
 //static 
 bool MenuWindow::m_registerstate = false;

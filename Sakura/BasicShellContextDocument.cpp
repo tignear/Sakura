@@ -17,12 +17,13 @@ namespace tignear::sakura {
 	void BasicShellContextDocument::NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine> v) {
 		m_text_change_callback(v);
 	}
-	bool BasicShellContextDocument::FixCursorY() {
+	bool BasicShellContextDocument::FixCursorY(){
+		if (m_text.begin() == m_text.end()) {
+			return false;
+		}
 		if (m_cursorY_itr == m_text.end()) {
-			MoveCursorYUp(1);
-			if (m_cursorY_itr == m_text.end()) {
-				return false;
-			}
+			--m_cursorY_itr;
+			--m_cursorY;
 		}
 		return true;
 	}
@@ -62,19 +63,25 @@ namespace tignear::sakura {
 		}
 		NotifyLayoutChange(false, true);
 	}
+	bool BasicShellContextDocument::CreateIfEnd() {
+		if (m_cursorY_itr != m_text.end()) {
+			return false;
+		}
+		m_text.emplace_back(m_color_sys, m_color_256, m_fontmap);
+		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::NEW, m_text.back())});
+		--m_cursorY_itr;
+		if (m_text.size() > m_max_line) {
+			NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, m_text.front())});
+			m_text.pop_front();
+		}
+		return true;
+	}
 	void BasicShellContextDocument::MoveCursorYDown(size_t y) {
+
 		for (auto i = 0_z; i < y; ++i) {
 			++m_cursorY_itr;
 			++m_cursorY;
-			if (m_cursorY_itr == m_text.end()) {
-				m_text.emplace_back(m_color_sys,m_color_256,m_fontmap);
-				NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::NEW, m_text.back())});
-				--m_cursorY_itr;
-				if (m_text.size() > m_max_line) {
-					NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, m_text.front())});
-					m_text.pop_front();
-				}
-			}
+			CreateIfEnd();
 		}
 		if (m_cursorY  > m_viewcount) {
 			m_viewend_itr = m_text.end();
@@ -183,6 +190,7 @@ namespace tignear::sakura {
 		m_viewend_itr=m_text.end();
 		m_cursorY   =m_viewendpos= 0;
 		m_cursorX = 0;
+		CreateIfEnd();
 		NotifyLayoutChange(true,true);
 	}
 	void BasicShellContextDocument::Remove() {
@@ -230,15 +238,7 @@ namespace tignear::sakura {
 
 		auto back = r.back();
 		r.pop_back();
-		if (m_cursorY_itr == m_text.end()) {
-			m_text.emplace_back(m_color_sys,m_color_256,m_fontmap);
-			NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::NEW, m_text.back())});
-			--m_cursorY_itr;
-			if (m_text.size() > m_max_line) {
-				NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, m_text.front())});
-				m_text.pop_front();
-			}
-		}
+		CreateIfEnd();
 		for (auto&& e : r) {
 			//e += L"\n";
 			if (!e.empty()&&L'\r'==e.back()){
@@ -259,6 +259,16 @@ namespace tignear::sakura {
 	attrtext_document_view_impl& BasicShellContextDocument::GetView() {
 		return m_view;
 	}
+	size_t  BasicShellContextDocument::GetCursorX()const {
+		return static_cast<size_t>(m_cursorX);
+	}
+	BasicShellContextLineText&  BasicShellContextDocument::GetCursorY()const {
+		if (m_cursorY_itr == m_text.end()) {
+			return *std::prev(m_cursorY_itr);
+		}
+		return *m_cursorY_itr;
+	}
+
 	void attrtext_line_iterator_impl::operator++() {
 		++m_elem;
 	}

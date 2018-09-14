@@ -16,7 +16,6 @@ namespace tignear::sakura {
 			DWORD x_count_chars;
 			DWORD y_count_chars;
 		};
-
 	private:
 		bool Init(stdex::tstring, const Options& opt);
 	public:

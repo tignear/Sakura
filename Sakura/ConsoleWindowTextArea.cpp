@@ -2,7 +2,7 @@
 #include <iterator>
 #include "FailToThrow.h"
 #include "ComHolder.h"
-#include "ConsoleWindowTextArea.h"
+#include "ConsoleWindow.h"
 using tignear::sakura::ConsoleWindowTextArea;
 using Microsoft::WRL::ComPtr;
 using tignear::dwrite::TextBuilder;
@@ -71,6 +71,7 @@ LRESULT CALLBACK ConsoleWindowTextArea::WndProc(HWND hwnd, UINT message, WPARAM 
 	case WM_LBUTTONDOWN:
 		SetFocus(hwnd);
 		break;
+
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
@@ -154,13 +155,14 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 	*pfClipped = FALSE;
 	return S_OK;
 }
-void ConsoleWindowTextArea::Init(int x, int y, int w, int h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f,std::shared_ptr<tignear::sakura::cwnd::Context> console) {
+void ConsoleWindowTextArea::Init(DIP x, DIP y, DIP w, DIP h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f,std::shared_ptr<tignear::sakura::cwnd::Context> console) {
 	FailToThrowHR(m_threadmgr->CreateDocumentMgr(&m_docmgr));
 	FailToThrowHR(m_docmgr->CreateContext(m_clientId, 0, dynamic_cast<ITextStoreACP*>(this), &m_context, &m_edit_cookie));
 	FailToThrowHR(m_context->GetProperty(GUID_PROP_ATTRIBUTE, &m_attr_prop));
 	FailToThrowHR(m_context->GetProperty(GUID_PROP_COMPOSING, &m_composition_prop));
 	FailToThrowB(RegisterConsoleWindowTextAreaClass(m_hinst));
-	m_textarea_hwnd = CreateWindowEx(0, m_className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, m_parentHwnd, m, m_hinst, this);
+	auto&& dpi = m_dpi;
+	m_textarea_hwnd = CreateWindowEx(0, m_className, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE,dpi.Pixel(x), dpi.Pixel(y), dpi.Pixel(w), dpi.Pixel(h), m_parentHwnd, m, m_hinst, this);
 	m_d2d = ConsoleWindowTextAreaDirect2DWithHWnd::Create(d2d_f, m_textarea_hwnd);
 	tignear::dwrite::DWriteDrawer::Create(m_d2d->GetFactory(), &m_drawer);
 	m_tbuilder = std::make_unique<TextBuilder>(dwrite_f,
@@ -310,6 +312,9 @@ bool ConsoleWindowTextArea::InterimChar()const {
 }
 bool ConsoleWindowTextArea::UseTerminalEchoBack() {
 	return m_console->shell->UseTerminalEchoBack();
+}
+void ConsoleWindowTextArea::OnDpiChange() {
+	m_d2d->GetRenderTarget()->SetDpi(static_cast<FLOAT>(m_dpi.GetDpi()), static_cast<FLOAT>(m_dpi.GetDpi()));
 }
 void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 
@@ -555,6 +560,7 @@ void ConsoleWindowTextArea::ConfirmCommand() {
 }
 void ConsoleWindowTextArea::UpdateText() {
 	ResetInputtingStringLayout();
+	PostMessage(m_parentHwnd, ConsoleWindow::WM_UPDATE_SCROLLBAR, 0, 0);
 	InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 }
 void ConsoleWindowTextArea::UpdateText(ShellContext* c, std::vector<ShellContext::TextUpdateInfoLine> vec) {
@@ -585,7 +591,7 @@ void ConsoleWindowTextArea::UpdateText(ShellContext* c, std::vector<ShellContext
 			}
 		}
 	}
-
+	PostMessage(m_parentHwnd, ConsoleWindow::WM_UPDATE_SCROLLBAR, 0, 0);
 	InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 }
 
@@ -978,8 +984,8 @@ void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::c
 	m_console->shell->SetPageSize(GetPageSize());
 	SetFocus(m_textarea_hwnd);
 }
-void ConsoleWindowTextArea::Create(HINSTANCE hinst, HWND pwnd, int x, int y, unsigned int w, unsigned int h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
-	auto r = new ConsoleWindowTextArea();
+void ConsoleWindowTextArea::Create(HINSTANCE hinst,HWND pwnd, const tignear::win::dpi::Dpi& dpi, DIP x, DIP y, DIP w, DIP h, HMENU hmenu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console,ConsoleWindowTextArea** pr) {
+	auto r = new ConsoleWindowTextArea(dpi);
 	r->AddRef();
 	r->m_hinst = hinst;
 	r->m_parentHwnd = pwnd;

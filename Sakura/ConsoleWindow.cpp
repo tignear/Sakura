@@ -2,15 +2,18 @@
 #include <commctrl.h>
 #include "ConsoleWindow.h"
 #include "FailToThrow.h"
+#include "Dpi.h"
 using tignear::sakura::ShellContextFactory;
 using tignear::sakura::ConsoleWindow;
 using tignear::sakura::cwnd::Context;
 using tignear::sakura::Config;
 using tignear::sakura::cwnd::Context;
+using namespace tignear::win::dpi;
 std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(
 	HINSTANCE hinst,
 	HWND pwnd,
-	int x, int y,unsigned int w, unsigned int h,
+	const tignear::win::dpi::Dpi& dpi,
+	DIP dip_x, DIP dip_y, DIP dip_w, DIP dip_h,
 	HMENU hmenu, 
 	ITfThreadMgr* threadmgr, 
 	TfClientId cid, 
@@ -18,29 +21,68 @@ std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(
 	ITfDisplayAttributeMgr* attr_mgr, 
 	ID2D1Factory* d2d_f, 
 	IDWriteFactory* dwrite_f, 
-	std::function<std::shared_ptr<Context>(unsigned int w, unsigned int h)> getContext
+	std::function<std::shared_ptr<Context>(DIP w,DIP h)> getContext
 ){
-	auto r = std::make_unique<ConsoleWindow>();
-	auto tareaW = w - m_scrollbar_width;
-	auto tareaH = h-m_scrollbar_width;
+	auto r = std::make_unique<ConsoleWindow>(constructor_tag{},dpi);
+	auto tareaW = dip_w - m_scrollbar_width;
+	auto tareaH = dip_h -m_scrollbar_width;
 	r->m_getContext = getContext;
 	r->m_console=getContext(tareaW,tareaH);
 	r->m_hinst = hinst;
 	FailToThrowB(RegisterConsoleWindowClass(hinst));
 	r->m_parent_hwnd = pwnd;
-	r->m_hwnd=CreateWindowEx(0, m_classname, NULL, WS_OVERLAPPED | WS_CHILD | WS_VISIBLE, x, y, w, h, pwnd,hmenu, hinst, r.get());
-	r->m_scrollbar_column_hwnd =CreateWindowEx(0, WC_SCROLLBAR, NULL,WS_CHILD|WS_VISIBLE| SBS_VERT, tareaW,0, m_scrollbar_width, tareaH,r->m_hwnd,m_hmenu_column_scrollbar,hinst,NULL);
-	r->m_scrollbar_row_hwnd = CreateWindowEx(0, WC_SCROLLBAR, NULL, WS_CHILD | WS_VISIBLE | SBS_HORZ,0, tareaH, tareaW, m_scrollbar_width, r->m_hwnd, m_hmenu_column_scrollbar, hinst, NULL);
+	r->m_hwnd=CreateWindowEx(
+		0,
+		m_classname,
+		NULL, 
+		WS_OVERLAPPED | WS_CHILD | WS_VISIBLE,
+		dpi.Pixel(dip_x) ,
+		dpi.Pixel(dip_y),
+		dpi.Pixel(dip_w), 
+		dpi.Pixel(dip_h),
+		pwnd,
+		hmenu,
+		hinst,
+		r.get()
+	);
+	r->m_scrollbar_column_hwnd =CreateWindowEx(
+		0,
+		WC_SCROLLBAR, 
+		NULL,
+		WS_CHILD|WS_VISIBLE| SBS_VERT,
+		dpi.Pixel(tareaW),
+		0,
+		dpi.Pixel(m_scrollbar_width),
+		dpi.Pixel(tareaH),
+		r->m_hwnd,
+		m_hmenu_column_scrollbar,
+		hinst,
+		NULL
+	);
+	r->m_scrollbar_row_hwnd = CreateWindowEx(
+		0,
+		WC_SCROLLBAR,
+		NULL,
+		WS_CHILD | WS_VISIBLE | SBS_HORZ,
+		0,
+		dpi.Pixel(tareaH),
+		dpi.Pixel(tareaW),
+		dpi.Pixel(m_scrollbar_width),
+		r->m_hwnd,
+		m_hmenu_column_scrollbar,
+		hinst, 
+		NULL
+	);
 	SCROLLINFO sbinfo{};
 	sbinfo.cbSize = sizeof(sbinfo);
 	sbinfo.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
 	sbinfo.nMin = 0;
 	sbinfo.nMax = 20;
 	sbinfo.nPage = 10;
-	SetScrollInfo(r->m_scrollbar_column_hwnd, SB_VERT, &sbinfo, TRUE);
-	ConsoleWindowTextArea::Create(hinst,r->m_hwnd, 0, 0, tareaW, tareaH, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f,r->m_console, &(r->m_textarea));
+	SetScrollInfo(r->m_scrollbar_column_hwnd, SB_CTL, &sbinfo, TRUE);
+	ConsoleWindowTextArea::Create(hinst,r->m_hwnd,r->m_dpi ,0, 0, tareaW,tareaH, m_hmenu_textarea, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f,r->m_console, &(r->m_textarea));
 	r->UpdateScrollBar();
-	r->m_console->shell->AddLayoutChangeListener(std::bind(&ConsoleWindow::OnLayoutChange,std::ref(*r), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	//r->m_console->shell->AddLayoutChangeListener(std::bind(&ConsoleWindow::OnLayoutChange,std::ref(*r), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	return r;
  }
 bool ConsoleWindow::RegisterConsoleWindowClass(HINSTANCE hinst) {
@@ -85,14 +127,15 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 	{			
 		RECT rect;
 		GetClientRect(self->GetHWnd(), &rect);
+		auto sbarw =self->m_dpi.Pixel(m_scrollbar_width);
 		if (self->m_textarea) {
-			SetWindowPos(self->m_textarea->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left - m_scrollbar_width, rect.bottom - rect.top-m_scrollbar_width, SWP_NOOWNERZORDER);
+			SetWindowPos(self->m_textarea->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left - sbarw, rect.bottom - rect.top- sbarw, SWP_NOOWNERZORDER);
 		}
 		if (self->m_scrollbar_column_hwnd) {
-			FailToThrowB(SetWindowPos(self->m_scrollbar_column_hwnd,0, rect.right-m_scrollbar_width, rect.top, m_scrollbar_width, rect.bottom - rect.top-m_scrollbar_width, SWP_NOOWNERZORDER));
+			FailToThrowB(SetWindowPos(self->m_scrollbar_column_hwnd,0, rect.right- sbarw, rect.top, sbarw, rect.bottom - rect.top- sbarw, SWP_NOOWNERZORDER));
 		}
 		if (self->m_scrollbar_row_hwnd) {
-			FailToThrowB(SetWindowPos(self->m_scrollbar_row_hwnd, 0, rect.left, rect.bottom - rect.top - m_scrollbar_width, rect.right - rect.left - m_scrollbar_width, m_scrollbar_width, SWP_NOOWNERZORDER));
+			FailToThrowB(SetWindowPos(self->m_scrollbar_row_hwnd, 0, rect.left, rect.bottom - rect.top - sbarw, rect.right - rect.left - sbarw, sbarw, SWP_NOOWNERZORDER));
 		}
 		break;
 	}
@@ -127,7 +170,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 			info.cbSize = sizeof(info);
 			info.fMask = SIF_TRACKPOS;
 			GetScrollInfo(self->m_scrollbar_row_hwnd, SB_CTL, &info);
-			self->m_textarea->SetOriginX(static_cast<FLOAT>(-info.nTrackPos));
+			self->m_textarea->SetOriginX(static_cast<DIP>(-info.nTrackPos));
 			break;
 		}
 		default:
@@ -136,11 +179,14 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 			info.cbSize = sizeof(info);
 			info.fMask = SIF_POS;
 			GetScrollInfo(self->m_scrollbar_row_hwnd, SB_CTL, &info);
-			self->m_textarea->SetOriginX(static_cast<FLOAT>(-info.nPos));
+			self->m_textarea->SetOriginX(static_cast<DIP>(-info.nPos));
 			break;
 		}
 		}
 		self->UpdateScrollBar();
+		break;
+	case WM_DPICHANGED:
+		PostMessage(self->m_textarea->GetHWnd(), message, wParam, NULL);
 		break;
 	case WM_UPDATE_SCROLLBAR:
 		self->UpdateScrollBar();
@@ -154,8 +200,8 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 HWND ConsoleWindow::GetHWnd() {
 	return m_hwnd;
 }
-void ConsoleWindow::OnLayoutChange(tignear::sakura::ShellContext* shell,bool ,bool) {
-	PostMessage(m_hwnd, WM_UPDATE_SCROLLBAR, 0, 0);
+void ConsoleWindow::OnDpiChange() {
+	m_textarea->OnDpiChange();
 }
 void ConsoleWindow::UpdateScrollBar() {
 	SCROLLINFO sbinfo_c{};
@@ -182,7 +228,7 @@ void ConsoleWindow::SetConsoleContext(std::shared_ptr<tignear::sakura::cwnd::Con
 void ConsoleWindow::ReGetConsoleContext() {
 	RECT rect;
 	GetClientRect(m_textarea->GetHWnd(), &rect);
-	SetConsoleContext(m_getContext(rect.right-rect.left,rect.bottom-rect.top));
+	SetConsoleContext(m_getContext(m_dpi.Dip(rect.right-rect.left),m_dpi.Dip(rect.bottom-rect.top)));
 }
 //static fields
 bool ConsoleWindow::m_registerstate = false;

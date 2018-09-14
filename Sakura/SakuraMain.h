@@ -17,6 +17,7 @@ namespace tignear::sakura {
 			LPTSTR lpCmdLine,
 			int nCmdShow);
 		static int Run();
+		static void Size();
 	private:
 		static HWND m_sakura;
 		static HINSTANCE appInstance;
@@ -30,5 +31,6 @@ namespace tignear::sakura {
 		static Microsoft::WRL::ComPtr<ITfDisplayAttributeMgr> m_attribute_mgr;
 		static std::unordered_map<std::string,std::shared_ptr<void>>  m_resource;
 		static std::unordered_map<std::string, std::unique_ptr<ShellContextFactory>> m_factory;
+		static win::dpi::Dpi m_dpi;
 };
 }

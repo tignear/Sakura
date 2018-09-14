@@ -42,18 +42,25 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	case WM_SIZING:
 	case WM_SIZE:
 	{
-		RECT rect;
-
-		GetClientRect(m_sakura, &rect);
-
-		if (m_console) {
-			SetWindowPos(m_console->GetHWnd(), 0, rect.left, rect.top + MenuWindow::m_menu_height, rect.right - rect.left, rect.bottom - rect.top - MenuWindow::m_menu_height, SWP_NOOWNERZORDER);
-		}
-		if (m_menu) {
-			SetWindowPos(m_menu->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, MenuWindow::m_menu_height, SWP_NOOWNERZORDER);
-		}
+		Size();
 		break;
 
+	}
+	case WM_DPICHANGED:
+	{
+		m_dpi.SetDpi(LOWORD(wParam));
+		LPRECT rect= reinterpret_cast<LPRECT>(lParam);
+		SetWindowPos(hWnd,
+			NULL,
+			rect->left,
+			rect->top,
+			rect->right - rect->left,
+			rect->bottom - rect->top,
+			SWP_NOZORDER | SWP_NOACTIVATE);
+		m_menu->OnDpiChange();
+		m_console->OnDpiChange();
+
+		break;
 	}
 
 	case WM_DESTROY:
@@ -64,7 +71,19 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	}
 	return 0;
 }
+void Sakura::Size() {
+	RECT rect;
 
+	GetClientRect(m_sakura, &rect);
+
+	auto&& m_height_px = Sakura::m_dpi.Pixel(MenuWindow::m_menu_height);
+	if (m_console) {
+		SetWindowPos(m_console->GetHWnd(), 0, rect.left, rect.top + m_height_px, rect.right - rect.left, rect.bottom - rect.top - m_height_px, SWP_NOOWNERZORDER);
+	}
+	if (m_menu) {
+		SetWindowPos(m_menu->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, m_height_px, SWP_NOOWNERZORDER);
+	}
+}
 int Sakura::Main(HINSTANCE hInstance,
 	HINSTANCE,
 	LPTSTR,
@@ -132,9 +151,10 @@ int Sakura::Main(HINSTANCE hInstance,
 	m_menu = MenuWindow::Create(
 		hInstance,
 		m_sakura,
+		m_dpi,
 		0,
 		0,
-		rect.right - rect.left,
+		m_dpi.Dip(rect.right - rect.left),
 		m_menu_hmenu,
 		[]() {
 			if (m_console) {
@@ -152,10 +172,11 @@ int Sakura::Main(HINSTANCE hInstance,
 	m_console = ConsoleWindow::Create(
 		hInstance,
 		m_sakura,
+		m_dpi,
 		0, 
 		MenuWindow::m_menu_height, 
-		rect.right - rect.left, 
-		rect.bottom - rect.top - MenuWindow::m_menu_height,
+		static_cast<FLOAT>(rect.right - rect.left), 
+		static_cast<FLOAT>(rect.bottom - rect.top - MenuWindow::m_menu_height),
 		m_console_hmenu,
 		m_thread_mgr.Get(),
 		m_clientId,
@@ -163,7 +184,7 @@ int Sakura::Main(HINSTANCE hInstance,
 		m_attribute_mgr.Get(),
 		m_d2d_factory.Get(),
 		m_dwrite_factory.Get(),
-		std::function([](unsigned int w,unsigned int h) {
+		std::function([](DIP w,DIP h) {
 			return Sakura::m_menu->GetCurrentContext(w, h);
 		})
 	);
@@ -248,3 +269,4 @@ ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
 ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
 std::unordered_map<std::string, std::shared_ptr<void>> Sakura::m_resource;
 std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory;
+tignear::win::dpi::Dpi Sakura::m_dpi= tignear::win::dpi::Dpi(GetDeviceCaps(GetDC(0), LOGPIXELSX));

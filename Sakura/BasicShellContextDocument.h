@@ -86,6 +86,8 @@ namespace tignear::sakura {
 		std::function<void(bool,bool)> m_layout_change_callback;
 		std::function<void(std::vector<ShellContext::TextUpdateInfoLine>)> m_text_change_callback;
 		bool FixCursorY();
+		bool CreateIfEnd();
+
 		void NotifyLayoutChange(bool x,bool y);
 		void NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine>);
 	public:
@@ -113,7 +115,7 @@ namespace tignear::sakura {
 			m_all(m_text),
 			m_view(m_text,m_viewend_itr,m_viewcount)
 		{
-
+			CreateIfEnd();
 		}
 		void SetSystemColorTable(const ColorTable&);
 		void SetSystemColorTable(const ColorTable&&);
@@ -122,6 +124,8 @@ namespace tignear::sakura {
 		void SetCursorXY(int32_t x,size_t y);
 		void SetCursorX(int32_t x);
 		void SetCursorY(size_t x);
+		size_t GetCursorX()const;
+		BasicShellContextLineText& GetCursorY()const;
 		void MoveCursorX(int32_t x);
 		void MoveCursorYUp(size_t y);
 		void MoveCursorYDown(size_t y);
