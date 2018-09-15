@@ -1,7 +1,5 @@
 #pragma once
 #include <string>
-#include "../EastAsianWidth.h"
-#include <unicode/unistr.h>
 #include <functional>
 namespace tignear::ansi {
 

@@ -5,7 +5,7 @@
 #include <msctf.h>
 #include <wrl.h>
 #include "TextStore.h"
-#include "../FailToThrow.h"
+#include <FailToThrow.h>
 #undef min
 
 using Microsoft::WRL::ComPtr;

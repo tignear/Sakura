@@ -231,6 +231,10 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 	{
 		sv.remove_suffix(1);
 		auto vec = split<wchar_t, std::vector<std::wstring>>(std::wstring( sv ), L";");
+		if (vec.size()<2) {
+			OutputDebugString(_T("Unsupported Opearation\n"));
+			break;
+		}
 		if (vec[0].empty()) {
 			m_document.SetCursorY(0);
 		}

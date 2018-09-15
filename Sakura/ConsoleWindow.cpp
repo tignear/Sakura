@@ -141,6 +141,7 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 	}
 	case WM_VSCROLL:
 		switch (LOWORD(wParam)) {
+		case SB_THUMBPOSITION:
 		case SB_THUMBTRACK:
 		{
 			SCROLLINFO info{};
@@ -159,11 +160,12 @@ LRESULT CALLBACK ConsoleWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, 
 			self->m_textarea->SetViewPosition(info.nPos);
 			break;
 		}
-
 		}
+		self->UpdateScrollBar();
 		break;
 	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
+		case SB_THUMBPOSITION:
 		case SB_THUMBTRACK:
 		{
 			SCROLLINFO info{};

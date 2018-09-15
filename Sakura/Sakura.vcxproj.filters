@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="ヘッダー ファイル\ansi">
-      <UniqueIdentifier>{1e8ad8e2-b666-44ca-b941-66a6bf97738c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ヘッダー ファイル\tsf">
       <UniqueIdentifier>{b7be02e0-c82f-49e0-832b-74f7a9f0e56b}</UniqueIdentifier>
     </Filter>
@@ -33,9 +30,6 @@
     <ClInclude Include="SakuraMain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="FailToThrow.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="TextBuilder.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -48,44 +42,11 @@
     <ClInclude Include="D2DLineUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ShellContext.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="BasicShellContext.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="tstring.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="IOCPMgr.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="split.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="GetHwndFromPid.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="strconv.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\stdafx.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\AnsiParser.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\AttributeText.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="EastAsianWidth.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="TextDrawer.h">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\BasicColorTable.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
     </ClInclude>
     <ClInclude Include="ConsoleWindow.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -105,22 +66,13 @@
     <ClInclude Include="Looper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ShellContextFactory.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="BasicShellContextFactory.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="SakuraConfig.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="DefinedResource.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="MenuWindow.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="ExecutableFilePath.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="ConsoleWindowTextAreaRender.h">
@@ -141,10 +93,7 @@
     <ClInclude Include="NormalShellContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ComHolder.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Dpi.h">
+    <ClInclude Include="EastAsianWidth.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

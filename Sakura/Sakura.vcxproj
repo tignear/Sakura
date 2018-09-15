@@ -72,22 +72,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)icu\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)icu\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)icu\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(ProjectDir)lib\icu\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)icu\include;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -136,7 +136,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>Sakura.manifest</AdditionalManifestFiles>
@@ -196,46 +196,31 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalDependencies>icutu.lib;icuuc.lib;Dwrite.lib;lua53.lib;D2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)icu\lib64;$(SolutionDir)lua\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>Sakura.manifest</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ansi\AnsiParser.h" />
-    <ClInclude Include="ansi\AttributeText.h" />
-    <ClInclude Include="ansi\BasicColorTable.h" />
-    <ClInclude Include="ansi\stdafx.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="BasicShellContextAttributeText.h" />
     <ClInclude Include="BasicShellContextDocument.h" />
     <ClInclude Include="BasicShellContextFactory.h" />
     <ClInclude Include="BasicShellContextLineText.h" />
-    <ClInclude Include="ComHolder.h" />
     <ClInclude Include="ConsoleWindowTextAreaDirect2D.h" />
     <ClInclude Include="ConsoleWindowTextAreaRender.h" />
-    <ClInclude Include="Dpi.h" />
-    <ClInclude Include="ExecutableFilePath.h" />
+    <ClInclude Include="EastAsianWidth.h" />
     <ClInclude Include="MenuWindow.h" />
-    <ClInclude Include="DefinedResource.h" />
     <ClInclude Include="NormalShellContext.h" />
     <ClInclude Include="SakuraConfig.h" />
     <ClInclude Include="ConsoleWindow.h" />
     <ClInclude Include="ConsoleWindowContext.h" />
     <ClInclude Include="Direct2D.h" />
-    <ClInclude Include="EastAsianWidth.h" />
-    <ClInclude Include="FailToThrow.h" />
-    <ClInclude Include="GetHwndFromPid.h" />
-    <ClInclude Include="IOCPMgr.h" />
     <ClInclude Include="Looper.h" />
     <ClInclude Include="SakuraMain.h" />
     <ClInclude Include="shared_recursive_mutex.h" />
-    <ClInclude Include="ShellContext.h" />
-    <ClInclude Include="ShellContextFactory.h" />
-    <ClInclude Include="split.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="strconv.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TextBuilder.h" />
     <ClInclude Include="TextDrawer.h" />
@@ -243,7 +228,6 @@
     <ClInclude Include="tsf\stdafx.h" />
     <ClInclude Include="tsf\TextStore.h" />
     <ClInclude Include="tsf\TextStoreLock.h" />
-    <ClInclude Include="tstring.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicShellContext.cpp" />

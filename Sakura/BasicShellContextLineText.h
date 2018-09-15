@@ -33,6 +33,7 @@ namespace tignear::sakura {
 		int32_t Remove();
 		int32_t RemoveAfter(int32_t p);
 		int32_t RemoveBefore(int32_t p);
+		
 		ShellContext::attrtext_iterator begin() override;
 		ShellContext::attrtext_iterator end() override;
 		std::shared_ptr<void>& resource()override;

@@ -19,7 +19,7 @@ namespace tignear::tsf {
 		std::optional<R> TryWriteLockToCallTS(std::function<R()> fn) {
 			std::optional<std::optional<R>> r = TryWriteLockToCallBase < std::optional<R> >([this, fn] {
 				auto exp = false;
-				if (m_write_lock == 1 && m_ts_write_lock.compare_exchange_weak(exp, true)) {
+				if (m_write_lock == 1 && m_ts_write_lock.compare_exchange_strong(exp, true)) {
 					auto r = fn();
 					m_ts_write_lock = false;
 					return r;
@@ -31,7 +31,7 @@ namespace tignear::tsf {
 		bool TryWriteLockToCallTS(std::function<void()> fn) {
 			std::optional<bool> r = TryWriteLockToCallBase<bool>([this, fn] {
 				auto exp = false;
-				if (m_write_lock == 1 && m_ts_write_lock.compare_exchange_weak(exp, true)) {
+				if (m_write_lock == 1 && m_ts_write_lock.compare_exchange_strong(exp, true)) {
 					fn();
 					m_ts_write_lock = false;
 					return true;
@@ -56,7 +56,7 @@ namespace tignear::tsf {
 		R WriteLockToCallTS(std::function<R()> fn) {
 			std::optional<bool> r = TryWriteLockToCallBase<bool>([this, fn] {
 				auto exp = false;
-				if (m_write_lock == 1 && m_ts_write_lock.compare_exchange_weak(exp, true)) {
+				if (m_write_lock == 1 && m_ts_write_lock.compare_exchange_strong(exp, true)) {
 					fn();
 					m_ts_write_lock = false;
 					return true;

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <unicode/uiter.h>
+#include <algorithm>
 #include "BasicShellContextLineText.h"
 #include "EastAsianWidth.h"
 #include "Looper.h"
@@ -70,10 +71,8 @@ int32_t BasicShellContextLineText::RemoveBefore(int32_t p) {
 	return p;
 }
 
+
 int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& ustr, const Attribute& attr) {
-	/*if (ustr.isEmpty()) {
-		return;
-	}*/
 	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
 	auto eaw = EastAsianWidth(ustr, ambiguous_size);
 	auto r2 = p + eaw;
@@ -97,32 +96,77 @@ int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& us
 				++cnt;
 				continue;
 			}
-			if (r >= static_cast<unsigned>(p)) {
-				if (itr->attribute() == attr) {
-					itr->ustr().insert(cnt, ustr);
-					return r2;
-				}
-				if (r == static_cast<unsigned>(p)) {
-					auto n=std::next(itr);
-					if (n != m_value.end()) {
-						if (n->attribute() == attr) {
-							n->ustr().insert(0, ustr);
-							return r2;
+			if (r >= static_cast<unsigned>(p)) {//‘}“üˆÊ’u‚ð’T‚µo‚µ‚½
+				if (itr->attribute() == attr) {//‘®«‚ª‚¨‚ñ‚È‚¶ê‡
+					if (ustr.length() > itr->ustr().length()+cnt) {//V‚µ‚¢•¶Žš—ñ‚Ì‚Ù‚¤‚ª’·‚¢‚©‚çŒÃ‚¢•¶Žš—ñ‚ðV‚µ‚¢•¶Žš‚Ì‚Ô‚ñÁ‚·
+						itr->ustr().replace(cnt, itr->ustr().length(), ustr);
+						auto removing = ustr.length() - itr->ustr().length()+cnt;
+						while (removing>0) {
+							++itr;
+							if (itr == m_value.end()) {
+								break;
+							}
+							auto nr = std::min(removing, itr->ustr().length());
+							itr->ustr().remove(0, nr);
+							removing -= nr;
 						}
 					}
-					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, m_fontmap, attr);
+					else {
+						itr->ustr().replace(cnt, ustr.length(), ustr);
+					}
 					return r2;
 				}
-				else {
+				if (charitr.getIndex()==0||charitr.getIndex()==charitr.getLength()-1) {//‹«ŠE‚É‚ ‚é‚©‚çŽŸ‚Ì‚Æ‚±‚àŒ©‚Ä‚Ý‚é
+					{
+						auto n = std::next(itr);
+						if (n != m_value.end()) {
+							if (itr->attribute() == attr) {
+								if (ustr.length() > n->ustr().length()) {
+									n->ustr().replace(0, n->ustr().length(), ustr);
+									auto removing = ustr.length() - n->ustr().length();
+									while (removing > 0) {
+										++n;
+										if (n == m_value.end()) {
+											break;
+										}
+										auto nr = std::min(removing, n->ustr().length());
+										n->ustr().remove(0, nr);
+										removing -= nr;
+									}
+								}
+								else {
+									n->ustr().replace(0, ustr.length(), ustr);
+								}
+								return r2;
+							}
+						}
+					}
+					m_value.emplace(itr, ustr, m_ct_sys, m_ct_256, m_fontmap, attr);
+					auto removing = ustr.length();
+					while (removing > 0) {
+						auto nr = std::min(removing, itr->ustr().length());
+						itr->ustr().remove(0, nr);
+						removing -= nr;
+						++itr;
+						if (itr== m_value.end()) {
+							break;
+						}
+					}
+					return r2;
+				}
+				else {//Š„‚èž‚ÞB
 					auto n = std::next(itr);
 					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 					if (n != m_value.end()) {
 						n=std::next(itr);
 					}
-					m_value.emplace(n,icu::UnicodeString(itr->ustr(),cnt),m_ct_sys,m_ct_256,m_fontmap,attr);
+					if (cnt > ustr.length()) {
+						m_value.emplace(n, icu::UnicodeString(itr->ustr(), cnt-ustr.length()), m_ct_sys, m_ct_256, m_fontmap, attr);
+					}
 					itr->ustr().removeBetween(cnt);
+					return r2;
 				}
-				return r2;
+				//throw std::runtime_error("Not expected");
 			}
 			r += EastAsianWidth(uc, ambiguous_size);
 			++cnt;

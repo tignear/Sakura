@@ -1,4 +1,5 @@
 #pragma once
+#include <unicode/unistr.h>
 #include <unicode/ustring.h>
 #include <unordered_map>
 #include "ansi/AttributeText.h"

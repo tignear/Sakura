@@ -833,7 +833,7 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildLayout(Sh
 
 }*/
 void ConsoleWindowTextArea::DrawShellText() {
-	auto height =GetAreaDip().height;
+	DIP height =GetAreaDip().height;
 	auto begin = m_console->shell->GetAll().begin();
 	auto nowY = height;
 	auto end = m_console->shell->GetView().end();
@@ -862,67 +862,87 @@ void ConsoleWindowTextArea::DrawShellText() {
 	if (nowY > 0.0f) {
 		nowY = 0;
 	}
-	DWRITE_TEXT_METRICS met;
+
+	DIP inputting_stringY = 0;
+	DIP inpuuting_string_fixX = 0;
+	bool find_curY = false;
+
 	{
+		DWRITE_TEXT_METRICS met;
+		auto&& curY = m_console->shell->GetCursorY();
 		for (; itr != std::prev(end); ++itr) {
 			ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
 			met = {};
 			layout->GetMetrics(&met);
 			layout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
+			if ((!find_curY) && curY == *itr) {
+				inputting_stringY = nowY;
+				inpuuting_string_fixX = met.width;
+				find_curY = true;
+			}
 			nowY += met.height;
+
 		}
 
 		ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
 		met = {};
 		layout->GetMetrics(&met);
 		layout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
-	}
-	auto&& inputtingstring_layout = GetInputtingStringLayout();
-	
-	//draw caret
-	//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
-	if (m_caret_display) {
-		DWRITE_HIT_TEST_METRICS hitTestMetrics;
-		bool isTrailingHit = false;
-		float caretX, caretY;
-		FailToThrowHR(inputtingstring_layout->HitTestTextPosition(
-			SelectionStart(),
-			isTrailingHit,
-			&caretX,
-			&caretY,
-			&hitTestMetrics
-		));
-		DWORD caretWidth = 1;
-		FailToThrowB(SystemParametersInfo(SPI_GETCARETWIDTH, 0, &caretWidth, 0));
-		DWORD halfCaretWidth = caretWidth / 2u;
-
-		t->FillRectangle({
-			caretX - halfCaretWidth + m_originX+ met.width,
-			hitTestMetrics.top + nowY,
-			caretX + (caretWidth - halfCaretWidth) + m_originX+ met.width,
-			hitTestMetrics.top + hitTestMetrics.height + nowY
-			}, m_d2d->red.Get());
-	}
-	else if (SelectionStart() != SelectionEnd())
-	{
-		UINT32 count;
-		inputtingstring_layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX+met.width, nowY, NULL, 0, &count);
-
-		std::unique_ptr<DWRITE_HIT_TEST_METRICS[]> mats(new DWRITE_HIT_TEST_METRICS[count]);
-		FailToThrowHR(inputtingstring_layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX + met.width, nowY, mats.get(), count, &count));
-
-		for (auto i = 0UL; i < count; ++i)
-		{
-			t->FillRectangle({
-				mats[i].left ,
-				mats[i].top ,
-				mats[i].left + mats[i].width ,
-				mats[i].top + mats[i].height
-				}, m_d2d->red.Get());
+		if ((!find_curY) && curY == *itr) {
+			inputting_stringY = nowY;
+			inpuuting_string_fixX = met.width;
+			find_curY = true;
 		}
 	}
-	inputtingstring_layout->Draw(context.get(), m_drawer.Get(), m_originX + met.width, nowY);
+	if (find_curY) {
 
+		auto&& inputtingstring_layout = GetInputtingStringLayout();
+
+
+		//draw caret
+		//https://stackoverflow.com/questions/28057369/direct2d-createtextlayout-how-to-get-caret-coordinates
+		if (m_caret_display) {
+			DWRITE_HIT_TEST_METRICS hitTestMetrics;
+			bool isTrailingHit = false;
+			float caretX, caretY;
+			FailToThrowHR(inputtingstring_layout->HitTestTextPosition(
+				SelectionStart(),
+				isTrailingHit,
+				&caretX,
+				&caretY,
+				&hitTestMetrics
+			));
+			DWORD caretWidth = 1;
+			FailToThrowB(SystemParametersInfo(SPI_GETCARETWIDTH, 0, &caretWidth, 0));
+			DWORD halfCaretWidth = caretWidth / 2u;
+
+			t->FillRectangle({
+				caretX - halfCaretWidth + m_originX + inpuuting_string_fixX,
+				hitTestMetrics.top + inputting_stringY,
+				caretX + (caretWidth - halfCaretWidth) + m_originX + inpuuting_string_fixX,
+				hitTestMetrics.top + hitTestMetrics.height + inputting_stringY
+				}, m_d2d->red.Get());
+		}
+		else if (SelectionStart() != SelectionEnd())
+		{
+			UINT32 count;
+			inputtingstring_layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX + inpuuting_string_fixX, inputting_stringY, NULL, 0, &count);
+
+			std::unique_ptr<DWRITE_HIT_TEST_METRICS[]> mats(new DWRITE_HIT_TEST_METRICS[count]);
+			FailToThrowHR(inputtingstring_layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX + inpuuting_string_fixX, inputting_stringY, mats.get(), count, &count));
+
+			for (auto i = 0UL; i < count; ++i)
+			{
+				t->FillRectangle({
+					mats[i].left ,
+					mats[i].top ,
+					mats[i].left + mats[i].width ,
+					mats[i].top + mats[i].height
+					}, m_d2d->red.Get());
+			}
+		}
+		inputtingstring_layout->Draw(context.get(), m_drawer.Get(), m_originX + inpuuting_string_fixX, inputting_stringY);
+	}
 }
 void ConsoleWindowTextArea::OnPaint() {
 
