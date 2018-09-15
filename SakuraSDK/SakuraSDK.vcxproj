@@ -136,6 +136,7 @@
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />
     <ClInclude Include="IOCPMgr.h" />
+    <ClInclude Include="PluginEntry.h" />
     <ClInclude Include="ShellContext.h" />
     <ClInclude Include="ShellContextFactory.h" />
     <ClInclude Include="split.h" />

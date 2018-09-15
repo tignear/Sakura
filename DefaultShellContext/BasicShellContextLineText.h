@@ -24,7 +24,7 @@ namespace tignear::sakura {
 		std::shared_ptr<void> m_resource;
 
 	public:
-		BasicShellContextLineText(const ColorTable& ct_sys,const ColorTable& ct_256, const std::vector<std::wstring>& fontmap):
+		BasicShellContextLineText(const ansi::ColorTable& ct_sys,const ansi::ColorTable& ct_256, const std::vector<std::wstring>& fontmap):
 			m_ct_sys(ct_sys),
 			m_ct_256(ct_256),
 			m_fontmap(fontmap){}
@@ -43,8 +43,8 @@ namespace tignear::sakura {
 		int32_t Insert(int32_t,const icu::UnicodeString&, const Attribute& attr);
 	private:
 		std::list<AttributeTextImpl> m_value;
-		const ColorTable& m_ct_sys;
-		const ColorTable& m_ct_256;
+		const ansi::ColorTable& m_ct_sys;
+		const ansi::ColorTable& m_ct_256;
 		const std::vector<std::wstring>& m_fontmap;
 		static std::list<AttributeTextImpl> empty;
 	};

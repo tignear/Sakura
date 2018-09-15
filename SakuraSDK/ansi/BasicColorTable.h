@@ -1,7 +1,9 @@
 #pragma once
 #include <unordered_map>
 namespace tignear::ansi {
-	static inline std::unordered_map<unsigned int,uint32_t> BasicSystemColorTable() {
+	using ColorTable = std::unordered_map<unsigned int, std::uint32_t>;
+
+	static inline ColorTable BasicSystemColorTable() {
 		return {
 		{30,0x000000},
 		{31,0xff0000},
@@ -41,7 +43,7 @@ namespace tignear::ansi {
 		return r << 16 | g << 8 | b;
 	}
 
-	static inline std::unordered_map<unsigned int, uint32_t> Basic256ColorTable() {
+	static inline ColorTable Basic256ColorTable() {
 		std::unordered_map<unsigned int, uint32_t> r{
 		{0,0x000000},
 		{1,0x800000},

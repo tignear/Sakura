@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#undef max
 namespace tignear::stdex {
 	//http://neocat.hatenablog.com/entry/20160521/1463842415
 	//‚ð‰ü•Ï

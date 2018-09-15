@@ -3,5 +3,10 @@
 #include <string>
 //http://marupeke296.com/TIPS_No14_tstring.html
 namespace tignear::stdex {
-	typedef std::basic_string<TCHAR> tstring;
+#ifdef UNICODE
+	using tstring=std::wstring;
+#else
+	using tstring = std::string;
+
+#endif
 }

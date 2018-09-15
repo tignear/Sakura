@@ -78,8 +78,8 @@ namespace tignear::sakura {
 		size_t m_viewcount;
 		int32_t m_cursorX;
 		int32_t m_curorX_save;
-		ColorTable m_color_256;
-		ColorTable m_color_sys;
+		ansi::ColorTable m_color_256;
+		ansi::ColorTable m_color_sys;
 		std::vector<std::wstring> m_fontmap;
 		Attribute m_current_attr;
 		Attribute m_default_attr;
@@ -92,8 +92,8 @@ namespace tignear::sakura {
 		void NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine>);
 	public:
 		BasicShellContextDocument(
-			const ColorTable& color_sys,
-			const ColorTable& color_256,
+			const ansi::ColorTable& color_sys,
+			const ansi::ColorTable& color_256,
 			const std::vector<std::wstring>& fontmap,
 			const Attribute& def,
 			std::function<void(bool,bool)> layout_change,
@@ -117,10 +117,10 @@ namespace tignear::sakura {
 		{
 			CreateIfEnd();
 		}
-		void SetSystemColorTable(const ColorTable&);
-		void SetSystemColorTable(const ColorTable&&);
-		void Set256ColorTable(const ColorTable&);
-		void Set256ColorTable(const ColorTable&&);
+		void SetSystemColorTable(const ansi::ColorTable&);
+		void SetSystemColorTable(const ansi::ColorTable&&);
+		void Set256ColorTable(const ansi::ColorTable&);
+		void Set256ColorTable(const ansi::ColorTable&&);
 		void SetCursorXY(int32_t x,size_t y);
 		void SetCursorX(int32_t x);
 		void SetCursorY(size_t x);

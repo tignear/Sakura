@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
-#include <tchar.h>
+#include <filesystem>
+#include "tstring.h"
 namespace tignear::win {
 
 	//http://www7.plala.or.jp/kfb/program/exedir.html
@@ -10,36 +11,39 @@ namespace tignear::win {
 	public:
 		ExecutableFilePath()
 		{
-			if (GetModuleFileName(NULL, m_Path, MAX_PATH))    //実行ファイルのフルパスを取得
-			{   //取得に成功
-				TCHAR* ptmp = _tcsrchr(m_Path, _T('\\')); // \の最後の出現位置を取得
-				if (ptmp != NULL)
-				{   //ファイル名を削除
-					ptmp = _tcsinc(ptmp);   //一文字進める
-					*ptmp = _T('\0');
+			auto reserve = MAX_PATH;
+			stdex::tstring buf;
+			while (true) {
+				buf.clear();
+				buf.reserve(reserve);
+				auto copyed = GetModuleFileName(NULL, buf.data(), static_cast<DWORD>(buf.capacity()));
+				if (copyed == 0) {
+					throw std::runtime_error("GetModuleFileName is Failed");
 				}
-				else
-				{
-					std::terminate();
+				if (copyed != buf.capacity()) {
+					auto p = std::filesystem::path(buf.c_str());
+					//auto p = std::filesystem::path(std::move(buf));//??? do not working this 
+					p.remove_filename();
+					m_path = p;
+					return;
 				}
-			}
-			else
-			{
-				std::terminate();
+				reserve *= 2;
 			}
 		}
-		const TCHAR* GetPath() const
-		{
-			return m_Path;
+		std::filesystem::path GetPath() {
+			return m_path;
 		}
+		~ExecutableFilePath() {
+			OutputDebugString(_T("???"));
+		}
+	private:
+		std::filesystem::path m_path;
 
-	protected:
-		TCHAR m_Path[MAX_PATH];
 	};
-	static inline const TCHAR* GetExecutableFilePath()
+	static inline std::filesystem::path GetExecutableFilePath()
 	{
-		static ExecutableFilePath path;
-		return path.GetPath();
+		static auto p = ExecutableFilePath().GetPath();
+		return p;
 	}
 
 

@@ -2,9 +2,9 @@
 #include <unicode/unistr.h>
 #include <unicode/ustring.h>
 #include <unordered_map>
-#include "ansi/AttributeText.h"
+#include <ansi/BasicColorTable.h>
+#include <ansi/AttributeText.h>
 namespace tignear::sakura {
-	using ColorTable = std::unordered_map<unsigned int, std::uint32_t>;
 	enum class ColorType :unsigned char{
 		ColorTrue=0,Color256=1,ColorSystem=2
 	};
@@ -69,13 +69,13 @@ namespace tignear::sakura {
 	class AttributeTextImpl:public ansi::AttributeText{
 		std::uint32_t ColorHelper(Color c) const;
 		const Attribute m_attr;
-		const ColorTable& m_system_color_table;
-		const ColorTable& m_256_color_table;
+		const ansi::ColorTable& m_system_color_table;
+		const ansi::ColorTable& m_256_color_table;
 		const std::vector<std::wstring>& m_font_map;
 		mutable icu::UnicodeString m_ustr;
 	public:
-		AttributeTextImpl(const icu::UnicodeString& ustr, const ColorTable& c_system, const ColorTable&c_256,const std::vector<std::wstring>& font) :m_ustr(ustr),m_system_color_table(c_system),m_256_color_table(c_256),m_font_map(font),m_attr(){}
-		AttributeTextImpl(const icu::UnicodeString& ustr, const ColorTable& c_system, const ColorTable&c_256,const std::vector<std::wstring>& font,const  Attribute& attr ) :m_ustr(ustr), m_system_color_table(c_system), m_256_color_table(c_256),m_font_map(font), m_attr(attr) {}
+		AttributeTextImpl(const icu::UnicodeString& ustr, const ansi::ColorTable& c_system, const ansi::ColorTable&c_256,const std::vector<std::wstring>& font) :m_ustr(ustr),m_system_color_table(c_system),m_256_color_table(c_256),m_font_map(font),m_attr(){}
+		AttributeTextImpl(const icu::UnicodeString& ustr, const ansi::ColorTable& c_system, const ansi::ColorTable&c_256,const std::vector<std::wstring>& font,const  Attribute& attr ) :m_ustr(ustr), m_system_color_table(c_system), m_256_color_table(c_256),m_font_map(font), m_attr(attr) {}
 
 		std::wstring_view textW()const override;
 		int32_t length()const override;

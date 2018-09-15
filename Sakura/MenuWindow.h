@@ -47,9 +47,9 @@ public:
 		if (m_icon_font != NULL) {
 			DeleteObject(m_icon_font);
 		}
-		auto ttf = stdex::tstring(win::GetExecutableFilePath());
+		auto ttf = win::GetExecutableFilePath();
 		ttf += _T("\\fonts\\menu.ttf");
-		RemoveFontResourceEx(ttf.c_str(),FR_PRIVATE,NULL);
+		RemoveFontResourceExW(ttf.c_str(),FR_PRIVATE,NULL);
 	}
 	static constexpr DIP m_menu_height = 20;
 	static std::unique_ptr<MenuWindow> Create(HINSTANCE hinst,

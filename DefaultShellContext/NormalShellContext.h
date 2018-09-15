@@ -33,8 +33,8 @@ namespace tignear::sakura {
 		NormalShellContext(
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
 			unsigned int codepage,
-			const ColorTable& c_sys,
-			const ColorTable& c_256,
+			const ansi::ColorTable& c_sys,
+			const ansi::ColorTable& c_256,
 			bool use_terminal_echoback,
 			std::vector<std::wstring> fontmap,
 			double fontsize,

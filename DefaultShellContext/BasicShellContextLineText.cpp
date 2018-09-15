@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <unicode/uiter.h>
 #include <algorithm>
+#include <ansi/BasicColorTable.h>
 #include "BasicShellContextLineText.h"
 #include "EastAsianWidth.h"
 #include "Looper.h"
@@ -199,7 +200,7 @@ bool BasicShellContextLineText::operator!=(const attrtext_line& obj)const {
 }
 
 //
-using tignear::sakura::ColorTable;
+using tignear::ansi::ColorTable;
 std::list<AttributeTextImpl> BasicShellContextLineText::empty{ AttributeTextImpl(L"", ColorTable(), ColorTable(),std::vector<std::wstring>()) };
 using tignear::sakura::attrtext_iterator_impl;
 void attrtext_iterator_impl::operator++() {

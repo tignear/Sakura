@@ -7,6 +7,7 @@
 #include "split.h"
 namespace tignear::sakura {
 	using stdex::For;
+	using ansi::ColorTable;
 	BasicShellContextDocument::TextUpdateInfoLine BasicShellContextDocument::BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus s, ShellContext::attrtext_line& l) {
 		return TextUpdateInfoLine(std::make_unique<TextUpdateInfoImpl>(s,l));
 	}

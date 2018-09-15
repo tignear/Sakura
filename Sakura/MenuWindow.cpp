@@ -40,9 +40,9 @@ std::unique_ptr<MenuWindow> MenuWindow::Create(
 	std::function<ShellContextFactory*(std::string)> getFactory,
 	std::function<std::shared_ptr<void>(std::string)> getResource
 ) {
-	auto ttf = stdex::tstring(win::GetExecutableFilePath());
+	auto ttf = win::GetExecutableFilePath();
 	ttf += _T("\\fonts\\menu.ttf");
-	auto cnt = AddFontResourceEx(ttf.c_str(), FR_PRIVATE, NULL);
+	auto cnt = AddFontResourceExW(ttf.c_str(), FR_PRIVATE, NULL);
 	if (cnt == 0) {
 		return std::unique_ptr < MenuWindow > ();
 	}

@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <unordered_map>
 #include <wrl.h>
-#include "BasicShellContextAttributeText.h"
 #include "MenuWindow.h"
 #include "ConsoleWindow.h"
 namespace tignear::sakura {

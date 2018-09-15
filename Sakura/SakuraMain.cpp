@@ -1,17 +1,18 @@
 #include "stdafx.h"
 #include <string>
+#include  <ansi/BasicColorTable.h>
 #include "FailToThrow.h"
 #include "SakuraMain.h"
 #include "IOCPMgr.h"
-#include "BasicShellContextFactory.h"
 #include "DefinedResource.h"
+#include "PluginLoader.h"
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
 using tignear::sakura::MenuWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
 using tignear::sakura::iocp::IOCPMgr;
-using tignear::sakura::ColorTable;
+using tignear::ansi::ColorTable;
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPTSTR lpCmdLine,
@@ -144,7 +145,6 @@ int Sakura::Main(HINSTANCE hInstance,
 	GetClientRect(m_sakura, (LPRECT)&rect);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
 	m_resource[resource::IOCPMgr] = iocpmgr;
-	m_factory.emplace("BasicShellContextFactory", std::make_unique<BasicShellContextFactory>());
 
 	auto config = LoadConfig("config.lua");
 	auto ishell = config.shells[config.initshell];
@@ -192,6 +192,8 @@ int Sakura::Main(HINSTANCE hInstance,
 	ShowWindow(m_sakura, SW_SHOWDEFAULT);
 	UpdateWindow(m_sakura);
 	auto r= Run();
+	m_menu.reset();
+	m_console.reset();
 	m_thread_mgr->Deactivate();
 	return r;
 }
@@ -268,5 +270,5 @@ std::unique_ptr<MenuWindow> Sakura::m_menu;
 ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
 ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
 std::unordered_map<std::string, std::shared_ptr<void>> Sakura::m_resource;
-std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory;
+std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory=tignear::sakura::loadPlugin(tignear::win::GetExecutableFilePath()/"plugins");
 tignear::win::dpi::Dpi Sakura::m_dpi= tignear::win::dpi::Dpi(GetDeviceCaps(GetDC(0), LOGPIXELSX));
