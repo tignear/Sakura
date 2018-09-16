@@ -11,7 +11,7 @@ namespace tignear::sakura {
 			if (mod == NULL) {
 				continue;
 			}
-			auto func=reinterpret_cast<decltype(&PluginLoad)>(GetProcAddress(mod,"PluginLoad"));
+			auto func=reinterpret_cast<PluginLoadFP>(GetProcAddress(mod,"PluginLoad"));
 			if (func == nullptr) {
 				FreeLibrary(mod);
 				continue;

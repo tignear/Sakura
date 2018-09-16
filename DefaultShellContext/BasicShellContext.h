@@ -25,7 +25,6 @@ namespace tignear::sakura {
 		void FindFF();		
 		void ParseColor(std::wstring_view sv);
 		//other class members
-		static bool IOWorkerStart(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
 		void AddString(std::wstring_view);
@@ -71,12 +70,20 @@ namespace tignear::sakura {
 			m_use_terminal_echoback(use_terminal_echoback),
 			m_fontmap(fontmap),
 			m_fontsize(fontsize),
-			m_hwnd(0)
+			m_hwnd(0),
+			m_out_pipe(0),
+			m_childProcess(0)
 		{
 		}
 		~BasicShellContext() {
-			CloseHandle(m_out_pipe);
-			CloseHandle(m_childProcess);
+			if (m_out_pipe) {
+				CloseHandle(m_out_pipe);
+				m_out_pipe = NULL;
+			}
+			if (m_childProcess) {
+				CloseHandle(m_childProcess);
+				m_childProcess = NULL;
+			}
 		}
 
 		void InputChar(WPARAM c) override;
@@ -110,6 +117,7 @@ namespace tignear::sakura {
 		const std::wstring& DefaultFont()const override;
 		void Lock()override;
 		void Unlock()override;
+		LRESULT OnMessage(LPARAM)override;
 };
 
 }

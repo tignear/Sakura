@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include <DefinedMessage.h>
+#include <PluginEntry.h>
 #include <string>
 #include  <ansi/BasicColorTable.h>
 #include "FailToThrow.h"
@@ -28,6 +30,14 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 {
 	switch (message)
 	{
+	case WM_SHELLCONTEXTMESSAGE:
+	{
+		auto itr = m_contexts.find(wParam);
+		if (std::end(m_contexts) ==itr ) {
+			return static_cast<LPARAM>(LONG_PTR_MAX);
+		}
+		return itr->second->shell->OnMessage(lParam);
+	}
 	case WM_CLOSE:
 		DestroyWindow(hWnd);
 		break;
@@ -156,6 +166,7 @@ int Sakura::Main(HINSTANCE hInstance,
 		0,
 		m_dpi.Dip(rect.right - rect.left),
 		m_menu_hmenu,
+		m_contexts,
 		[]() {
 			if (m_console) {
 				Sakura::m_console->ReGetConsoleContext();
@@ -270,5 +281,6 @@ std::unique_ptr<MenuWindow> Sakura::m_menu;
 ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
 ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
 std::unordered_map<std::string, std::shared_ptr<void>> Sakura::m_resource;
-std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory=tignear::sakura::loadPlugin(tignear::win::GetExecutableFilePath()/"plugins");
+std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory=tignear::sakura::loadPlugin(tignear::win::GetModuleFilePath(NULL)/"plugins");
+std::unordered_map<uintptr_t, std::shared_ptr<tignear::sakura::cwnd::Context>> Sakura::m_contexts = {};
 tignear::win::dpi::Dpi Sakura::m_dpi= tignear::win::dpi::Dpi(GetDeviceCaps(GetDC(0), LOGPIXELSX));

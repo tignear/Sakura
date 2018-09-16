@@ -13,9 +13,6 @@ using iocp::IOCPInfo;
 
 
 
-bool BasicShellContext::IOWorkerStart(shared_ptr<BasicShellContext> s) {
-	return OutputWorker(s);
-}
 bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	auto info = new IOCPInfo{
 		{},
@@ -145,6 +142,9 @@ void BasicShellContext::Lock() {
 }
 void BasicShellContext::Unlock() {
 	m_lock.unlock();
+}
+LRESULT BasicShellContext::OnMessage(LPARAM) {
+	return 0;
 }
 size_t BasicShellContext::GetLineCount()const {
 	//std::lock_guard lock(m_lock);

@@ -21,7 +21,7 @@ namespace {
 }
 namespace tignear::win32 {
 	
-	HWND GetHwndFromProcess(DWORD pid){
+	static inline HWND GetHwndFromProcess(DWORD pid){
 		Info info;
 		info.hwnd = 0;
 		info.pid = pid;

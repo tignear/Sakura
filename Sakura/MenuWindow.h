@@ -1,12 +1,13 @@
 #pragma once
+#include <ModuleFilePath.h>
+#include <deque>
+#include <memory>
 #include "SakuraConfig.h"
 #include "ShellContextFactory.h"
 #include "ConsoleWindowContext.h"
-#include "ExecutableFilePath.h"
 #include "tstring.h"
 #include "Dpi.h"
-#include <deque>
-#include <memory>
+
 namespace tignear::sakura {
 class MenuWindow {
 	static const constexpr HMENU m_hmenu_tab = (HMENU)0x01;
@@ -16,7 +17,7 @@ class MenuWindow {
 	static bool m_registerstate;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static bool RegisterMenuWindowClass(HINSTANCE hinst);
-	std::deque<std::shared_ptr<cwnd::Context>> m_contexts;
+	std::unordered_map<uintptr_t,std::shared_ptr<cwnd::Context>>& m_contexts;
 	const std::function<void()> m_contextUpdate;
 	const std::function<ShellContextFactory*(std::string)> m_getFactory;
 	const std::function<std::shared_ptr<void>(std::string)> m_getResource;
@@ -29,17 +30,18 @@ class MenuWindow {
 	HWND m_menu_button_hwnd;
 	HMENU m_hmenu_menu;
 	bool m_new;
-	int m_current_context_pos;
+	uintptr_t m_current_context_ptr;
 	void CreateAndSetFont();
 public:
-	MenuWindow(const win::dpi::Dpi& dpi,std::function<void()> contextUpdate,Config& config,std::function<ShellContextFactory*(std::string)> getFactory,  std::function<std::shared_ptr<void>(std::string)> getResource):
+	MenuWindow(const win::dpi::Dpi& dpi, std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>>& contexts,std::function<void()> contextUpdate,Config& config,std::function<ShellContextFactory*(std::string)> getFactory,  std::function<std::shared_ptr<void>(std::string)> getResource):
 		m_dpi(dpi),
 		m_contextUpdate(contextUpdate),
 		m_getFactory(getFactory),
 		m_getResource(getResource),
 		m_config(config),
 		m_new(true),
-		m_icon_font(NULL)
+		m_icon_font(NULL),
+		m_contexts(contexts)
 	{
 
 	}
@@ -47,7 +49,7 @@ public:
 		if (m_icon_font != NULL) {
 			DeleteObject(m_icon_font);
 		}
-		auto ttf = win::GetExecutableFilePath();
+		auto ttf = win::GetModuleFilePath(NULL);
 		ttf += _T("\\fonts\\menu.ttf");
 		RemoveFontResourceExW(ttf.c_str(),FR_PRIVATE,NULL);
 	}
@@ -57,6 +59,7 @@ public:
 		const win::dpi::Dpi& dpi,
 		DIP x, DIP y, DIP w,
 		HMENU hmenu,
+		std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>>& contexts,
 		std::function<void()> contextUpdate,
 		Config& conf,
 		std::function<ShellContextFactory*(std::string)>,

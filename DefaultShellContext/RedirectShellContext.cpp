@@ -1,11 +1,11 @@
 #include "stdafx.h"
-#include "NormalShellContext.h"
+#include "RedirectShellContext.h"
 #include "GetHwndFromPid.h"
 
 using tignear::stdex::tstring;
 using tignear::win32::GetHwndFromProcess;
 namespace tignear::sakura {
-	bool NormalShellContext::Init(tstring cmdstr, const Options& opt) {
+	bool RedirectShellContext::Init(tstring cmdstr, const Options& opt) {
 		//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = sizeof(sa);
@@ -73,7 +73,7 @@ namespace tignear::sakura {
 		CloseHandle(out_client_pipe);
 		CloseHandle(pi.hThread);
 		m_childProcess = pi.hProcess;
-		std::thread th([this, pid = pi.dwProcessId, hProcess = pi.hProcess]() {
+		std::thread th([this, pid = pi.dwProcessId, hProcess = m_childProcess]() {
 			while ((!m_hwnd) && WaitForSingleObject(hProcess, 200) == WAIT_TIMEOUT) {
 				m_hwnd = GetHwndFromProcess(pid);
 			}
@@ -83,7 +83,7 @@ namespace tignear::sakura {
 		th.detach();
 		return true;
 	}
-	std::shared_ptr<NormalShellContext> NormalShellContext::Create(
+	std::shared_ptr<RedirectShellContext> RedirectShellContext::Create(
 		tstring cmdstr,
 		std::shared_ptr<iocp::IOCPMgr> iocpmgr,
 		unsigned int codepage,
@@ -99,12 +99,12 @@ namespace tignear::sakura {
 		attr.frColor.color_system = 30;
 		attr.bgColor.type = ColorType::ColorSystem;
 		attr.bgColor.color_system = 47;
-		auto r = std::make_shared<NormalShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
+		auto r = std::make_shared<RedirectShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
 		r->SetSystemColor(colorsys);
 		r->Set256Color(color256);
 		if (r->Init(cmdstr, opt))
 		{
-			if (!r->IOWorkerStart(r)) {
+			if (!r->OutputWorker(r)) {
 				r.reset();
 				return r;
 			}

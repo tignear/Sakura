@@ -48,9 +48,6 @@
     <ClInclude Include="GetHwndFromPid.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ExecutableFilePath.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="FailToThrow.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -66,5 +63,13 @@
     <ClInclude Include="PluginEntry.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="ModuleFilePath.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DefinedMessage.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

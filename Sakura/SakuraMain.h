@@ -30,6 +30,7 @@ namespace tignear::sakura {
 		static Microsoft::WRL::ComPtr<ITfDisplayAttributeMgr> m_attribute_mgr;
 		static std::unordered_map<std::string,std::shared_ptr<void>>  m_resource;
 		static std::unordered_map<std::string, std::unique_ptr<ShellContextFactory>> m_factory;
+		static std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>> m_contexts;
 		static win::dpi::Dpi m_dpi;
 };
 }

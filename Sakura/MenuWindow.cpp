@@ -35,18 +35,19 @@ std::unique_ptr<MenuWindow> MenuWindow::Create(
 	const tignear::win::dpi::Dpi& dpi,
 	DIP x,DIP y,DIP w,
 	HMENU hmenu,
+	std::unordered_map<uintptr_t, std::shared_ptr<Context>>& contexts,
 	std::function<void()> contextUpdate,
 	Config& conf,
 	std::function<ShellContextFactory*(std::string)> getFactory,
 	std::function<std::shared_ptr<void>(std::string)> getResource
 ) {
-	auto ttf = win::GetExecutableFilePath();
+	auto ttf = win::GetModuleFilePath(NULL);
 	ttf += _T("\\fonts\\menu.ttf");
 	auto cnt = AddFontResourceExW(ttf.c_str(), FR_PRIVATE, NULL);
 	if (cnt == 0) {
 		return std::unique_ptr < MenuWindow > ();
 	}
-	auto r = std::make_unique<MenuWindow>(dpi,contextUpdate,conf,getFactory,getResource);
+	auto r = std::make_unique<MenuWindow>(dpi,contexts,contextUpdate,conf,getFactory,getResource);
 	if (!RegisterMenuWindowClass(hinst)) {
 		r.reset();
 		return r;
@@ -69,7 +70,7 @@ std::unique_ptr<MenuWindow> MenuWindow::Create(
 #else
 		mii.dwTypeData = std::get<0>(conf.shells[i]).data();
 #endif
-		InsertMenuItem(r->m_hmenu_menu, 0, TRUE, &mii);
+		InsertMenuItem(r->m_hmenu_menu, i, TRUE, &mii);
 
 	}
 
@@ -104,7 +105,7 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	}else{
 		auto s = LOWORD(wParam);
 		self->m_new=true;
-		self->m_current_context_pos = s;
+		self->m_current_context_ptr = s;
 		self->m_contextUpdate();
 		break;
 	}
@@ -112,7 +113,13 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 	{
 		auto* p = reinterpret_cast<LPNMHDR>(lParam);
 		if (p->hwndFrom==self->m_tab_hwnd) {
-			self->m_current_context_pos = TabCtrl_GetCurSel(self->m_tab_hwnd);
+			TCITEM select;
+			select.mask = TCIF_PARAM;
+			auto cur = TabCtrl_GetCurSel(self->m_tab_hwnd);
+			if (!TabCtrl_GetItem(self->m_tab_hwnd, cur, &select)) {
+				break;
+			}
+			self->m_current_context_ptr = static_cast<WPARAM>(select.lParam);
 			self->m_contextUpdate();
 			break;
 		}
@@ -130,13 +137,18 @@ HWND MenuWindow::GetHWnd() {
 std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
 	if (m_new) {
 		m_new = false;
-		auto sinfo = m_config.shells.at(m_current_context_pos);
-		auto c = std::make_shared<Context>(m_getFactory(std::get<1>(sinfo))->Create(ShellContextFactory::Information{ w,h,std::get<2>(sinfo),m_getResource }));
-		m_contexts.push_back(c);
-		m_current_context_pos =static_cast<int>(m_contexts.size()-1);
+		auto sinfo = m_config.shells.at(m_current_context_ptr);
+		auto c = std::make_shared<Context>(m_getFactory(std::get<1>(sinfo))->Create(ShellContextFactory::Information{w,h,std::get<2>(sinfo),m_getResource }));
+		
+		if (!c) {
+
+		}
+		m_current_context_ptr =reinterpret_cast<LPARAM>(c->shell.get());
+		m_contexts[m_current_context_ptr] = c;
 		TCITEM item{};
-		item.mask = TCIF_TEXT;
+		item.mask = TCIF_TEXT|TCIF_PARAM;
 		item.dwState = TCIS_BUTTONPRESSED;
+		item.lParam = m_current_context_ptr;
 		auto title = c->shell->GetTitle();
 #pragma warning(disable:4189)
 #ifdef UNICODE
@@ -145,10 +157,11 @@ std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
 		auto r = title.empty() ? std::get<0>(sinfo) : wide_to_ansi(std::wstring(title));
 #endif 
 		item.pszText = r.data();
-		TabCtrl_InsertItem(m_tab_hwnd, m_current_context_pos, &item);
+		auto index = TabCtrl_GetItemCount(m_tab_hwnd);
+		TabCtrl_InsertItem(m_tab_hwnd, index, &item);
+		TabCtrl_SetCurSel(m_tab_hwnd, index);
 	}
-	TabCtrl_SetCurSel(m_tab_hwnd, m_current_context_pos);
-	return m_contexts.at(m_current_context_pos);
+	return m_contexts.at(m_current_context_ptr);
 }
 void MenuWindow::OnDpiChange() {
 	CreateAndSetFont();

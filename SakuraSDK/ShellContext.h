@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include "ansi/AttributeText.h"
 namespace tignear::sakura {
+	using SHELL_CONTEXT_ID = WPARAM;
 	class ShellContext {
 
 	public:
@@ -188,6 +189,7 @@ namespace tignear::sakura {
 		virtual const std::wstring& DefaultFont()const=0;//no lock call
 		virtual double FontSize()const =0;//no lock call
 		virtual bool UseTerminalEchoBack()const=0;//no lock call
+		virtual LRESULT OnMessage(LPARAM lparam)=0;
 		virtual ~ShellContext() {};//no lock call.bat not require lock.
 	};
 

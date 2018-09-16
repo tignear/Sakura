@@ -3,7 +3,7 @@
 #include "tstring.h"
 #include "BasicShellContext.h"
 namespace tignear::sakura {
-	class NormalShellContext:public BasicShellContext {
+	class RedirectShellContext :public BasicShellContext {
 
 	public:	
 		struct Options {
@@ -19,7 +19,7 @@ namespace tignear::sakura {
 	private:
 		bool Init(stdex::tstring, const Options& opt);
 	public:
-		static std::shared_ptr<NormalShellContext> Create(
+		static std::shared_ptr<RedirectShellContext> Create(
 			stdex::tstring,
 			std::shared_ptr<iocp::IOCPMgr>,
 			unsigned int codepage,
@@ -30,7 +30,7 @@ namespace tignear::sakura {
 			double fontsize,
 			const Options& opt
 		);
-		NormalShellContext(
+		RedirectShellContext(
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
 			unsigned int codepage,
 			const ansi::ColorTable& c_sys,
