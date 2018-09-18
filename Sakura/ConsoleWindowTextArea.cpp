@@ -100,45 +100,38 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 	{
 		std::swap(acpStart, acpEnd);
 	}
+	FLOAT y=0;
 	auto height = GetAreaDip().height;
-	auto begin = m_console->shell->GetAll().begin();
-	auto nowY = height;
 	auto end = m_console->shell->GetView().end();
-	FLOAT y = 0;
-	FLOAT x = 0;
-	if (end != begin) {
-		--end;
-		auto itr = end;
-		for (; itr != begin; --itr) {
-			ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
-			DWRITE_TEXT_METRICS met;
-			layout->GetMetrics(&met);
-			nowY -= met.height;
-			if (nowY < 0.0f) {
-				break;
-			}
+	--end;
+	auto itr = end;
+	auto begin = m_console->shell->GetAll().begin();
+	auto&& curY = m_console->shell->GetCursorY();
+	auto nowY = height;
+	for (; itr != begin; --itr) {
+		DWRITE_TEXT_METRICS met{};
+		auto lay = GetLayout(*itr);
+		lay->GetMetrics(&met);
+		nowY -= met.height;
+		if (nowY < 0) {
+			break;
 		}
-		DWRITE_TEXT_METRICS met;
-		auto endlayout = GetLayout(*end);
-		endlayout->GetMetrics(&met);
-		x = met.width + m_originX;
-		if (nowY > 0) {
-			y = height - nowY;
-		}
-		else {
-			y = height - met.height;
+		if (*itr == curY) {
+			y = nowY;
 		}
 	}
-
-
+	if (nowY>0) {
+		y = height - nowY;
+	}
 	HRESULT hr;
 	UINT32 count;
-	auto layout = GetInputtingStringLayout();
-	if (( hr= layout->HitTestTextRange(acpStart, acpEnd- acpStart, x, y, NULL, 0, &count))!=E_NOT_SUFFICIENT_BUFFER) {
+	auto iss=static_cast<UINT32>(m_console->shell->GetCursorXWStringPos());
+	auto layout = BuildCurosorYLayoutWithX();
+	if (( hr= layout->HitTestTextRange(iss+acpStart, acpEnd-acpStart, 0, y, NULL, 0, &count))!=E_NOT_SUFFICIENT_BUFFER) {
 		FailToThrowHR(hr);
 	}
 	auto mats = std::make_unique<DWRITE_HIT_TEST_METRICS[]>(count);
-	FailToThrowHR(layout->HitTestTextRange(+ acpStart, acpEnd - acpStart, x, y, mats.get(), count, &count));
+	FailToThrowHR(layout->HitTestTextRange(iss + acpStart, acpEnd - acpStart, 0, y, mats.get(), count, &count));
 	LONG left = LONG_MAX, top = LONG_MAX, right = 0, bottom = 0;
 	for (auto i = 0UL; i < count; ++i)
 	{
@@ -559,7 +552,7 @@ void ConsoleWindowTextArea::ConfirmCommand() {
 	Sink()->OnTextChange(0, &change);
 }
 void ConsoleWindowTextArea::UpdateText() {
-	ResetInputtingStringLayout();
+	//ResetInputtingStringLayout();
 	PostMessage(m_parentHwnd, ConsoleWindow::WM_UPDATE_SCROLLBAR, 0, 0);
 	InvalidateRect(m_textarea_hwnd, NULL, FALSE);
 }
@@ -576,14 +569,14 @@ void ConsoleWindowTextArea::UpdateText(ShellContext* c, std::vector<ShellContext
 					met = {};
 					GetLayout(e2)->GetMetrics(&met);
 					if (e.line() != e2 && m_text_width < met.width) {
-
+						m_text_width = met.width;
 					}
 				}
 			}
 		}
 		else {
-			auto layout = BuildLayout(e.line());
-			e.line().resource() = std::make_shared<com::ComHolder<IDWriteTextLayout1>>(layout);
+			e.line().resource().reset();
+			auto layout=GetLayout(e.line());
 			DWRITE_TEXT_METRICS met{};
 			layout->GetMetrics(&met);
 			if (m_text_width < met.width) {
@@ -625,7 +618,7 @@ static inline ComPtr<R> convertColor(TF_DA_COLOR& color, ID2D1RenderTarget* t, R
 		return ifNone;
 	}
 }
-Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::GetInputtingStringLayout() {
+/*Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::GetInputtingStringLayout() {
 	if (m_d2d->inputtingstring_layout) {
 		return m_d2d->inputtingstring_layout;
 	}
@@ -690,18 +683,21 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildInputting
 		}
 	}
 	return layout;
-}
+}*/
 Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::GetLayout(ShellContext::attrtext_line& l) {
 	if (l.resource()&& std::static_pointer_cast<com::ComHolder<IDWriteTextLayout1>>(l.resource())->ptr) {
 		return std::static_pointer_cast<com::ComHolder<IDWriteTextLayout1>>(l.resource())->ptr;
 	}
-	l.resource() = std::make_shared<com::ComHolder<IDWriteTextLayout1>>(BuildLayout(l));
-	return std::static_pointer_cast<com::ComHolder<IDWriteTextLayout1>>(l.resource())->ptr;
+	auto pair = BuildLayout(l);
+	if (pair.first) {
+		l.resource() = std::make_shared<com::ComHolder<IDWriteTextLayout1>>(pair.second);
+	}
+	return pair.second;
 }
-Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildLayout(ShellContext::attrtext_line& l) {
+std::pair<bool,Microsoft::WRL::ComPtr<IDWriteTextLayout1>> ConsoleWindowTextArea::BuildLayout(ShellContext::attrtext_line& l){
 	auto&& t = m_d2d->GetRenderTarget();
 	auto rc = GetAreaDip();
-
+	auto allowCaching = true;
 	std::wstring ftext;
 	auto&& end = l.end();
 	for (auto itr = l.begin(); itr != end; ++itr) {
@@ -737,6 +733,7 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildLayout(Sh
 		auto fralpha = 1.0f;
 
 		if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+			allowCaching = false;
 			fralpha = 0;
 		}
 		else if (itr->faint()) {
@@ -754,9 +751,111 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildLayout(Sh
 		layout->SetDrawingEffect(effect.Get(), range);
 		strcnt = nstrcnt;
 	}
+	return { allowCaching,layout };
+}
+Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildCurosorYLayoutWithX() {
+	auto&& t = m_d2d->GetRenderTarget();
+	auto rc = GetAreaDip();
+	auto allowCaching = true;
+	std::wstring ftext;
+	auto&& l = m_console->shell->GetCursorY();
+	auto&& end = l.end();
+	for (auto itr = l.begin(); itr != end; ++itr) {
+		ftext += itr->textW();
+	}
+	auto iss = m_console->shell->GetCursorXWStringPos();
+	ftext.replace(iss,std::min(ftext.length(),InputtingString().length()),InputtingString());
+	ComPtr<IDWriteTextLayout1> layout = m_tbuilder->CreateTextLayout(ftext, rc.width, rc.height);
+	{
+		layout->SetCharacterSpacing(0, 0, 0, { 0,static_cast<UINT32>(ftext.length()) });
+		layout->SetPairKerning(false, { 0,static_cast<UINT32>(ftext.length()) });
+		layout->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, m_linespacing, m_baseline);
+		layout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+	}
+
+	int32_t strcnt = 0;
+	for (auto itr = l.begin(); itr != l.end(); ++itr) {
+		auto nstrcnt = strcnt + itr->length();
+		DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
+		if (itr->bold()) {
+			layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
+		}
+		if (itr->italic()) {
+			layout->SetFontStyle(DWRITE_FONT_STYLE_ITALIC, range);
+		}
+		if (itr->underline()) {
+			layout->SetUnderline(true, range);
+		}
+		if (itr->crossed_out()) {
+			layout->SetStrikethrough(true, range);
+		}
+		ComPtr<ID2D1SolidColorBrush> bgbrush;
+		t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()), &bgbrush);
+		ComPtr<ID2D1SolidColorBrush> frbrush;
+		auto fralpha = 1.0f;
+
+		if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+			allowCaching = false;
+			fralpha = 0;
+		}
+		else if (itr->faint()) {
+			fralpha = 0.75f;
+		}
+		t->CreateSolidColorBrush(D2D1::ColorF(itr->textColor(), fralpha), &frbrush);
+		ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
+			bgbrush.Get(),
+			frbrush.Get(),
+			itr->underline() ? std::make_unique<DWriteDrawerEffectUnderline>(
+				LineStyle_Solid,
+				false,
+				frbrush.Get()) : std::unique_ptr<DWriteDrawerEffectUnderline>()
+		);
+		layout->SetDrawingEffect(effect.Get(), range);
+		strcnt = nstrcnt;
+	}
+	ComPtr<IEnumTfRanges> enumRanges;
+	FailToThrowHR(m_attr_prop->EnumRanges(m_edit_cookie, &enumRanges, NULL));
+	ComPtr<ITfRange> range;
+	while (enumRanges->Next(1, &range, NULL) == S_OK) {
+		VARIANT var;
+		try {
+			VariantInit(&var);
+			if (!(m_attr_prop->GetValue(m_edit_cookie, range.Get(), &var) == S_OK && var.vt == VT_I4)) {
+				continue;
+			}
+			GUID guid;
+			FailToThrowHR(m_category_mgr->GetGUID((TfGuidAtom)var.lVal, &guid));
+			ComPtr<ITfDisplayAttributeInfo> dispattrinfo;
+			FailToThrowHR(m_attribute_mgr->GetDisplayAttributeInfo(guid, &dispattrinfo, NULL));
+			TF_DISPLAYATTRIBUTE attr;
+			dispattrinfo->GetAttributeInfo(&attr);
+			//attrÇ…ëÆê´Ç™ì¸Ç¡ÇƒÇ¢ÇÈÇÃÇ≈ëÆê´Ç…äÓÇ√Ç¢Çƒï`âÊÇ≥ÇπÇÈ
+			ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
+				convertColor(attr.crBk, t, m_d2d->transparency.Get()).Get(),
+				convertColor(attr.crText, t, m_d2d->textColor.Get()).Get(),
+				attr.lsStyle == TF_LS_NONE ? std::unique_ptr<DWriteDrawerEffectUnderline>() : std::make_unique<DWriteDrawerEffectUnderline>(convertLineStyle(attr.lsStyle),
+					static_cast<bool>(attr.fBoldLine),
+					convertColor(attr.crLine, t, m_d2d->textColor.Get()).Get())
+			);
+			ComPtr<ITfRangeACP> rangeAcp;
+			range.As(&rangeAcp);
+			LONG start, length;
+			if (FAILED(rangeAcp->GetExtent(&start, &length))) {
+				continue;
+			}
+			DWRITE_TEXT_RANGE write_range{ static_cast<UINT32>(start+iss), static_cast<UINT32>(length+iss) };
+			layout->SetDrawingEffect(effect.Get(), write_range);
+			layout->SetUnderline(effect->underline ? TRUE : FALSE, write_range);
+			VariantClear(&var);
+		}
+		catch (...)
+		{
+			VariantClear(&var);
+			throw;
+		}
+	}
 	return layout;
 }
-
 /*Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildLayout()  {
 	auto rc = GetAreaDip();
 	auto&& t = m_d2d->GetRenderTarget();
@@ -863,40 +962,42 @@ void ConsoleWindowTextArea::DrawShellText() {
 		nowY = 0;
 	}
 
-	DIP inputting_stringY = 0;
-	DIP inpuuting_string_fixX = 0;
-	bool find_curY = false;
 
+	ComPtr<IDWriteTextLayout1> curYlayout;
+	DIP curY_Y=0;
 	{
 		DWRITE_TEXT_METRICS met;
 		auto&& curY = m_console->shell->GetCursorY();
 		for (; itr != std::prev(end); ++itr) {
-			ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
 			met = {};
-			layout->GetMetrics(&met);
-			layout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
-			if ((!find_curY) && curY == *itr) {
-				inputting_stringY = nowY;
-				inpuuting_string_fixX = met.width;
-				find_curY = true;
+			if ((!curYlayout) && curY == *itr) {
+				curY_Y = nowY;
+				curYlayout = BuildCurosorYLayoutWithX();
+				curYlayout->GetMetrics(&met);
+				curYlayout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
+			}
+			else {
+				ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
+				layout->GetMetrics(&met);
+				layout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
 			}
 			nowY += met.height;
 
 		}
 
-		ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
-		met = {};
-		layout->GetMetrics(&met);
-		layout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
-		if ((!find_curY) && curY == *itr) {
-			inputting_stringY = nowY;
-			inpuuting_string_fixX = met.width;
-			find_curY = true;
+
+		if ((!curYlayout) && curY == *itr) {
+			curY_Y = nowY;
+			curYlayout = BuildCurosorYLayoutWithX();
+			curYlayout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
+		}
+		else {
+			ComPtr<IDWriteTextLayout1> layout = GetLayout(*itr);
+			layout->Draw(context.get(), m_drawer.Get(), m_originX, nowY);
 		}
 	}
-	if (find_curY) {
-
-		auto&& inputtingstring_layout = GetInputtingStringLayout();
+	if (curYlayout) {
+		auto iss = static_cast<UINT32>(m_console->shell->GetCursorXWStringPos());
 
 
 		//draw caret
@@ -905,8 +1006,8 @@ void ConsoleWindowTextArea::DrawShellText() {
 			DWRITE_HIT_TEST_METRICS hitTestMetrics;
 			bool isTrailingHit = false;
 			float caretX, caretY;
-			FailToThrowHR(inputtingstring_layout->HitTestTextPosition(
-				SelectionStart(),
+			FailToThrowHR(curYlayout->HitTestTextPosition(
+				SelectionStart()+iss,
 				isTrailingHit,
 				&caretX,
 				&caretY,
@@ -917,19 +1018,19 @@ void ConsoleWindowTextArea::DrawShellText() {
 			DWORD halfCaretWidth = caretWidth / 2u;
 
 			t->FillRectangle({
-				caretX - halfCaretWidth + m_originX + inpuuting_string_fixX,
-				hitTestMetrics.top + inputting_stringY,
-				caretX + (caretWidth - halfCaretWidth) + m_originX + inpuuting_string_fixX,
-				hitTestMetrics.top + hitTestMetrics.height + inputting_stringY
+				caretX - halfCaretWidth + m_originX + 0,
+				hitTestMetrics.top + curY_Y,
+				caretX + (caretWidth - halfCaretWidth) + m_originX,
+				hitTestMetrics.top + hitTestMetrics.height + curY_Y
 				}, m_d2d->red.Get());
 		}
 		else if (SelectionStart() != SelectionEnd())
 		{
 			UINT32 count;
-			inputtingstring_layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX + inpuuting_string_fixX, inputting_stringY, NULL, 0, &count);
+			curYlayout->HitTestTextRange(iss+SelectionStart(), SelectionEnd() - SelectionStart(), m_originX , curY_Y, NULL, 0, &count);
 
 			std::unique_ptr<DWRITE_HIT_TEST_METRICS[]> mats(new DWRITE_HIT_TEST_METRICS[count]);
-			FailToThrowHR(inputtingstring_layout->HitTestTextRange(SelectionStart(), SelectionEnd() - SelectionStart(), m_originX + inpuuting_string_fixX, inputting_stringY, mats.get(), count, &count));
+			FailToThrowHR(curYlayout->HitTestTextRange(iss+SelectionStart(), SelectionEnd() - SelectionStart(), m_originX, curY_Y, mats.get(), count, &count));
 
 			for (auto i = 0UL; i < count; ++i)
 			{
@@ -941,7 +1042,6 @@ void ConsoleWindowTextArea::DrawShellText() {
 					}, m_d2d->red.Get());
 			}
 		}
-		inputtingstring_layout->Draw(context.get(), m_drawer.Get(), m_originX + inpuuting_string_fixX, inputting_stringY);
 	}
 }
 void ConsoleWindowTextArea::OnPaint() {
@@ -970,12 +1070,15 @@ void ConsoleWindowTextArea::OnPaint() {
 	});
 }
 void ConsoleWindowTextArea::SetConsoleContext(std::shared_ptr<tignear::sakura::cwnd::Context> console) {
-	if (m_console) {
+	
+	if (m_console&&m_console->shell) {
 		m_console->shell->RemoveLayoutChangeListener(m_layout_change_listener_removekey);
 		m_console->shell->RemoveTextChangeListener(m_text_change_listener_removekey);
 	}
-
 	m_console =console;
+	if (!m_console) {
+		return;
+	}
 	m_layout_change_listener_removekey = m_console->shell->AddLayoutChangeListener([this](ShellContext*,auto x,auto y) {
 		InvalidateRect(this->GetHWnd(), NULL, FALSE);
 	});

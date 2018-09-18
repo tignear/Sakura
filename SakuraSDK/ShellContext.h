@@ -31,7 +31,7 @@ namespace tignear::sakura {
 			attrtext_iterator(std::unique_ptr<attrtext_iterator_innner> inner):m_inner(std::move(inner)){
 				
 			}
-			attrtext_iterator(attrtext_iterator& self):m_inner(std::unique_ptr<attrtext_iterator_innner>(self.m_inner->clone())) {
+			attrtext_iterator(const attrtext_iterator& self):m_inner(std::unique_ptr<attrtext_iterator_innner>(self.m_inner->clone())) {
 				
 			}
 			using iterator_category = std::forward_iterator_tag;
@@ -171,7 +171,7 @@ namespace tignear::sakura {
 		virtual void SetPageSize(size_t count)=0;//no lock call
 		virtual size_t GetViewStart()const=0;//no lock call
 		virtual attrtext_line& GetCursorY()const=0;
-		virtual size_t GetCursorX()const = 0;
+		virtual size_t GetCursorXWStringPos()const = 0;//no lock call.wstring_view position
 		virtual void SetViewStart(size_t)=0;//no lock call
 		virtual uintptr_t AddTextChangeListener(std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)>)const=0;//no lock call
 		virtual void RemoveTextChangeListener(uintptr_t)const = 0;//no lock call
@@ -189,8 +189,10 @@ namespace tignear::sakura {
 		virtual const std::wstring& DefaultFont()const=0;//no lock call
 		virtual double FontSize()const =0;//no lock call
 		virtual bool UseTerminalEchoBack()const=0;//no lock call
+		virtual void Terminate()=0;
 		virtual LRESULT OnMessage(LPARAM lparam)=0;
-		virtual ~ShellContext() {};//no lock call.bat not require lock.
+		virtual ~ShellContext() {
+		};//no lock call.bat not require lock.
 	};
 
 }

@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "RedirectShellContext.h"
 #include "GetHwndFromPid.h"
+#include <ProcessTree.h>
 
 using tignear::stdex::tstring;
 using tignear::win32::GetHwndFromProcess;
 namespace tignear::sakura {
-	bool RedirectShellContext::Init(tstring cmdstr, const Options& opt) {
+	bool RedirectShellContext::CreateShell(std::shared_ptr<RedirectShellContext> s,tstring cmdstr, const Options& opt) {
 		//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = sizeof(sa);
@@ -25,8 +26,8 @@ namespace tignear::sakura {
 
 		++m_process_count;
 
-		m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
-		if (m_out_pipe == INVALID_HANDLE_VALUE) {
+		s->m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
+		if (s->m_out_pipe == INVALID_HANDLE_VALUE) {
 			//auto le = GetLastError();
 			return false;
 		}
@@ -63,8 +64,8 @@ namespace tignear::sakura {
 #pragma warning(disable:4996)
 		cmdstr.copy(cmd.get(), len);
 #pragma warning(default:4996)
-		m_iocpmgr->Attach(m_out_pipe);
-
+		s->m_iocpmgr->Attach(s->m_out_pipe);
+		
 		if (!CreateProcess(NULL, cmd.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, opt.environment, opt.current_directory, &si, &pi)) {
 			auto le = GetLastError();
 			OutputDebugStringW(std::to_wstring(le).c_str());
@@ -72,15 +73,14 @@ namespace tignear::sakura {
 		}
 		CloseHandle(out_client_pipe);
 		CloseHandle(pi.hThread);
-		m_childProcess = pi.hProcess;
-		std::thread th([this, pid = pi.dwProcessId, hProcess = m_childProcess]() {
-			while ((!m_hwnd) && WaitForSingleObject(hProcess, 200) == WAIT_TIMEOUT) {
-				m_hwnd = GetHwndFromProcess(pid);
+		s->m_childProcess = pi.hProcess;
+		s->m_thread=std::thread([s, pid = pi.dwProcessId, hProcess = s->m_childProcess,&hwnd=s->m_hwnd]() {
+			while ((!hwnd) && WaitForSingleObject(hProcess, 200) == WAIT_TIMEOUT) {
+				hwnd = GetHwndFromProcess(pid);
 			}
 			WaitForSingleObject(hProcess, INFINITE);
-			NotifyExit();
+			s->NotifyExit();
 		});
-		th.detach();
 		return true;
 	}
 	std::shared_ptr<RedirectShellContext> RedirectShellContext::Create(
@@ -102,7 +102,7 @@ namespace tignear::sakura {
 		auto r = std::make_shared<RedirectShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
 		r->SetSystemColor(colorsys);
 		r->Set256Color(color256);
-		if (r->Init(cmdstr, opt))
+		if (CreateShell(r,cmdstr, opt))
 		{
 			if (!r->OutputWorker(r)) {
 				r.reset();
@@ -115,6 +115,11 @@ namespace tignear::sakura {
 			r.reset();
 			return r;
 		}
-
+	}
+	void RedirectShellContext::Terminate() {
+		win32::TerminateProcessTree(win32::ProcessTree(GetProcessId(m_childProcess)));
+		if (m_thread.joinable()) {
+			m_thread.join();
+		}
 	}
 }

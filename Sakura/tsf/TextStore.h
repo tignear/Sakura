@@ -29,6 +29,7 @@ namespace tignear::tsf {
 		virtual LONG SelectionEnd()const=0;
 		virtual TsActiveSelEnd ActiveSelEnd()const=0;
 		virtual bool InterimChar()const =0;
+		virtual ~TextStore() {}
 	public:
 		/*
 		ItextStoreAcp
@@ -215,6 +216,8 @@ namespace tignear::tsf {
 		void RequestAsyncLock(DWORD);
 		void PushAsyncCallQueue(bool write, std::function<void()>);
 		void CallAsync();
-
+		void UnregisterTextStore() {
+			m_sink.Reset();
+		}
 	};
 }

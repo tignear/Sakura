@@ -20,54 +20,6 @@
 #include "ConsoleWindowContext.h"
 #include "Dpi.h"
 #include "tsf/TextStore.h"
-
-namespace tignear::sakura {
-	class ConsoleWindowTextArea;
-	class ConsoleWindow {
-		static constexpr HMENU m_hmenu_textarea=(HMENU)0x01;
-		static constexpr HMENU m_hmenu_column_scrollbar =(HMENU)0x02;
-		static constexpr HMENU m_hmenu_row_scrollbar = (HMENU)0x03;
-		static constexpr DIP m_scrollbar_width = 15;
-		
-		Microsoft::WRL::ComPtr<ConsoleWindowTextArea> m_textarea;
-		HWND m_parent_hwnd;
-		HWND m_hwnd;
-		HWND m_tab_hwnd;
-		HWND m_scrollbar_column_hwnd;
-		HWND m_scrollbar_row_hwnd;
-		HINSTANCE m_hinst;
-		static bool m_registerstate;
-		static bool RegisterConsoleWindowClass(HINSTANCE hinst);
-		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-		//void OnLayoutChange(ShellContext* shell,bool,bool);
-		void UpdateScrollBar();
-		std::shared_ptr<cwnd::Context> m_console;
-		void SetConsoleContext(std::shared_ptr<cwnd::Context>);
-		std::function<std::shared_ptr<cwnd::Context>(DIP w, DIP h)> m_getContext;
-		const win::dpi::Dpi& m_dpi;
-		struct constructor_tag { explicit constructor_tag() = default; };
-	public:
-		ConsoleWindow(constructor_tag,const win::dpi::Dpi& dpi) :m_dpi(dpi){}
-		static constexpr UINT WM_UPDATE_SCROLLBAR = WM_USER + 0x0001;
-		static constexpr LPCTSTR m_classname=_T("ConsoleWindow");
-		static std::unique_ptr<ConsoleWindow> Create(HINSTANCE,
-			HWND,
-			const win::dpi::Dpi& dpi,
-			DIP x, DIP y, DIP w, DIP dip_h,
-			HMENU,
-			ITfThreadMgr* threadmgr, 
-			TfClientId,
-			ITfCategoryMgr* cate_mgr,
-			ITfDisplayAttributeMgr* attr_mgr,
-			ID2D1Factory*,
-			IDWriteFactory*,
-			std::function<std::shared_ptr<cwnd::Context>(DIP w,DIP h)> getContext);
-		void ReGetConsoleContext();
-		HWND GetHWnd();
-		void OnDpiChange();
-	};
-}
-
 namespace tignear::sakura {
 	class ConsoleWindowTextArea :public tsf::TextStore, public ITfContextOwnerCompositionSink {
 	private:
@@ -114,7 +66,6 @@ namespace tignear::sakura {
 		const win::dpi::Dpi& m_dpi;
 		void Init(DIP x, DIP y, DIP w, DIP h, HMENU m, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context>);
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-		ConsoleWindowTextArea(const win::dpi::Dpi& dpi):m_dpi(dpi) {}
 		void OnSetFocus();
 		void OnPaint();
 		void DrawShellText();
@@ -130,10 +81,11 @@ namespace tignear::sakura {
 		bool UseTerminalEchoBack();
 
 		Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetLayout(ShellContext::attrtext_line& line);
-		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildLayout(ShellContext::attrtext_line& line);
-		Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetInputtingStringLayout();
-		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildInputtingStringLayout();
-		void ResetInputtingStringLayout();
+		std::pair<bool,Microsoft::WRL::ComPtr<IDWriteTextLayout1>> BuildLayout(ShellContext::attrtext_line& line);
+		Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildCurosorYLayoutWithX();
+		//Microsoft::WRL::ComPtr<IDWriteTextLayout1> GetInputtingStringLayout();
+		//Microsoft::WRL::ComPtr<IDWriteTextLayout1> BuildInputtingStringLayout();
+		//void ResetInputtingStringLayout();
 		void Selection(std::function<void(LONG&, LONG&, TsActiveSelEnd&, bool&)>) override;
 		void Selection(std::function<void(LONG&, LONG&)>)override;
 		void InputtingString(std::function<void(std::wstring&)>)override;
@@ -146,13 +98,14 @@ namespace tignear::sakura {
 		FLOAT m_baseline;
 		uintptr_t m_layout_change_listener_removekey;
 		uintptr_t m_text_change_listener_removekey;
+		explicit ConsoleWindowTextArea(const win::dpi::Dpi& dpi) :m_dpi(dpi) {}
 
 	public:
 
 		static bool RegisterConsoleWindowTextAreaClass(HINSTANCE hinst);//call once.but automatic call when create.
-		static void Create(HINSTANCE, HWND,const win::dpi::Dpi& dpi, DIP x, DIP y, DIP w, DIP h, HMENU, ITfThreadMgr* threadmgr, TfClientId, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory*, IDWriteFactory*, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea**);
-		inline static void Create(HWND parent,const win::dpi::Dpi& dpi, DIP x, DIP y, DIP w, DIP h, HMENU menu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea** pr) {
-			return Create(reinterpret_cast<HINSTANCE>(GetWindowLongPtr(parent, GWLP_HINSTANCE)), parent, dpi,x, y, w, h, menu, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, console, pr);
+		static void Create(HINSTANCE, HWND, const win::dpi::Dpi& dpi, DIP x, DIP y, DIP w, DIP h, HMENU, ITfThreadMgr* threadmgr, TfClientId, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory*, IDWriteFactory*, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea**);
+		inline static void Create(HWND parent, const win::dpi::Dpi& dpi, DIP x, DIP y, DIP w, DIP h, HMENU menu, ITfThreadMgr* threadmgr, TfClientId cid, ITfCategoryMgr* cate_mgr, ITfDisplayAttributeMgr* attr_mgr, ID2D1Factory* d2d_f, IDWriteFactory* dwrite_f, std::shared_ptr<tignear::sakura::cwnd::Context> console, ConsoleWindowTextArea** pr) {
+			return Create(reinterpret_cast<HINSTANCE>(GetWindowLongPtr(parent, GWLP_HINSTANCE)), parent, dpi, x, y, w, h, menu, threadmgr, cid, cate_mgr, attr_mgr, d2d_f, dwrite_f, console, pr);
 		}
 		const HWND GetParentHwnd()
 		{
@@ -170,7 +123,7 @@ namespace tignear::sakura {
 			return m_ref_cnt;
 		}
 		ULONG STDMETHODCALLTYPE Release()override {
-			m_ref_cnt--;
+			--m_ref_cnt;
 			if (m_ref_cnt <= 0) {
 				delete this;
 				return 0;
@@ -218,24 +171,19 @@ namespace tignear::sakura {
 		*/
 		void SetConsoleContext(std::shared_ptr<cwnd::Context> console);
 
-		~ConsoleWindowTextArea() {
-			m_docmgr->Pop(0);
-		}
+
 		void SetViewPosition(size_t t) {
 			m_console->shell->SetViewStart(t);
 		}
-		D2D1_SIZE_F GetAreaDip() {
+		D2D1_SIZE_F GetAreaDip()const {
 			return m_d2d->GetRenderTarget()->GetSize();
 		}
 
 		FLOAT GetTextWidthDip() {
-			auto lay = GetLayout(m_console->shell->GetCursorY());
+			auto lay = BuildCurosorYLayoutWithX();
 			DWRITE_TEXT_METRICS met{};
 			lay->GetMetrics(&met);
-			auto&& curY_width = met.width;
-			met = {};
-			GetInputtingStringLayout()->GetMetrics(&met);
-			return std::max(m_text_width, curY_width + met.width);
+			return std::max(m_text_width,  met.width);
 		}
 		void SetOriginX(FLOAT origX) {
 			m_originX = origX;
@@ -247,5 +195,70 @@ namespace tignear::sakura {
 		size_t GetPageSize() {
 			return static_cast<size_t>(GetAreaDip().height / m_linespacing + 1);
 		}
+		~ConsoleWindowTextArea() {
+			OutputDebugStringA("aaa");
+		}
+		void UnregisterTextStore() {
+			m_docmgr->Pop(0);
+			m_docmgr.Reset();
+			m_attribute_mgr.Reset();
+			m_attr_prop.Reset();
+			m_category_mgr.Reset();
+			m_context.Reset();
+			m_composition_prop.Reset();
+			m_threadmgr.Reset();
+			m_console.reset();
+			TextStore::UnregisterTextStore();
+		}
 	};
 }
+namespace tignear::sakura {
+	class ConsoleWindow {
+		static constexpr HMENU m_hmenu_textarea=(HMENU)0x01;
+		static constexpr HMENU m_hmenu_column_scrollbar =(HMENU)0x02;
+		static constexpr HMENU m_hmenu_row_scrollbar = (HMENU)0x03;
+		static constexpr DIP m_scrollbar_width = 15;
+		
+		Microsoft::WRL::ComPtr<ConsoleWindowTextArea> m_textarea;
+		HWND m_parent_hwnd;
+		HWND m_hwnd;
+		HWND m_tab_hwnd;
+		HWND m_scrollbar_column_hwnd;
+		HWND m_scrollbar_row_hwnd;
+		HINSTANCE m_hinst;
+		static bool m_registerstate;
+		static bool RegisterConsoleWindowClass(HINSTANCE hinst);
+		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+		//void OnLayoutChange(ShellContext* shell,bool,bool);
+		void UpdateScrollBar();
+		std::shared_ptr<cwnd::Context> m_console;
+		void SetConsoleContext(std::shared_ptr<cwnd::Context>);
+		std::function<std::shared_ptr<cwnd::Context>(DIP w, DIP h)> m_getContext;
+		const win::dpi::Dpi& m_dpi;
+		struct constructor_tag { explicit constructor_tag() = default; };
+	public:
+		ConsoleWindow(constructor_tag,const win::dpi::Dpi& dpi) :m_dpi(dpi){}
+		~ConsoleWindow() {
+			m_textarea->UnregisterTextStore();
+		}
+		static constexpr UINT WM_UPDATE_SCROLLBAR = WM_USER + 0x0001;
+		static constexpr LPCTSTR m_classname=_T("ConsoleWindow");
+		static std::unique_ptr<ConsoleWindow> Create(HINSTANCE,
+			HWND,
+			const win::dpi::Dpi& dpi,
+			DIP x, DIP y, DIP w, DIP dip_h,
+			HMENU,
+			ITfThreadMgr* threadmgr, 
+			TfClientId,
+			ITfCategoryMgr* cate_mgr,
+			ITfDisplayAttributeMgr* attr_mgr,
+			ID2D1Factory*,
+			IDWriteFactory*,
+			std::function<std::shared_ptr<cwnd::Context>(DIP w,DIP h)> getContext);
+		void ReGetConsoleContext();
+		HWND GetHWnd();
+		void OnDpiChange();
+	};
+}
+
+

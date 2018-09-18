@@ -29,13 +29,38 @@ bool MenuWindow::RegisterMenuWindowClass(HINSTANCE hinst) {
 	m_registerstate = true;
 	return true;
 }
+INT MenuWindow::GetTabIndexFromId(LPARAM id) {
+	auto cnt = TabCtrl_GetItemCount(m_tab_hwnd);
+	for (auto i = 0; i < cnt; ++i) {
+		TC_ITEM item{};
+		item.mask = TCIF_PARAM;
+		TabCtrl_GetItem(m_tab_hwnd, i, &item);
+		if (id == item.lParam) {
+			return i;
+		}
+	}
+	return -1;
+}
+void MenuWindow::RemoveTab(LPARAM id) {
+	auto i = GetTabIndexFromId(id);
+	if (i == TabCtrl_GetCurSel(m_tab_hwnd)) {
+		auto cnew = std::max(0, i - 1);
+		TabCtrl_SetCurSel(m_tab_hwnd,cnew);
+		TC_ITEM item{};
+		item.mask = TCIF_PARAM;
+		TabCtrl_GetItem(m_tab_hwnd, cnew, &item);
+		m_current_context_ptr = item.lParam;
+	}
+	TabCtrl_DeleteItem(m_tab_hwnd, i);
+}
 std::unique_ptr<MenuWindow> MenuWindow::Create(
 	HINSTANCE hinst,
 	HWND parent,
 	const tignear::win::dpi::Dpi& dpi,
 	DIP x,DIP y,DIP w,
 	HMENU hmenu,
-	std::unordered_map<uintptr_t, std::shared_ptr<Context>>& contexts,
+	const std::unordered_map<uintptr_t, std::shared_ptr<Context>>& contexts,
+	std::function<void(std::shared_ptr<Context>)> newContxet,
 	std::function<void()> contextUpdate,
 	Config& conf,
 	std::function<ShellContextFactory*(std::string)> getFactory,
@@ -47,7 +72,7 @@ std::unique_ptr<MenuWindow> MenuWindow::Create(
 	if (cnt == 0) {
 		return std::unique_ptr < MenuWindow > ();
 	}
-	auto r = std::make_unique<MenuWindow>(dpi,contexts,contextUpdate,conf,getFactory,getResource);
+	auto r = std::make_unique<MenuWindow>(dpi,contexts, newContxet,contextUpdate,conf,getFactory,getResource);
 	if (!RegisterMenuWindowClass(hinst)) {
 		r.reset();
 		return r;
@@ -104,8 +129,7 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 		break;
 	}else{
 		auto s = LOWORD(wParam);
-		self->m_new=true;
-		self->m_current_context_ptr = s;
+		self->m_new_index = s;
 		self->m_contextUpdate();
 		break;
 	}
@@ -135,16 +159,20 @@ HWND MenuWindow::GetHWnd() {
 	return m_hwnd;
 }
 std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
-	if (m_new) {
-		m_new = false;
-		auto sinfo = m_config.shells.at(m_current_context_ptr);
+	if (m_new_index!=-1) {
+		auto sinfo = m_config.shells.at(m_new_index);
 		auto c = std::make_shared<Context>(m_getFactory(std::get<1>(sinfo))->Create(ShellContextFactory::Information{w,h,std::get<2>(sinfo),m_getResource }));
-		
-		if (!c) {
-
+		m_new_index = -1;
+		if (!c->shell) {
+			throw std::runtime_error("create context failed");
 		}
 		m_current_context_ptr =reinterpret_cast<LPARAM>(c->shell.get());
-		m_contexts[m_current_context_ptr] = c;
+		m_newContext(c);
+		c->shell->AddExitListener([this](auto* e) {
+			auto k = reinterpret_cast<uintptr_t>(e);
+			RemoveTab(k);
+			m_contextUpdate();
+		});
 		TCITEM item{};
 		item.mask = TCIF_TEXT|TCIF_PARAM;
 		item.dwState = TCIS_BUTTONPRESSED;
@@ -161,7 +189,11 @@ std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
 		TabCtrl_InsertItem(m_tab_hwnd, index, &item);
 		TabCtrl_SetCurSel(m_tab_hwnd, index);
 	}
-	return m_contexts.at(m_current_context_ptr);
+	auto r=m_contexts.find(m_current_context_ptr);
+	if (r == m_contexts.end()) {
+		return std::shared_ptr<Context>();
+	}
+	return r->second;
 }
 void MenuWindow::OnDpiChange() {
 	CreateAndSetFont();

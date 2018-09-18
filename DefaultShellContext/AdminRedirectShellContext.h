@@ -12,8 +12,10 @@ namespace tignear::sakura {
 			LPCTSTR current_directory;
 		};
 	private:
-		bool Init(stdex::tstring,stdex::tstring, const Options& opt);
+		static bool CreateShell(std::shared_ptr<AdminRedirectShellContext> s,stdex::tstring,stdex::tstring, const Options& opt);
 		static bool WorkerStart(std::shared_ptr<AdminRedirectShellContext>);
+		HANDLE m_childProcess=0;
+		std::thread m_thread;
 	public:
 		static std::shared_ptr<AdminRedirectShellContext> Create(
 			HINSTANCE,
@@ -47,6 +49,7 @@ namespace tignear::sakura {
 				def
 			) {}
 		LRESULT OnMessage(LPARAM)override;
-
+		void Terminate()override;
+		~AdminRedirectShellContext();
 	};
 }

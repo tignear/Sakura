@@ -17,7 +17,9 @@ namespace tignear::sakura {
 			DWORD y_count_chars;
 		};
 	private:
-		bool Init(stdex::tstring, const Options& opt);
+		static bool CreateShell(std::shared_ptr<RedirectShellContext> s,stdex::tstring, const Options& opt);
+		HANDLE m_childProcess;
+		std::thread m_thread;
 	public:
 		static std::shared_ptr<RedirectShellContext> Create(
 			stdex::tstring,
@@ -50,5 +52,14 @@ namespace tignear::sakura {
 				fontsize,
 				def
 			) {}
+		void Terminate()override;
+		~RedirectShellContext() {
+			if (m_childProcess) {
+				CloseHandle(m_childProcess);
+			}
+			if (m_thread.joinable()) {
+				m_thread.detach();
+			}
+		}
 	};
 }

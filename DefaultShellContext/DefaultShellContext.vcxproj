@@ -193,7 +193,6 @@
     <ClCompile Include="BasicShellContextDocument.cpp" />
     <ClCompile Include="RedirectShellContextFactory.cpp" />
     <ClCompile Include="BasicShellContextLineText.cpp" />
-    <ClCompile Include="DefaultShellContext.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="RedirectShellContext.cpp" />
     <ClCompile Include="stdafx.cpp">

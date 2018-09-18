@@ -2,6 +2,9 @@
 #include <memory>
 #include <stdexcept>
 #include <algorithm>
+#include <unicode/uchar.h>
+#include <unicode/schriter.h>
+#include "EastAsianWidth.h"
 #include "BasicShellContextDocument.h"
 #include "Looper.h"
 #include "split.h"
@@ -40,11 +43,11 @@ namespace tignear::sakura {
 	void BasicShellContextDocument::Set256ColorTable(const ColorTable&& t) {
 		m_color_256 = t;
 	}
-	void BasicShellContextDocument::SetCursorXY(int32_t x, size_t y) {
+	void BasicShellContextDocument::SetCursorXY(size_t x, size_t y) {
 		SetCursorX(x);
 		SetCursorY(y);
 	}
-	void BasicShellContextDocument::SetCursorX(int32_t x) {
+	void BasicShellContextDocument::SetCursorX(size_t x) {
 		m_cursorX = x;
 		NotifyLayoutChange(true, false);
 	}
@@ -261,7 +264,34 @@ namespace tignear::sakura {
 		return m_view;
 	}
 	size_t  BasicShellContextDocument::GetCursorX()const {
-		return static_cast<size_t>(m_cursorX);
+		return m_cursorX;
+	}
+	size_t BasicShellContextDocument::CalcWStringPosCache()const {
+		const auto& l =decltype(m_text)::const_iterator(m_cursorY_itr)->Value();
+
+		size_t cnt=0;
+		size_t nowEAW = 0;
+		auto end = l.cend();
+		for (auto itr = l.cbegin(); itr != end&&nowEAW<m_cursorX;++itr) {
+			auto charitr = icu::StringCharacterIterator(itr->ustr());
+			for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
+				if ((u_getCombiningClass(uc) != 0)) {
+					charitr.next();
+					++cnt;
+					continue;
+				}
+				++cnt;
+				nowEAW += icuex::EastAsianWidth(uc,2);//MAGIC_NUMBER
+			}
+		}
+		return cnt;
+	}
+	size_t  BasicShellContextDocument::GetCursorXWStringPos()const {
+		if (m_cursorX_wstringpos_cache_update) {
+			m_cursorX_wstringpos_cache=CalcWStringPosCache();
+			m_cursorX_wstringpos_cache_update = false;
+		}
+		return static_cast<size_t>(m_cursorX_wstringpos_cache);
 	}
 	BasicShellContextLineText&  BasicShellContextDocument::GetCursorY()const {
 		if (m_cursorY_itr == m_text.end()) {

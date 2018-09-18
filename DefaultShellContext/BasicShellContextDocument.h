@@ -76,8 +76,8 @@ namespace tignear::sakura {
 		//size_t m_origin;
 		size_t m_viewendpos;
 		size_t m_viewcount;
-		int32_t m_cursorX;
-		int32_t m_curorX_save;
+		size_t m_cursorX;
+		size_t m_curorX_save;
 		ansi::ColorTable m_color_256;
 		ansi::ColorTable m_color_sys;
 		std::vector<std::wstring> m_fontmap;
@@ -85,9 +85,11 @@ namespace tignear::sakura {
 		Attribute m_default_attr;
 		std::function<void(bool,bool)> m_layout_change_callback;
 		std::function<void(std::vector<ShellContext::TextUpdateInfoLine>)> m_text_change_callback;
+		mutable bool m_cursorX_wstringpos_cache_update;
+		mutable size_t m_cursorX_wstringpos_cache;
+		size_t CalcWStringPosCache()const;
 		bool FixCursorY();
 		bool CreateIfEnd();
-
 		void NotifyLayoutChange(bool x,bool y);
 		void NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine>);
 	public:
@@ -121,10 +123,11 @@ namespace tignear::sakura {
 		void SetSystemColorTable(const ansi::ColorTable&&);
 		void Set256ColorTable(const ansi::ColorTable&);
 		void Set256ColorTable(const ansi::ColorTable&&);
-		void SetCursorXY(int32_t x,size_t y);
-		void SetCursorX(int32_t x);
+		void SetCursorXY(size_t x,size_t y);
+		void SetCursorX(size_t x);
 		void SetCursorY(size_t x);
 		size_t GetCursorX()const;
+		size_t GetCursorXWStringPos()const;
 		BasicShellContextLineText& GetCursorY()const;
 		void MoveCursorX(int32_t x);
 		void MoveCursorYUp(size_t y);

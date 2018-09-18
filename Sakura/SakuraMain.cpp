@@ -21,7 +21,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	int nCmdShow)
 {
 	CoInitialize(NULL);
-	auto r= Sakura::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	int r;
+	{
+		Sakura s;
+		Sakura::m_sakura = &s;
+		r=Sakura::m_sakura->Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	}
 	CoUninitialize();
 	return r;
 }
@@ -32,8 +37,8 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	{
 	case WM_SHELLCONTEXTMESSAGE:
 	{
-		auto itr = m_contexts.find(wParam);
-		if (std::end(m_contexts) ==itr ) {
+		auto itr = m_sakura->m_contexts.find(wParam);
+		if (std::end(m_sakura->m_contexts) ==itr ) {
 			return static_cast<LPARAM>(LONG_PTR_MAX);
 		}
 		return itr->second->shell->OnMessage(lParam);
@@ -42,8 +47,8 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		DestroyWindow(hWnd);
 		break;
 	case WM_SETFOCUS:
-		if (m_console) {
-			if (SetFocus(m_console->GetHWnd()) == NULL) {
+		if (m_sakura->m_console) {
+			if (SetFocus(m_sakura->m_console->GetHWnd()) == NULL) {
 				DestroyWindow(hWnd);
 				break;
 			}
@@ -53,13 +58,13 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	case WM_SIZING:
 	case WM_SIZE:
 	{
-		Size();
+		m_sakura->Size();
 		break;
 
 	}
 	case WM_DPICHANGED:
 	{
-		m_dpi.SetDpi(LOWORD(wParam));
+		m_sakura->m_dpi.SetDpi(LOWORD(wParam));
 		LPRECT rect= reinterpret_cast<LPRECT>(lParam);
 		SetWindowPos(hWnd,
 			NULL,
@@ -68,8 +73,8 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			rect->right - rect->left,
 			rect->bottom - rect->top,
 			SWP_NOZORDER | SWP_NOACTIVATE);
-		m_menu->OnDpiChange();
-		m_console->OnDpiChange();
+		m_sakura->m_menu->OnDpiChange();
+		m_sakura->m_console->OnDpiChange();
 
 		break;
 	}
@@ -85,7 +90,7 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 void Sakura::Size() {
 	RECT rect;
 
-	GetClientRect(m_sakura, &rect);
+	GetClientRect(m_hwnd, &rect);
 
 	auto&& m_height_px = Sakura::m_dpi.Pixel(MenuWindow::m_menu_height);
 	if (m_console) {
@@ -100,7 +105,12 @@ int Sakura::Main(HINSTANCE hInstance,
 	LPTSTR,
 	int)
 {
+	
 	appInstance = hInstance;
+
+	m_plugins = tignear::sakura::loadPlugin(tignear::win::GetModuleFilePath(NULL) / "plugins");
+	m_factory = tignear::sakura::loadShellContext(m_plugins);
+
 	WNDCLASS wc;
 	setlocale(LC_CTYPE, "JPN");
 
@@ -118,7 +128,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	if (!RegisterClass(&wc)) {
 		return -1;
 	}
-	m_sakura=CreateWindowEx(
+	m_hwnd=CreateWindowEx(
 		0,      
 		className,  
 		_T("Sakura"), 
@@ -152,7 +162,7 @@ int Sakura::Main(HINSTANCE hInstance,
 
 
 	RECT rect;
-	GetClientRect(m_sakura, (LPRECT)&rect);
+	GetClientRect(m_hwnd, (LPRECT)&rect);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
 	m_resource[resource::IOCPMgr] = iocpmgr;
 
@@ -160,29 +170,47 @@ int Sakura::Main(HINSTANCE hInstance,
 	auto ishell = config.shells[config.initshell];
 	m_menu = MenuWindow::Create(
 		hInstance,
-		m_sakura,
+		m_hwnd,
 		m_dpi,
 		0,
 		0,
 		m_dpi.Dip(rect.right - rect.left),
 		m_menu_hmenu,
 		m_contexts,
-		[]() {
+		[this](auto c){
+			m_contexts[reinterpret_cast<uintptr_t>(c->shell.get())] = c;
+			c->shell->AddExitListener(
+				[this](auto e) {
+					auto k = reinterpret_cast<uintptr_t>(e);
+					auto f=m_contexts.find(k);
+					if (f == m_contexts.end()) {
+						return;
+					}
+					m_contexts.erase(f);
+					if (m_contexts.empty()) {
+						SendMessage(m_hwnd,WM_DESTROY,0,0);
+						return;
+					}
+
+				}
+			);
+		},
+		[this]() {
 			if (m_console) {
 				Sakura::m_console->ReGetConsoleContext();
 			}
 		},
 		config,
-		[](std::string k) {
-		return Sakura::m_factory.at(k).get();
+		[this](std::string k) {
+			return m_factory.at(k).get();
 		},
-		[](std::string k) {
-		return Sakura::m_resource.at(k);
-	}
+		[this](std::string k) {
+			return m_resource.at(k);
+		}
 	);
 	m_console = ConsoleWindow::Create(
 		hInstance,
-		m_sakura,
+		m_hwnd,
 		m_dpi,
 		0, 
 		MenuWindow::m_menu_height, 
@@ -195,16 +223,19 @@ int Sakura::Main(HINSTANCE hInstance,
 		m_attribute_mgr.Get(),
 		m_d2d_factory.Get(),
 		m_dwrite_factory.Get(),
-		std::function([](DIP w,DIP h) {
-			return Sakura::m_menu->GetCurrentContext(w, h);
+		std::function([this](DIP w,DIP h) {
+			return m_menu->GetCurrentContext(w, h);
 		})
 	);
 
-	ShowWindow(m_sakura, SW_SHOWDEFAULT);
-	UpdateWindow(m_sakura);
+	ShowWindow(m_hwnd, SW_SHOWDEFAULT);
+	UpdateWindow(m_hwnd);
 	auto r= Run();
-	m_menu.reset();
-	m_console.reset();
+	for (auto itr = m_contexts.begin(); itr != m_contexts.end();) {
+		auto e = itr->second->shell;
+		itr = m_contexts.erase(itr);
+		e->Terminate();
+	}
 	m_thread_mgr->Deactivate();
 	return r;
 }
@@ -270,17 +301,4 @@ int Sakura::Run() {
 	}
 }
 //static fields
-HWND Sakura::m_sakura;
-HINSTANCE Sakura::appInstance;
-Microsoft::WRL::ComPtr<ITfThreadMgr> Sakura::m_thread_mgr;
-TfClientId Sakura::m_clientId;
-Microsoft::WRL::ComPtr<ID2D1Factory> Sakura::m_d2d_factory;
-Microsoft::WRL::ComPtr<IDWriteFactory> Sakura::m_dwrite_factory;
-std::unique_ptr<ConsoleWindow> Sakura::m_console;
-std::unique_ptr<MenuWindow> Sakura::m_menu;
-ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
-ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
-std::unordered_map<std::string, std::shared_ptr<void>> Sakura::m_resource;
-std::unordered_map<std::string, std::unique_ptr<tignear::sakura::ShellContextFactory>> Sakura::m_factory=tignear::sakura::loadPlugin(tignear::win::GetModuleFilePath(NULL)/"plugins");
-std::unordered_map<uintptr_t, std::shared_ptr<tignear::sakura::cwnd::Context>> Sakura::m_contexts = {};
-tignear::win::dpi::Dpi Sakura::m_dpi= tignear::win::dpi::Dpi(GetDeviceCaps(GetDC(0), LOGPIXELSX));
+tignear::sakura::Sakura* Sakura::m_sakura;

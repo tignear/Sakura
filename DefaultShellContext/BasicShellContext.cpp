@@ -16,7 +16,11 @@ using iocp::IOCPInfo;
 bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	auto info = new IOCPInfo{
 		{},
-		[s](DWORD readCnt) {
+		[w=std::weak_ptr(s)](DWORD readCnt) {
+			auto s=w.lock();
+			if (!s) {
+				return;
+			}
 			s->OutputWorkerHelper(readCnt,s);
 		}
 	};
@@ -183,7 +187,7 @@ BasicShellContextLineText& BasicShellContext::GetCursorY()const {
 	std::lock_guard lock(m_lock);
 	return m_document.GetCursorY();
 }
-size_t BasicShellContext::GetCursorX()const {
+size_t BasicShellContext::GetCursorXWStringPos()const {
 	std::lock_guard lock(m_lock);
 	return m_document.GetCursorX();
 }

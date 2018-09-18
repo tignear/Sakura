@@ -5,7 +5,7 @@
 namespace tignear::sakura {
 	struct Config {
 		LuaIntf::LuaContext L= LuaIntf::LuaContext();
-		size_t initshell;
+		INT initshell;
 		std::vector<std::tuple<std::string,std::string,LuaIntf::LuaRef>> shells;
 	};
 	struct config_exception:public std::exception {
@@ -32,7 +32,7 @@ namespace tignear::sakura {
 			{
 				rconfig.initshell = 0;
 				if (conf.has("initshell")) {
-					rconfig.initshell = static_cast<size_t>(conf.get<int>("initshell"));
+					rconfig.initshell = static_cast<INT>(conf.get<int>("initshell"));
 				}
 			}
 

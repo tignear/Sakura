@@ -30,9 +30,9 @@ namespace tignear::sakura {
 			m_fontmap(fontmap){}
 		const std::list<AttributeTextImpl>& Value()const;
 
-		int32_t Remove();
-		int32_t RemoveAfter(int32_t p);
-		int32_t RemoveBefore(int32_t p);
+		size_t Remove();
+		size_t RemoveAfter(size_t p);
+		size_t RemoveBefore(size_t p);
 		
 		ShellContext::attrtext_iterator begin() override;
 		ShellContext::attrtext_iterator end() override;
@@ -40,7 +40,7 @@ namespace tignear::sakura {
 		bool operator==(const attrtext_line&)const override;
 		bool operator!=(const attrtext_line&)const override;
 
-		int32_t Insert(int32_t,const icu::UnicodeString&, const Attribute& attr);
+		size_t Insert(size_t,const icu::UnicodeString&, const Attribute& attr);
 	private:
 		std::list<AttributeTextImpl> m_value;
 		const ansi::ColorTable& m_ct_sys;

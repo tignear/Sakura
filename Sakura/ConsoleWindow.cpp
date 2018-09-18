@@ -7,7 +7,6 @@ using tignear::sakura::ShellContextFactory;
 using tignear::sakura::ConsoleWindow;
 using tignear::sakura::cwnd::Context;
 using tignear::sakura::Config;
-using tignear::sakura::cwnd::Context;
 using namespace tignear::win::dpi;
 std::unique_ptr<ConsoleWindow> ConsoleWindow::Create(
 	HINSTANCE hinst,
@@ -223,7 +222,7 @@ void ConsoleWindow::UpdateScrollBar() {
 	sbinfo_r.nPage = static_cast<UINT>(m_textarea->GetAreaDip().height+0.5f);
 	SetScrollInfo(m_scrollbar_row_hwnd, SB_CTL, &sbinfo_r, TRUE);
 }
-void ConsoleWindow::SetConsoleContext(std::shared_ptr<tignear::sakura::cwnd::Context> c) {
+void ConsoleWindow::SetConsoleContext(std::shared_ptr<Context> c) {
 	m_console = c;
 	m_textarea->SetConsoleContext(c);
 }

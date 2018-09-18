@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <unordered_set>
 #include <atomic>
 #include <thread>
 #include <DefinedMessage.h>
@@ -11,18 +12,19 @@ enum class Args {
 	HELP,CMD,CURRENT_DIR,PIPE_NAME,PID,SHELLCONTEXT_PTR
 };
 std::atomic<HWND> g_child=0;
-static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message)
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
 	case WM_KEYDOWN:
-		return PostMessage(g_child,message,wParam,lParam);
 	case WM_CHAR:
+	{
 		return PostMessage(g_child, message, wParam, lParam);
+	}
 	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
 	return 0;
 }
@@ -91,6 +93,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			ChangeWindowMessageFilterEx(hwnd, WM_KEYDOWN, MSGFLT_ALLOW, NULL))) {
 			return EXIT_FAILURE;
 		}
+		SendMessage(tignear::win32::GetHwndFromProcess(opts.get<Args::PID>()), WM_SHELLCONTEXTMESSAGE, opts.get<Args::SHELLCONTEXT_PTR>(), reinterpret_cast<LPARAM>(hwnd));
+
 		//Create Process
 		auto cmdstr= opts.get<Args::CMD>();
 		auto pipename = opts.get<Args::PIPE_NAME>();
@@ -107,12 +111,16 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			OPEN_EXISTING,
 			NULL,
 			NULL);
+		if (out_client_pipe == INVALID_HANDLE_VALUE) {
+			return EXIT_FAILURE;
+		}
 		PROCESS_INFORMATION pi{};
 		STARTUPINFO si{};
 		si.cb = sizeof(si);
 		si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 		si.hStdError = out_client_pipe;
 		si.hStdOutput = out_client_pipe;
+		si.hStdInput = NULL;
 		si.wShowWindow = SW_HIDE;
 		auto len = cmdstr.length();
 		auto cmdca = std::make_unique<TCHAR[]>(len + 1);
@@ -127,43 +135,44 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		}
 		auto hprocess = pi.hProcess;
 		CloseHandle(pi.hThread);
+		
 		CloseHandle(out_client_pipe);
+		DWORD exitcode = 0;
 		auto th=std::thread(
 			[
 				hwnd,
 				hprocess,
-				parent= tignear::win32::GetHwndFromProcess(opts.get<Args::PID>()),
-				pid=pi.dwProcessId,param= opts.get<Args::SHELLCONTEXT_PTR>()
+				pid=pi.dwProcessId,
+				&exitcode
 			]()->void {
 			while (WaitForSingleObject(hprocess, 200) == WAIT_TIMEOUT) {
 				g_child = tignear::win32::GetHwndFromProcess(pid);
 				if (g_child) {
-					SendMessage(parent, WM_SHELLCONTEXTMESSAGE, param, reinterpret_cast<LPARAM>(hwnd));
 					break;
 				}
 			}
 			if (WaitForSingleObject(hprocess, INFINITE) != WAIT_OBJECT_0) {
-				PostQuitMessage(EXIT_FAILURE);
+				exitcode = EXIT_FAILURE;
+				PostMessage(hwnd, WM_CLOSE, 0, 0);
 				return;
 			}
-			DWORD exitCode;
-			if (!GetExitCodeProcess(hprocess, &exitCode)) {
+			if (!GetExitCodeProcess(hprocess, &exitcode)) {
 				CloseHandle(hprocess);
-				PostQuitMessage(EXIT_FAILURE);
+				exitcode = EXIT_FAILURE;
+				PostMessage(hwnd, WM_CLOSE, 0, 0);
 				return;
 			}
 			CloseHandle(hprocess);
-			PostQuitMessage(exitCode);
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
 		});
-		th.detach();
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0))
 		{
-			//TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		return (int)msg.wParam;
+		th.join();
 
+		return exitcode;
 
 	}
 	catch (error const &e) {

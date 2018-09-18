@@ -32,7 +32,6 @@ namespace tignear::sakura {
 		const unsigned int m_codepage;
 		static std::atomic_uintmax_t m_process_count;
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
-		HANDLE m_childProcess;
 		HANDLE m_out_pipe;
 		std::atomic<HWND> m_hwnd;
 		std::wstring m_title;
@@ -71,19 +70,15 @@ namespace tignear::sakura {
 			m_fontmap(fontmap),
 			m_fontsize(fontsize),
 			m_hwnd(0),
-			m_out_pipe(0),
-			m_childProcess(0)
+			m_out_pipe(0)
 		{
 		}
-		~BasicShellContext() {
+		virtual ~BasicShellContext() {
 			if (m_out_pipe) {
 				CloseHandle(m_out_pipe);
 				m_out_pipe = NULL;
 			}
-			if (m_childProcess) {
-				CloseHandle(m_childProcess);
-				m_childProcess = NULL;
-			}
+
 		}
 
 		void InputChar(WPARAM c) override;
@@ -108,7 +103,7 @@ namespace tignear::sakura {
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
 		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		BasicShellContextLineText& GetCursorY()const override;
-		size_t GetCursorX()const override;
+		size_t GetCursorXWStringPos()const override;
 		void Resize(UINT w, UINT h)override;
 		attrtext_document& GetAll() override;
 		attrtext_document& GetView() override;

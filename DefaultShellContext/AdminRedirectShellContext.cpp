@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <ProcessTree.h>
 #include <ModuleFilePath.h>
 #include <shellapi.h>
 #include "AdminRedirectShellContext.h"
@@ -6,7 +7,7 @@
 using tignear::stdex::tstring;
 using tignear::win32::GetHwndFromProcess;
 namespace tignear::sakura {
-	bool AdminRedirectShellContext::Init(tstring execute,tstring cmdstr, const Options& opt) {
+	bool AdminRedirectShellContext::CreateShell(std::shared_ptr<AdminRedirectShellContext> s,tstring execute,tstring cmdstr, const Options& opt) {
 		//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = sizeof(sa);
@@ -21,8 +22,8 @@ namespace tignear::sakura {
 
 		++m_process_count;
 
-		m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
-		if (m_out_pipe == INVALID_HANDLE_VALUE) {
+		s->m_out_pipe = CreateNamedPipe(out_pipename.c_str(), PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 2, BUFFER_SIZE, BUFFER_SIZE, 1000, &sa);
+		if (s->m_out_pipe == INVALID_HANDLE_VALUE) {
 			//auto le = GetLastError();
 			return false;
 		}
@@ -33,25 +34,26 @@ namespace tignear::sakura {
 		}
 		(cmdstr +=_T(" "))+= out_pipename;
 		(cmdstr += _T(" ")) += stdex::to_tstring(GetCurrentProcessId());
-		(cmdstr += _T(" ")) += stdex::to_tstring(reinterpret_cast<uintptr_t>(this));
+		(cmdstr += _T(" ")) += stdex::to_tstring(reinterpret_cast<uintptr_t>(s.get()));
 		SHELLEXECUTEINFO info{};
 		info.lpFile = execute.c_str();
 		info.lpParameters = cmdstr.c_str();
 		info.cbSize = sizeof(info);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
 		info.nShow = SW_HIDE;
-		m_iocpmgr->Attach(m_out_pipe);
+		s->m_iocpmgr->Attach(s->m_out_pipe);
 		if (!ShellExecuteEx(&info)||!info.hProcess) {
 #pragma warning(disable:4189)
 			auto e = GetLastError();
 			return false;
 		}
-		m_childProcess = info.hProcess;
-		std::thread th([this, pid = GetProcessId(m_childProcess), hProcess = m_childProcess]() {
+		
+		s->m_childProcess = info.hProcess;
+		s->m_thread=std::thread([s, pid = GetProcessId(s->m_childProcess), hProcess = s->m_childProcess]() {
 			WaitForSingleObject(hProcess, INFINITE);
-			NotifyExit();
+			s->NotifyExit();
 		});
-		th.detach();
+
 		return true;
 	}
 	bool AdminRedirectShellContext::WorkerStart(std::shared_ptr<AdminRedirectShellContext> s) {
@@ -89,7 +91,7 @@ namespace tignear::sakura {
 		auto r = std::make_shared<AdminRedirectShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
 		r->SetSystemColor(colorsys);
 		r->Set256Color(color256);
-		if (r->Init(tstring(win::GetModuleFilePath(hinst)/"AdminRedirectShellContext.exe") ,cmdstr, opt))
+		if (CreateShell(r,tstring(win::GetModuleFilePath(hinst)/"AdminRedirectShellContext.exe") ,cmdstr, opt))
 		{
 			if (!r->WorkerStart(r)) {
 				r.reset();
@@ -104,8 +106,24 @@ namespace tignear::sakura {
 		}
 	}
 	LRESULT AdminRedirectShellContext::OnMessage(LPARAM param) {
+
 		m_hwnd=reinterpret_cast<HWND>(param);
 
 		return 0;
+	}
+	AdminRedirectShellContext::~AdminRedirectShellContext() {
+		if (m_childProcess) {
+			CloseHandle(m_childProcess);
+		}
+		if (m_thread.joinable()) {
+			m_thread.detach();
+		}
+
+	}
+	void AdminRedirectShellContext::Terminate() {
+		win32::TerminateProcessTree(win32::ProcessTree(GetProcessId(m_childProcess)));
+		if (m_thread.joinable()) {
+			m_thread.join();
+		}
 	}
 }

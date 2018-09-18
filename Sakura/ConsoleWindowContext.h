@@ -22,9 +22,14 @@ namespace tignear::sakura::cwnd {
 		std::wstring input_string;
 		bool interim_char;
 	};
-	struct Context {
+	class Context {
+
+	public:
 		Context(std::shared_ptr<ShellContext> shell) :shell(shell), textarea_context() {
 
+		}
+		~Context() {
+			//shell->RemoveExitListener(exitListener_removekey);
 		}
 		std::shared_ptr<ShellContext> shell;
 		TextAreaContext textarea_context;

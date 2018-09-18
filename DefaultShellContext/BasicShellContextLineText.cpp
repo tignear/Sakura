@@ -21,11 +21,11 @@ const std::list<AttributeTextImpl>& BasicShellContextLineText::Value()const{
 	}
 	return m_value;
 }
-int32_t  BasicShellContextLineText::Remove() {
+size_t  BasicShellContextLineText::Remove() {
 	m_value.clear();
 	return 0;
 }
-int32_t BasicShellContextLineText::RemoveAfter(int32_t p) {
+size_t BasicShellContextLineText::RemoveAfter(size_t p) {
 	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
 	uint32_t r=0;
 	for (auto itr = m_value.begin(); itr != m_value.end();++itr) {
@@ -49,7 +49,7 @@ int32_t BasicShellContextLineText::RemoveAfter(int32_t p) {
 	return p;
 }
 
-int32_t BasicShellContextLineText::RemoveBefore(int32_t p) {
+size_t BasicShellContextLineText::RemoveBefore(size_t p) {
 	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
 	uint32_t r = 0;
 	for (auto itr = m_value.begin(); itr != m_value.end();) {
@@ -73,7 +73,7 @@ int32_t BasicShellContextLineText::RemoveBefore(int32_t p) {
 }
 
 
-int32_t BasicShellContextLineText::Insert(int32_t p,const icu::UnicodeString& ustr, const Attribute& attr) {
+size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr, const Attribute& attr) {
 	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
 	auto eaw = EastAsianWidth(ustr, ambiguous_size);
 	auto r2 = p + eaw;

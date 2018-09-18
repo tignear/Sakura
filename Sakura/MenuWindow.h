@@ -17,7 +17,8 @@ class MenuWindow {
 	static bool m_registerstate;
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 	static bool RegisterMenuWindowClass(HINSTANCE hinst);
-	std::unordered_map<uintptr_t,std::shared_ptr<cwnd::Context>>& m_contexts;
+	const std::unordered_map<uintptr_t,std::shared_ptr<cwnd::Context>>& m_contexts;
+	const std::function<void(std::shared_ptr<cwnd::Context>)> m_newContext;
 	const std::function<void()> m_contextUpdate;
 	const std::function<ShellContextFactory*(std::string)> m_getFactory;
 	const std::function<std::shared_ptr<void>(std::string)> m_getResource;
@@ -29,19 +30,22 @@ class MenuWindow {
 	HWND m_tab_hwnd;
 	HWND m_menu_button_hwnd;
 	HMENU m_hmenu_menu;
-	bool m_new;
+	INT m_new_index;
 	uintptr_t m_current_context_ptr;
 	void CreateAndSetFont();
+	INT GetTabIndexFromId(LPARAM id);
+	void RemoveTab(LPARAM id);
 public:
-	MenuWindow(const win::dpi::Dpi& dpi, std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>>& contexts,std::function<void()> contextUpdate,Config& config,std::function<ShellContextFactory*(std::string)> getFactory,  std::function<std::shared_ptr<void>(std::string)> getResource):
+	MenuWindow(const win::dpi::Dpi& dpi,const std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>>& contexts,std::function<void(std::shared_ptr<cwnd::Context>)> newContext,std::function<void()> contextUpdate,Config& config,std::function<ShellContextFactory*(std::string)> getFactory,  std::function<std::shared_ptr<void>(std::string)> getResource):
 		m_dpi(dpi),
+		m_contexts(contexts),
+		m_newContext(newContext),
 		m_contextUpdate(contextUpdate),
 		m_getFactory(getFactory),
 		m_getResource(getResource),
 		m_config(config),
-		m_new(true),
-		m_icon_font(NULL),
-		m_contexts(contexts)
+		m_new_index(config.initshell),
+		m_icon_font(NULL)
 	{
 
 	}
@@ -59,13 +63,15 @@ public:
 		const win::dpi::Dpi& dpi,
 		DIP x, DIP y, DIP w,
 		HMENU hmenu,
-		std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>>& contexts,
+		const std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>>& contexts,
+		std::function<void(std::shared_ptr<cwnd::Context>)>,
 		std::function<void()> contextUpdate,
 		Config& conf,
 		std::function<ShellContextFactory*(std::string)>,
 		std::function<std::shared_ptr<void>(std::string)> getResource);
 	HWND GetHWnd();
 	std::shared_ptr<cwnd::Context> GetCurrentContext(DIP width,DIP height);
+
 	void OnDpiChange();
 };
 }
