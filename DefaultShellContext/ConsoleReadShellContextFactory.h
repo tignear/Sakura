@@ -23,26 +23,21 @@ namespace tignear::sakura {
 			LuaIntf::LuaRef fonts = info.shellConf["fonts"];
 			for (auto e : fonts) {
 				fontmap.push_back(cp_to_wide(e.value().toValue<std::string>(), 65001));
-			}
+			}*/
 			auto admin = false;
 			auto hasAdminParam = info.shellConf.has("admin");
 			if (hasAdminParam) {
 				admin = info.shellConf.get<bool>("admin");
-			}*/
+			}
 #ifdef UNICODE
 			auto cmdc = cp_to_wide(cmd, 65001);
 #else
 			auto cmdc = std::move(cmd);
 #endif // UNICODE
-			/*if (admin) {
-				return std::shared_ptr<ShellContext>();
-				//return ShellExecuteExShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "AdminRedirectShellContext.exe"), cmdc, iocpMgr, cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ShellExecuteExShellContext::Options{});
-			}*/
-			//else {
 
-				return ConsoleReadShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConsoleReadShellContext.exe"), cmdc,nullptr,L"");
+			return ConsoleReadShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) /(admin?"AdminConsoleReadShellContext.exe" :"ConsoleReadShellContext.exe")), cmdc,nullptr,L"");
 
-			//}
+			
 		}
 	};
 }
