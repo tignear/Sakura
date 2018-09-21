@@ -128,7 +128,7 @@ namespace tignear::sakura {
 		void SetCursorY(size_t x);
 		size_t GetCursorX()const;
 		size_t GetCursorXWStringPos()const;
-		BasicShellContextLineText& GetCursorY()const;
+		BasicShellContextLineText& GetCursorY();
 		void MoveCursorX(int32_t x);
 		void MoveCursorYUp(size_t y);
 		void MoveCursorYDown(size_t y);

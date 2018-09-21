@@ -125,29 +125,14 @@ std::wstring_view BasicShellContext::GetTitle()const {
 	std::lock_guard lock(m_lock);
 	return m_title;
 }
-void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>& table256) {
-	std::lock_guard lock(m_lock);
-	m_document.Set256ColorTable(table256);
-}
-void BasicShellContext::Set256Color(const std::unordered_map<unsigned int, uint32_t>&& table256) {
-	std::lock_guard lock(m_lock);
-	m_document.Set256ColorTable(table256);
-}
-void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>& tablesys) {
-	std::lock_guard lock(m_lock);
-	m_document.SetSystemColorTable(tablesys);
-}
-void BasicShellContext::SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&& tablesys) {
-	std::lock_guard lock(m_lock);
-	m_document.SetSystemColorTable(std::move(tablesys));
-}
+
 void BasicShellContext::Lock() {
 	m_lock.lock();
 }
 void BasicShellContext::Unlock() {
 	m_lock.unlock();
 }
-LRESULT BasicShellContext::OnMessage(LPARAM) {
+LRESULT BasicShellContext::OnMessage(UINT,LPARAM) {
 	return 0;
 }
 size_t BasicShellContext::GetLineCount()const {
@@ -183,7 +168,7 @@ bool BasicShellContext::UseTerminalEchoBack()const {
 const std::wstring& BasicShellContext::DefaultFont()const {
 	return m_fontmap.at(m_document.GetDefaultAttribute().font);
 }
-BasicShellContextLineText& BasicShellContext::GetCursorY()const {
+BasicShellContextLineText& BasicShellContext::GetCursorY(){
 	std::lock_guard lock(m_lock);
 	return m_document.GetCursorY();
 }

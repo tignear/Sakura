@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include <DefinedMessage.h>
 #include <PluginEntry.h>
 #include <string>
 #include  <ansi/BasicColorTable.h>
@@ -31,17 +30,26 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	return r;
 }
 
-LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK Sakura::WndProc(HWND hWnd,UINT message, WPARAM wParam, LPARAM lParam) 
 {
-	switch (message)
-	{
-	case WM_SHELLCONTEXTMESSAGE:
+	if(message>=WM_APP&&message<=WM_APP+0xafff)
 	{
 		auto itr = m_sakura->m_contexts.find(wParam);
-		if (std::end(m_sakura->m_contexts) ==itr ) {
+		if (std::end(m_sakura->m_contexts) == itr) {
 			return static_cast<LPARAM>(LONG_PTR_MAX);
 		}
-		return itr->second->shell->OnMessage(lParam);
+		return itr->second->shell->OnMessage(message, lParam);
+	}
+	switch (message)
+	{
+
+	case WM_COPYDATA:
+	{
+		auto itr = m_sakura->m_contexts.find(wParam);
+		if (std::end(m_sakura->m_contexts) == itr) {
+			return static_cast<LPARAM>(LONG_PTR_MAX);
+		}
+		return itr->second->shell->OnMessage(message,lParam);
 	}
 	case WM_CLOSE:
 		DestroyWindow(hWnd);

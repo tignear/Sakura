@@ -98,11 +98,11 @@ namespace tignear::sakura {
 		void RemoveLayoutChangeListener(uintptr_t)const override;
 		uintptr_t AddExitListener(std::function<void(ShellContext*)>)const override;
 		void RemoveExitListener(uintptr_t)const override;
-		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
-		void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
-		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
-		void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
-		BasicShellContextLineText& GetCursorY()const override;
+		//void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
+		//void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		//void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
+		//void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
+		BasicShellContextLineText& GetCursorY()override;
 		size_t GetCursorXWStringPos()const override;
 		void Resize(UINT w, UINT h)override;
 		attrtext_document& GetAll() override;
@@ -112,7 +112,7 @@ namespace tignear::sakura {
 		const std::wstring& DefaultFont()const override;
 		void Lock()override;
 		void Unlock()override;
-		LRESULT OnMessage(LPARAM)override;
+		LRESULT OnMessage(UINT,LPARAM)override;
 };
 
 }

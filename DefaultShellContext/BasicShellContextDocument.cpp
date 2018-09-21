@@ -293,7 +293,7 @@ namespace tignear::sakura {
 		}
 		return static_cast<size_t>(m_cursorX_wstringpos_cache);
 	}
-	BasicShellContextLineText&  BasicShellContextDocument::GetCursorY()const {
+	BasicShellContextLineText&  BasicShellContextDocument::GetCursorY(){
 		if (m_cursorY_itr == m_text.end()) {
 			return *std::prev(m_cursorY_itr);
 		}

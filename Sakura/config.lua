@@ -2,7 +2,7 @@ local conf={
     shells={
         {
             display="Cmd",
-            factory="RedirectShellContextFactory",
+            factory="ConsoleReadShellContextFactory",
             cmd=[[cmd]],
             codepage=65001,
             use_terminal_echoback=true,

@@ -8,7 +8,7 @@ namespace tignear::ansi {
 	};
 	struct AttributeText {
 		virtual std::wstring_view textW()const=0;
-		virtual int32_t length()const=0;
+		virtual size_t length()const=0;
 		virtual std::uint32_t textColor()const = 0;
 		virtual std::uint32_t backgroundColor()const = 0;
 		virtual bool bold()const = 0;

@@ -1,7 +1,7 @@
 #pragma once
 #include <windows.h>
 #include <filesystem>
-#include "tstring.h"
+#include <tstring.h>
 namespace tignear::win {
 
 	//http://www7.plala.or.jp/kfb/program/exedir.html
@@ -13,7 +13,7 @@ namespace tignear::win {
 		while (true) {
 			buf.clear();
 			buf.reserve(reserve);
-			auto copyed = GetModuleFileName(m, buf.data(), static_cast<DWORD>(buf.capacity()));
+			auto copyed = GetModuleFileName(m, buf.data(), static_cast<DWORD>(buf.capacity()-1));
 			if (copyed == 0) {
 				throw std::runtime_error("GetModuleFileName is Failed");
 			}

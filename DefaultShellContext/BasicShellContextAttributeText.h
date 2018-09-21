@@ -78,7 +78,7 @@ namespace tignear::sakura {
 		AttributeTextImpl(const icu::UnicodeString& ustr, const ansi::ColorTable& c_system, const ansi::ColorTable&c_256,const std::vector<std::wstring>& font,const  Attribute& attr ) :m_ustr(ustr), m_system_color_table(c_system), m_256_color_table(c_256),m_font_map(font), m_attr(attr) {}
 
 		std::wstring_view textW()const override;
-		int32_t length()const override;
+		size_t length()const override;
 		std::uint32_t textColor()const override;
 		std::uint32_t backgroundColor()const override;
 		bool bold()const override;

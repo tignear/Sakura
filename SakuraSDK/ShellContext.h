@@ -10,7 +10,7 @@ namespace tignear::sakura {
 		class attrtext_iterator_innner {
 		public:
 			using iterator_category = std::forward_iterator_tag;
-			using value_type = ansi::AttributeText;
+			using value_type =const ansi::AttributeText;
 			using pointer = value_type * ;
 			using reference = value_type & ;
 			using difference_type = std::ptrdiff_t;
@@ -35,7 +35,7 @@ namespace tignear::sakura {
 				
 			}
 			using iterator_category = std::forward_iterator_tag;
-			using value_type = ansi::AttributeText;
+			using value_type = const ansi::AttributeText;
 			using pointer = value_type * ;
 			using reference = value_type & ;
 			using difference_type = std::ptrdiff_t;
@@ -47,10 +47,10 @@ namespace tignear::sakura {
 			attrtext_iterator operator++(int i) {
 				return attrtext_iterator(std::unique_ptr<attrtext_iterator_innner>(m_inner->operator++(i)));
 			}
-			reference operator*() {
+			reference operator*()const {
 				return m_inner->operator*();
 			};
-			pointer operator->() {
+			pointer operator->()const {
 				return m_inner->operator->();
 			};
 			bool operator==(const attrtext_iterator& iterator)const {
@@ -170,7 +170,7 @@ namespace tignear::sakura {
 		virtual size_t GetViewCount()const=0;//no lock call
 		virtual void SetPageSize(size_t count)=0;//no lock call
 		virtual size_t GetViewStart()const=0;//no lock call
-		virtual attrtext_line& GetCursorY()const=0;
+		virtual attrtext_line& GetCursorY()=0;
 		virtual size_t GetCursorXWStringPos()const = 0;//no lock call.wstring_view position
 		virtual void SetViewStart(size_t)=0;//no lock call
 		virtual uintptr_t AddTextChangeListener(std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)>)const=0;//no lock call
@@ -179,10 +179,10 @@ namespace tignear::sakura {
 		virtual void RemoveLayoutChangeListener(uintptr_t)const = 0;//no lock call
 		virtual uintptr_t AddExitListener(std::function<void(ShellContext*)>)const = 0;//no lock call
 		virtual void RemoveExitListener(uintptr_t)const = 0;//no lock call
-		virtual void Set256Color(const std::unordered_map<unsigned int,uint32_t>&)=0;//no lock call
-		virtual void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
-		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&)=0;//no lock call
-		virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
+		//virtual void Set256Color(const std::unordered_map<unsigned int,uint32_t>&)=0;//no lock call
+		//virtual void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
+		//virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&)=0;//no lock call
+		//virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
 		virtual void Lock()=0;//no lock call
 		virtual void Unlock()=0;//lock call
 		virtual void Resize(UINT w,UINT h)=0;//no lock call
@@ -190,9 +190,8 @@ namespace tignear::sakura {
 		virtual double FontSize()const =0;//no lock call
 		virtual bool UseTerminalEchoBack()const=0;//no lock call
 		virtual void Terminate()=0;
-		virtual LRESULT OnMessage(LPARAM lparam)=0;
-		virtual ~ShellContext() {
-		};//no lock call.bat not require lock.
+		virtual LRESULT OnMessage(UINT,LPARAM lparam)=0;
+		virtual ~ShellContext() {};//no lock call.bat not require lock.
 	};
 
 }

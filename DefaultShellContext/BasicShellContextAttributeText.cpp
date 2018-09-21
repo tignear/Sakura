@@ -20,7 +20,7 @@ std::uint32_t AttributeTextImpl::ColorHelper(Color c)const {
 std::wstring_view AttributeTextImpl::textW()const{
 	return std::wstring_view(reinterpret_cast<const wchar_t*>(m_ustr.getBuffer()), m_ustr.length());
 }
-int32_t AttributeTextImpl::length()const{
+size_t AttributeTextImpl::length()const{
 	return m_ustr.length();
 }
 std::uint32_t AttributeTextImpl::textColor()const{

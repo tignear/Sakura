@@ -105,10 +105,10 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 	auto end = m_console->shell->GetView().end();
 	--end;
 	auto itr = end;
-	auto begin = m_console->shell->GetAll().begin();
+	auto begin = m_console->shell->GetView().begin();
 	auto&& curY = m_console->shell->GetCursorY();
 	auto nowY = height;
-	for (; itr != begin; --itr) {
+	for (;true; --itr) {
 		DWRITE_TEXT_METRICS met{};
 		auto lay = GetLayout(*itr);
 		lay->GetMetrics(&met);
@@ -118,6 +118,9 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 		}
 		if (*itr == curY) {
 			y = nowY;
+		}
+		if (itr == begin) {
+			break;
 		}
 	}
 	if (nowY>0) {
@@ -713,7 +716,7 @@ std::pair<bool,Microsoft::WRL::ComPtr<IDWriteTextLayout1>> ConsoleWindowTextArea
 
 	int32_t strcnt = 0;
 	for (auto itr = l.begin(); itr != l.end(); ++itr) {
-		auto nstrcnt = strcnt + itr->length();
+		auto nstrcnt = static_cast<int32_t>(strcnt + itr->length());
 		DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
 		if (itr->bold()) {
 			layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);
@@ -731,10 +734,11 @@ std::pair<bool,Microsoft::WRL::ComPtr<IDWriteTextLayout1>> ConsoleWindowTextArea
 		t->CreateSolidColorBrush(D2D1::ColorF(itr->backgroundColor()), &bgbrush);
 		ComPtr<ID2D1SolidColorBrush> frbrush;
 		auto fralpha = 1.0f;
-
-		if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+		if (itr->blink() != ansi::Blink::None) {
 			allowCaching = false;
-			fralpha = 0;
+			if ((itr->blink() == ansi::Blink::Fast && !m_fast_blink_display) || (itr->blink() == ansi::Blink::Slow && !m_slow_blink_display)) {
+				fralpha = 0;
+			}
 		}
 		else if (itr->faint()) {
 			fralpha = 0.75f;
@@ -775,7 +779,7 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildCurosorYL
 
 	int32_t strcnt = 0;
 	for (auto itr = l.begin(); itr != l.end(); ++itr) {
-		auto nstrcnt = strcnt + itr->length();
+		auto nstrcnt = strcnt + static_cast<int32_t>(itr->length());
 		DWRITE_TEXT_RANGE range{ static_cast<UINT32>(strcnt),static_cast<UINT32>(itr->length()) };
 		if (itr->bold()) {
 			layout->SetFontWeight(DWRITE_FONT_WEIGHT_BOLD, range);

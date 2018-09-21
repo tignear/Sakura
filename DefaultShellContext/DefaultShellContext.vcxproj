@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)ConsoleReadShellContextCommon;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\plugins\$(ProjectName)\</OutDir>
     <TargetName>plugin</TargetName>
   </PropertyGroup>
@@ -90,7 +90,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)ConsoleReadShellContextCommon;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\plugins\$(ProjectName)\</OutDir>
     <TargetName>plugin</TargetName>
   </PropertyGroup>
@@ -173,7 +173,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AdminRedirectShellContext.h" />
+    <ClInclude Include="ConsoleReadShellContext.h" />
+    <ClInclude Include="ConsoleReadShellContextFactory.h" />
+    <ClInclude Include="ShellExecuteExShellContext.h" />
     <ClInclude Include="BasicShellContext.h" />
     <ClInclude Include="BasicShellContextAttributeText.h" />
     <ClInclude Include="BasicShellContextDocument.h" />
@@ -191,6 +193,7 @@
     <ClCompile Include="BasicShellContextAnsiParserSink.cpp" />
     <ClCompile Include="BasicShellContextAttributeText.cpp" />
     <ClCompile Include="BasicShellContextDocument.cpp" />
+    <ClCompile Include="ConsoleReadShellContext.cpp" />
     <ClCompile Include="RedirectShellContextFactory.cpp" />
     <ClCompile Include="BasicShellContextLineText.cpp" />
     <ClCompile Include="dllmain.cpp" />

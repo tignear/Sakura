@@ -2,12 +2,12 @@
 #include <ProcessTree.h>
 #include <ModuleFilePath.h>
 #include <shellapi.h>
-#include "AdminRedirectShellContext.h"
+#include "ShellExecuteExShellContext.h"
 #include "GetHwndFromPid.h"
 using tignear::stdex::tstring;
 using tignear::win32::GetHwndFromProcess;
 namespace tignear::sakura {
-	bool AdminRedirectShellContext::CreateShell(std::shared_ptr<AdminRedirectShellContext> s,tstring execute,tstring cmdstr, const Options& opt) {
+	bool ShellExecuteExShellContext::CreateShell(std::shared_ptr<ShellExecuteExShellContext> s,tstring execute,tstring cmdstr, const Options& opt) {
 		//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 		SECURITY_ATTRIBUTES sa;
 		sa.nLength = sizeof(sa);
@@ -56,7 +56,7 @@ namespace tignear::sakura {
 
 		return true;
 	}
-	bool AdminRedirectShellContext::WorkerStart(std::shared_ptr<AdminRedirectShellContext> s) {
+	bool ShellExecuteExShellContext::WorkerStart(std::shared_ptr<ShellExecuteExShellContext> s) {
 		auto info = new iocp::IOCPInfo{
 			{},
 			[s](DWORD) {
@@ -71,8 +71,8 @@ namespace tignear::sakura {
 		}
 		return true;
 	}
-	std::shared_ptr<AdminRedirectShellContext> AdminRedirectShellContext::Create(
-		HINSTANCE hinst,
+	std::shared_ptr<ShellExecuteExShellContext> ShellExecuteExShellContext::Create(
+		stdex::tstring executable,
 		tstring cmdstr,
 		std::shared_ptr<iocp::IOCPMgr> iocpmgr,
 		unsigned int codepage,
@@ -88,10 +88,8 @@ namespace tignear::sakura {
 		attr.frColor.color_system = 30;
 		attr.bgColor.type = ColorType::ColorSystem;
 		attr.bgColor.color_system = 47;
-		auto r = std::make_shared<AdminRedirectShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
-		r->SetSystemColor(colorsys);
-		r->Set256Color(color256);
-		if (CreateShell(r,tstring(win::GetModuleFilePath(hinst)/"AdminRedirectShellContext.exe") ,cmdstr, opt))
+		auto r = std::make_shared<ShellExecuteExShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
+		if (CreateShell(r,executable ,cmdstr, opt))
 		{
 			if (!r->WorkerStart(r)) {
 				r.reset();
@@ -105,13 +103,13 @@ namespace tignear::sakura {
 			return r;
 		}
 	}
-	LRESULT AdminRedirectShellContext::OnMessage(LPARAM param) {
-
+	LRESULT ShellExecuteExShellContext::OnMessage(UINT,LPARAM param) {
+		
 		m_hwnd=reinterpret_cast<HWND>(param);
 
 		return 0;
 	}
-	AdminRedirectShellContext::~AdminRedirectShellContext() {
+	ShellExecuteExShellContext::~ShellExecuteExShellContext() {
 		if (m_childProcess) {
 			CloseHandle(m_childProcess);
 		}
@@ -120,7 +118,7 @@ namespace tignear::sakura {
 		}
 
 	}
-	void AdminRedirectShellContext::Terminate() {
+	void ShellExecuteExShellContext::Terminate() {
 		win32::TerminateProcessTree(win32::ProcessTree(GetProcessId(m_childProcess)));
 		if (m_thread.joinable()) {
 			m_thread.join();

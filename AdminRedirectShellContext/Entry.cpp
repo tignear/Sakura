@@ -2,7 +2,6 @@
 #include <unordered_set>
 #include <atomic>
 #include <thread>
-#include <DefinedMessage.h>
 #include <GetHWndFrompid.h>
 #include <tchar.h>
 #include <Windows.h>
@@ -93,7 +92,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			ChangeWindowMessageFilterEx(hwnd, WM_KEYDOWN, MSGFLT_ALLOW, NULL))) {
 			return EXIT_FAILURE;
 		}
-		SendMessage(tignear::win32::GetHwndFromProcess(opts.get<Args::PID>()), WM_SHELLCONTEXTMESSAGE, opts.get<Args::SHELLCONTEXT_PTR>(), reinterpret_cast<LPARAM>(hwnd));
+		SendMessage(tignear::win32::GetHwndFromProcess(opts.get<Args::PID>()), WM_APP+1, opts.get<Args::SHELLCONTEXT_PTR>(), reinterpret_cast<LPARAM>(hwnd));
 
 		//Create Process
 		auto cmdstr= opts.get<Args::CMD>();

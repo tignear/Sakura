@@ -4,7 +4,7 @@
 #include "tstring.h"
 #include "BasicShellContext.h"
 namespace tignear::sakura {
-	class AdminRedirectShellContext :public BasicShellContext {
+	class ShellExecuteExShellContext :public BasicShellContext {
 
 	public:
 		struct Options {
@@ -12,13 +12,13 @@ namespace tignear::sakura {
 			LPCTSTR current_directory;
 		};
 	private:
-		static bool CreateShell(std::shared_ptr<AdminRedirectShellContext> s,stdex::tstring,stdex::tstring, const Options& opt);
-		static bool WorkerStart(std::shared_ptr<AdminRedirectShellContext>);
+		static bool CreateShell(std::shared_ptr<ShellExecuteExShellContext> s,stdex::tstring,stdex::tstring, const Options& opt);
+		static bool WorkerStart(std::shared_ptr<ShellExecuteExShellContext>);
 		HANDLE m_childProcess=0;
 		std::thread m_thread;
 	public:
-		static std::shared_ptr<AdminRedirectShellContext> Create(
-			HINSTANCE,
+		static std::shared_ptr<ShellExecuteExShellContext> Create(
+			stdex::tstring executable,
 			stdex::tstring,
 			std::shared_ptr<iocp::IOCPMgr>,
 			unsigned int codepage,
@@ -29,7 +29,7 @@ namespace tignear::sakura {
 			double fontsize,
 			const Options& opt
 		);
-		AdminRedirectShellContext(
+		ShellExecuteExShellContext(
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
 			unsigned int codepage,
 			const ansi::ColorTable& c_sys,
@@ -48,8 +48,8 @@ namespace tignear::sakura {
 				fontsize,
 				def
 			) {}
-		LRESULT OnMessage(LPARAM)override;
+		LRESULT OnMessage(UINT,LPARAM)override;
 		void Terminate()override;
-		~AdminRedirectShellContext();
+		~ShellExecuteExShellContext();
 	};
 }

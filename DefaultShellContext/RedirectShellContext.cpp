@@ -100,8 +100,6 @@ namespace tignear::sakura {
 		attr.bgColor.type = ColorType::ColorSystem;
 		attr.bgColor.color_system = 47;
 		auto r = std::make_shared<RedirectShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
-		r->SetSystemColor(colorsys);
-		r->Set256Color(color256);
 		if (CreateShell(r,cmdstr, opt))
 		{
 			if (!r->OutputWorker(r)) {
