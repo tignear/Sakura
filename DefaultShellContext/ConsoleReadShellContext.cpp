@@ -24,8 +24,8 @@ namespace tignear::sakura {
 		} );
 		return r;
 	}
-	void ConsoleReadShellContext::InputKey(WPARAM keycode) {
-		PostMessage(m_child_hwnd, WM_KEYDOWN, keycode, 0);
+	void ConsoleReadShellContext::InputKey(WPARAM) {
+		//PostMessage(m_child_hwnd, WM_KEYDOWN, keycode, 0);
 	}
 	void ConsoleReadShellContext::InputKey(WPARAM keycode, unsigned int count) {
 		for (auto i = 0U; i < count; ++i) {
@@ -33,9 +33,9 @@ namespace tignear::sakura {
 		}
 	}
 	void ConsoleReadShellContext::InputChar(WPARAM charcode) {
-		if (charcode <= 127) {
+		/*if (charcode <= 127) {
 			return;
-		}
+		}*/
 		PostMessage(m_child_hwnd, WM_CHAR, charcode, 0);
 	}
 	void ConsoleReadShellContext::InputString(std::wstring_view wstr) {

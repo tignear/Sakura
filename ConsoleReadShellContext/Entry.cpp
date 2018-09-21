@@ -21,9 +21,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 		PostQuitMessage(0);
 		break;
 	case WM_KEYDOWN:
+		PostMessage(g_child, WM_KEYDOWN, wParam, lParam);
+		//PostMessage(g_child, WM_KEYUP, wParam, lParam);
+		break;
 	case WM_CHAR:
 	{
-		return PostMessage(g_child, message, wParam, lParam);
+		PostMessage(g_child, message, wParam, lParam);
+		break;
 	}
 	case WM_APP+1:
 	{

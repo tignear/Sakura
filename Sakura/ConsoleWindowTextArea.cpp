@@ -847,7 +847,7 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildCurosorYL
 			if (FAILED(rangeAcp->GetExtent(&start, &length))) {
 				continue;
 			}
-			DWRITE_TEXT_RANGE write_range{ static_cast<UINT32>(start+iss), static_cast<UINT32>(length+iss) };
+			DWRITE_TEXT_RANGE write_range{ static_cast<UINT32>(start+iss), static_cast<UINT32>(length) };
 			layout->SetDrawingEffect(effect.Get(), write_range);
 			layout->SetUnderline(effect->underline ? TRUE : FALSE, write_range);
 			VariantClear(&var);

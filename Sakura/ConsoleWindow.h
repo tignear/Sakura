@@ -196,7 +196,6 @@ namespace tignear::sakura {
 			return static_cast<size_t>(GetAreaDip().height / m_linespacing + 1);
 		}
 		~ConsoleWindowTextArea() {
-			OutputDebugStringA("aaa");
 		}
 		void UnregisterTextStore() {
 			m_docmgr->Pop(0);
