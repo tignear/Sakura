@@ -20,13 +20,38 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	case WM_KEYDOWN:
-		PostMessage(g_child, WM_KEYDOWN, wParam, lParam);
-		//PostMessage(g_child, WM_KEYUP, wParam, lParam);
-		break;
-	case WM_CHAR:
+	case WM_APP+2://Input key
 	{
-		PostMessage(g_child, message, wParam, lParam);
+		INPUT_RECORD rec[2];
+		rec[0].EventType = KEY_EVENT;
+		rec[0].Event.KeyEvent.bKeyDown = TRUE;
+		rec[0].Event.KeyEvent.wRepeatCount = 1;
+		rec[0].Event.KeyEvent.wVirtualScanCode = (lParam >> 16) & 0xff;
+		rec[0].Event.KeyEvent.dwControlKeyState = GetKeyState(VK_SHIFT) ? SHIFT_PRESSED : 0;//TODO
+		rec[0].Event.KeyEvent.uChar.UnicodeChar = 0;//static_cast<WCHAR>(MapVirtualKeyW(static_cast<UINT>(wParam), MAPVK_VK_TO_CHAR));
+		rec[0].Event.KeyEvent.wVirtualKeyCode =static_cast<WORD>(wParam);
+		memcpy(&rec[1], &rec[0], sizeof(rec[1]));
+		rec[1].Event.KeyEvent.bKeyDown = FALSE;
+		rec[1].Event.KeyEvent.wRepeatCount = 0;
+		DWORD write;
+		WriteConsoleInput(GetStdHandle(STD_INPUT_HANDLE), &rec[0], 2, &write);
+		break;
+	}
+	case  WM_APP + 3://input char
+	{
+		INPUT_RECORD rec[2];
+		rec[0].EventType = KEY_EVENT;
+		rec[0].Event.KeyEvent.bKeyDown = TRUE;
+		rec[0].Event.KeyEvent.wRepeatCount = 1;
+		rec[0].Event.KeyEvent.dwControlKeyState = GetKeyState(VK_SHIFT) ? SHIFT_PRESSED : 0;//TODO
+		rec[0].Event.KeyEvent.uChar.UnicodeChar = static_cast<WCHAR>(wParam);
+		rec[0].Event.KeyEvent.wVirtualScanCode = (lParam >> 16) & 0xff;
+		rec[0].Event.KeyEvent.wVirtualKeyCode = lParam ? static_cast<WORD>(MapVirtualKeyW((lParam >> 16)&0xff, MAPVK_VSC_TO_VK_EX)) : 0;
+		memcpy(&rec[1], &rec[0], sizeof(rec[1]));
+		rec[1].Event.KeyEvent.bKeyDown = FALSE;
+		rec[1].Event.KeyEvent.wRepeatCount = 0;
+		DWORD write;
+		WriteConsoleInputW(GetStdHandle(STD_INPUT_HANDLE), &rec[0], 2, &write);
 		break;
 	}
 	case WM_APP+1:
@@ -49,7 +74,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 	return 0;
 }
 enum class Args {
-	HELP, CMD, CURRENT_DIR, MUTEX, PID, SHELLCONTEXT_PTR,/*FONT_SIZE*/
+	HELP, CMD, CURRENT_DIR,/* MUTEX,*/ PID, SHELLCONTEXT_PTR,/*FONT_SIZE*/
 };
 int APIENTRY WinMain(HINSTANCE hInstance,
 	HINSTANCE,
@@ -113,8 +138,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		}
 
 		//UIPI
-		if (!(ChangeWindowMessageFilterEx(hwnd, WM_CHAR, MSGFLT_ALLOW, NULL) &&
-			ChangeWindowMessageFilterEx(hwnd, WM_KEYDOWN, MSGFLT_ALLOW, NULL)&&
+		if (!(ChangeWindowMessageFilterEx(hwnd, WM_APP + 3, MSGFLT_ALLOW, NULL) &&
+			ChangeWindowMessageFilterEx(hwnd, WM_APP + 2, MSGFLT_ALLOW, NULL)&&
 			ChangeWindowMessageFilterEx(hwnd,WM_APP+1,MSGFLT_ALLOW,NULL))) {
 			return EXIT_FAILURE;
 		}
@@ -143,7 +168,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 #pragma warning(disable:4996)
 		cmdstr.copy(cmdca.get(), len);
 #pragma warning(default:4996)
-		if (!CreateProcessA(NULL, cmdca.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE, NULL, cdir.empty() ? NULL : cdir.c_str(), &si, &pi)) {
+		if (!CreateProcessA(NULL, cmdca.get(), &sa, &sa, TRUE, CREATE_NEW_CONSOLE|CREATE_NEW_PROCESS_GROUP, NULL, cdir.empty() ? NULL : cdir.c_str(), &si, &pi)) {
 			auto le = GetLastError();
 			OutputDebugStringW(std::to_wstring(le).c_str());
 			return EXIT_FAILURE;
@@ -164,39 +189,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		auto console_outbuf_handle=GetStdHandle(STD_OUTPUT_HANDLE);
 
 		DWORD exitcode = 0;
-		auto th = std::thread(
-			[
-				hwnd,
-				hprocess,
-				pid = pi.dwProcessId,
-				&exitcode
-
-			]()->void {
-
-			if (WaitForSingleObject(hprocess, INFINITE) != WAIT_OBJECT_0) {
-				CloseHandle(hprocess);
-				exitcode = EXIT_FAILURE;
-				PostMessage(hwnd, WM_CLOSE, 0, 0);
-				return;
-			}
-			if (!GetExitCodeProcess(hprocess, &exitcode)) {
-				CloseHandle(hprocess);
-				exitcode = EXIT_FAILURE;
-				PostMessage(hwnd, WM_CLOSE, 0, 0);
-				return;
-			}
-			CloseHandle(hprocess);
-
-			PostMessage(hwnd, WM_CLOSE, 0, 0);
-		});
-		//Sleep(10 * 1000);
-
-		auto th_out = std::thread([console_outbuf_handle,parent,id,hwnd,&exitcode]{
+		auto th_out = std::thread([hprocess,console_outbuf_handle,parent,id,hwnd,&exitcode]{
 			//SHORT nowpos=0;
 			MappingView view;
 			unsigned int num = 0;
-			while (true) {
-				Sleep(100);
+			while (WaitForSingleObject(hprocess, 100)==WAIT_TIMEOUT) {
 				CONSOLE_SCREEN_BUFFER_INFOEX info;
 				info.cbSize = sizeof(info);
 				if (!GetConsoleScreenBufferInfoEx(console_outbuf_handle, &info)) {
@@ -233,7 +230,15 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 				}
 				PostMessage(parent, WM_APP + 3, id, 0);
 			}
+			if (!GetExitCodeProcess(hprocess, &exitcode)) {
+				CloseHandle(hprocess);
+				exitcode = EXIT_FAILURE;
+				PostMessage(hwnd, WM_CLOSE, 0, 0);
+				return;
+			}
+			CloseHandle(hprocess);
 
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
 		});
 		
 		MSG msg;
@@ -242,7 +247,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 		TerminateProcess(hprocess,EXIT_FAILURE);
-		th.join();
 		th_out.join();
 		return exitcode;
 	}

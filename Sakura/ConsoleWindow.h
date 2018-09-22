@@ -70,9 +70,9 @@ namespace tignear::sakura {
 		void OnPaint();
 		void DrawShellText();
 		void OnSize();
-		void OnChar(WPARAM);
+		void OnChar(WPARAM,LPARAM);
 		void OnTimer();
-		void OnKeyDown(WPARAM);
+		void OnKeyDown(WPARAM,LPARAM);
 		void UpdateText(ShellContext*, std::vector<ShellContext::TextUpdateInfoLine>);
 		void UpdateText();
 		void CaretUpdate();

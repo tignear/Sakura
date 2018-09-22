@@ -43,29 +43,29 @@ bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContex
 	s->AddString(cp_to_wide(s->m_outbuf.c_str(),s->m_codepage,cnt));
 	return s->OutputWorker(s);
 }
-void BasicShellContext::InputKey(WPARAM keycode) {
+void BasicShellContext::InputKey(WPARAM keycode,LPARAM lp) {
 	if (!m_hwnd) {
 		return;
 	}
-	PostMessage(m_hwnd,WM_KEYDOWN,keycode,0);
+	PostMessage(m_hwnd,WM_KEYDOWN,keycode,lp);
 }
 void BasicShellContext::InputKey(WPARAM keycode, unsigned int count) {
 	for (auto i = 0U; i < count; ++i) {
-		InputKey(keycode);
+		InputKey(keycode,static_cast<LPARAM>(1));
 	}
 }
-void BasicShellContext::InputChar(WPARAM charcode) {
+void BasicShellContext::InputChar(WPARAM charcode,LPARAM) {
 	if (!m_hwnd) {
 		return;
 	}
 	if (charcode <= 127) {
 		return;
 	}
-	PostMessage(m_hwnd, WM_CHAR, charcode, 0);
+	PostMessage(m_hwnd, WM_CHAR, charcode, 1);
 }
 void BasicShellContext::InputString(std::wstring_view wstr) {
 	for (auto c : wstr) {
-		InputChar(c);
+		InputChar(c,0);
 	}
 }
 void BasicShellContext::ConfirmString(std::wstring_view view) {

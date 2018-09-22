@@ -350,9 +350,9 @@ namespace tignear::sakura {
 			m_child_hwnd = win32::GetHwndFromProcess(m_child_pid);
 		}
 		static std::shared_ptr<ConsoleReadShellContext> Create(stdex::tstring exe, stdex::tstring cmd,LPVOID env,stdex::tstring cdir);
-		void InputKey(WPARAM keycode)override;//no lock call
+		void InputKey(WPARAM keycode,LPARAM)override;//no lock call
 		void InputKey(WPARAM keycode, unsigned int count)override;//no lock call
-		void InputChar(WPARAM charcode)override;//no lock call
+		void InputChar(WPARAM charcode,LPARAM)override;//no lock call
 		void InputString(std::wstring_view wstr)override;//no lock call
 		void ConfirmString(std::wstring_view)override;//no lock call
 		attrtext_document& GetAll()override;//lock call

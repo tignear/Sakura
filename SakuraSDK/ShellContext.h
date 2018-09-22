@@ -158,9 +158,9 @@ namespace tignear::sakura {
 				return info->line();
 			}
 		};
-		virtual void InputKey(WPARAM keycode)=0;//no lock call
+		virtual void InputKey(WPARAM keycode,LPARAM lp=0)=0;//no lock call
 		virtual void InputKey(WPARAM keycode,unsigned int count) = 0;//no lock call
-		virtual void InputChar(WPARAM charcode) = 0;//no lock call
+		virtual void InputChar(WPARAM charcode,LPARAM lp=0) = 0;//no lock call
 		virtual void InputString(std::wstring_view wstr) = 0;//no lock call
 		virtual void ConfirmString(std::wstring_view)=0;//no lock call
 		virtual attrtext_document& GetAll()=0;//lock call

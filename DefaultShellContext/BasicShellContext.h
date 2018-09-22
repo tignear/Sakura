@@ -81,8 +81,8 @@ namespace tignear::sakura {
 
 		}
 
-		void InputChar(WPARAM c) override;
-		void InputKey(WPARAM keycode) override;
+		void InputChar(WPARAM c,LPARAM lp) override;
+		void InputKey(WPARAM keycode,LPARAM lp) override;
 		void InputKey(WPARAM keycode, unsigned int count) override;
 		void InputString(std::wstring_view) override;
 		void ConfirmString(std::wstring_view) override;

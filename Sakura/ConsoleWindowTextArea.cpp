@@ -51,10 +51,10 @@ LRESULT CALLBACK ConsoleWindowTextArea::WndProc(HWND hwnd, UINT message, WPARAM 
 		self->OnSetFocus();
 		break;
 	case WM_KEYDOWN:
-		self->OnKeyDown(wParam);
+		self->OnKeyDown(wParam, lParam);
 		break;
 	case WM_CHAR:
-		self->OnChar(wParam);
+		self->OnChar(wParam, lParam);
 		break;
 	case WM_PAINT:
 		self->OnPaint();
@@ -193,8 +193,8 @@ void ConsoleWindowTextArea::OnSize() {
 
 	}
 }
-void ConsoleWindowTextArea::OnChar(WPARAM wp) {
-	m_console->shell->InputChar(wp);
+void ConsoleWindowTextArea::OnChar(WPARAM wp,LPARAM lp) {
+	m_console->shell->InputChar(wp,lp);
 
 	TCHAR c = static_cast<TCHAR>(wp);
 #ifdef UNICODE
@@ -312,7 +312,7 @@ bool ConsoleWindowTextArea::UseTerminalEchoBack() {
 void ConsoleWindowTextArea::OnDpiChange() {
 	m_d2d->GetRenderTarget()->SetDpi(static_cast<FLOAT>(m_dpi.GetDpi()), static_cast<FLOAT>(m_dpi.GetDpi()));
 }
-void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
+void ConsoleWindowTextArea::OnKeyDown(WPARAM param,LPARAM lp) {
 
 	CallWithAppLock(true, [this, param]() {
 		InputtingString([this, param](auto&str) {
@@ -366,7 +366,7 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 						{
 							auto cnt = end -start;
 							if (ase == TS_AE_START) {
-								m_console->shell->InputKey(VK_LEFT, cnt);
+								m_console->shell->InputKey(VK_LEFT,static_cast<unsigned int>(cnt));
 							}
 							end = start;
 							ase = TS_AE_NONE;
@@ -432,7 +432,7 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 						{
 							auto cnt = end - start;
 							if (ase == TS_AE_END) {
-								m_console->shell->InputKey(VK_RIGHT, cnt);
+								m_console->shell->InputKey(VK_RIGHT,static_cast<unsigned int>(cnt));
 							}
 							start= end;
 							ase= TS_AE_NONE;
@@ -476,9 +476,9 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 						auto cnt = end - start;
 						str.erase(start, cnt);
 						if (ase == TS_AE_END) {
-							m_console->shell->InputKey(VK_RIGHT, cnt);
+							m_console->shell->InputKey(VK_RIGHT,static_cast<unsigned int>(cnt));
 						}
-						m_console->shell->InputKey(VK_BACK, cnt);
+						m_console->shell->InputKey(VK_BACK, static_cast<unsigned int>(cnt));
 
 						end = start;
 						ase = TS_AE_NONE;
@@ -508,9 +508,9 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param) {
 							str.erase(start, cnt);
 							end = SelectionStart();
 							if (ActiveSelEnd() == TS_AE_END) {
-								m_console->shell->InputKey(VK_RIGHT, cnt);
+								m_console->shell->InputKey(VK_RIGHT, static_cast<unsigned int>(cnt));
 							}
-							m_console->shell->InputKey(VK_BACK, cnt);
+							m_console->shell->InputKey(VK_BACK, static_cast<unsigned int>(cnt));
 							ase = TS_AE_NONE;
 						}
 					}

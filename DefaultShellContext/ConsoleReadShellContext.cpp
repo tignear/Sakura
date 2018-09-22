@@ -24,23 +24,26 @@ namespace tignear::sakura {
 		} );
 		return r;
 	}
-	void ConsoleReadShellContext::InputKey(WPARAM) {
-		//PostMessage(m_child_hwnd, WM_KEYDOWN, keycode, 0);
+	void ConsoleReadShellContext::InputKey(WPARAM keycode,LPARAM lp) {
+		if (keycode > 0x39) {
+			return;
+		}
+		PostMessage(m_child_hwnd, WM_APP+2,keycode, lp);
 	}
 	void ConsoleReadShellContext::InputKey(WPARAM keycode, unsigned int count) {
 		for (auto i = 0U; i < count; ++i) {
-			InputKey(keycode);
+			InputKey(keycode,static_cast<LPARAM>(0));
 		}
 	}
-	void ConsoleReadShellContext::InputChar(WPARAM charcode) {
+	void ConsoleReadShellContext::InputChar(WPARAM charcode,LPARAM lp) {
 		/*if (charcode <= 127) {
 			return;
 		}*/
-		PostMessage(m_child_hwnd, WM_CHAR, charcode, 0);
+		PostMessage(m_child_hwnd, WM_APP + 3, charcode, lp);
 	}
 	void ConsoleReadShellContext::InputString(std::wstring_view wstr) {
 		for (auto&& e : wstr) {
-			InputChar(e);
+			InputChar(e,0);
 		}
 	}
 	void ConsoleReadShellContext::ConfirmString(std::wstring_view) {
@@ -145,9 +148,7 @@ namespace tignear::sakura {
 		win32::TerminateProcessTree(win32::ProcessTree(m_child_pid));
 	}
 	LRESULT ConsoleReadShellContext::OnMessage(UINT msg,LPARAM lp) {
-		/*if (WM_APP + 1 == msg) {
-			m_child_hwnd = reinterpret_cast<HWND>(lp);
-		}else*/ if(WM_APP+2==msg){
+		if(WM_APP+2==msg){
 			auto name = std::wstring(L"tignear.sakura.ConsoleReadShellContext.") + std::to_wstring(GetProcessId(m_child_process)) + L"." + std::to_wstring(lp);
 			m_view = OpenMappingViewW(name.c_str());
 		}
