@@ -3,9 +3,7 @@
 #include "Direct2D.h"
 using Microsoft::WRL::ComPtr;
 using tignear::Direct2DWithHWnd;
-void Direct2DWithHWnd::InitInternal() {
-	InitResource();
-}
+
 
 void tignear::Direct2DWithHWnd::InitResource()
 {
@@ -18,10 +16,8 @@ void tignear::Direct2DWithHWnd::InitResource()
 }
 std::unique_ptr<Direct2DWithHWnd> Direct2DWithHWnd::Create(ID2D1Factory* d2d1_f,HWND hwnd){
 	FailToThrowB(hwnd != NULL);
-	auto d = std::make_unique<Direct2DWithHWnd>(_constructor_tag{});
-	d->m_factory = d2d1_f;
-	d->m_hwnd = hwnd;
-	d->InitInternal();
+	auto d = std::make_unique<Direct2DWithHWnd>(constructor_tag{},d2d1_f,hwnd);
+	d->InitResource();
 	return d;
 }
 void Direct2DWithHWnd::ReCreate() {

@@ -13,8 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="ヘッダー ファイル\ansi">
-      <UniqueIdentifier>{1e8ad8e2-b666-44ca-b941-66a6bf97738c}</UniqueIdentifier>
+    <Filter Include="ヘッダー ファイル\tsf">
+      <UniqueIdentifier>{b7be02e0-c82f-49e0-832b-74f7a9f0e56b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\tsf">
+      <UniqueIdentifier>{04d3606a-5fb3-40b1-bf75-a4e32c4b47d8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -27,12 +30,6 @@
     <ClInclude Include="SakuraMain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ConsoleWindow.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="FailToThrow.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="TextBuilder.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -42,46 +39,40 @@
     <ClInclude Include="shared_recursive_mutex.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="TextStoreLock.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="TSFDWriteDrawer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="D2DLineUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ShellContext.h">
+    <ClInclude Include="TextDrawer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="BasicShellContext.h">
+    <ClInclude Include="ConsoleWindow.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="tstring.h">
+    <ClInclude Include="ConsoleWindowContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="IOCPMgr.h">
+    <ClInclude Include="SakuraConfig.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="split.h">
+    <ClInclude Include="MenuWindow.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="GetHwndFromPid.h">
+    <ClInclude Include="ConsoleWindowTextAreaRender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="strconv.h">
+    <ClInclude Include="tsf\TextStore.h">
+      <Filter>ヘッダー ファイル\tsf</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf\TextStoreLock.h">
+      <Filter>ヘッダー ファイル\tsf</Filter>
+    </ClInclude>
+    <ClInclude Include="tsf\stdafx.h">
+      <Filter>ヘッダー ファイル\tsf</Filter>
+    </ClInclude>
+    <ClInclude Include="ConsoleWindowTextAreaDirect2D.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ansi\stdafx.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\AnsiParser.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="ansi\AttributeText.h">
-      <Filter>ヘッダー ファイル\ansi</Filter>
-    </ClInclude>
-    <ClInclude Include="EastAsianWidth.h">
+    <ClInclude Include="PluginLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,29 +83,48 @@
     <ClCompile Include="SakuraMain.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ConsoleWindowTextStore.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="ConsoleWindow.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="TextBuilder.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Direct2D.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ConsoleWindowCompositionSink.cpp">
+    <ClCompile Include="TextDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="TSFDWriteDrawer.cpp">
+    <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="BasicShellContext.cpp">
+    <ClCompile Include="ConsoleWindowTextArea.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="BasicShellContextAnsiParserSink.cpp">
+    <ClCompile Include="ConsoleWindow.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MenuWindow.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsoleWindowTextAreaRender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="tsf\TextStore.cpp">
+      <Filter>ソース ファイル\tsf</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsoleWindowTextAreaDirect2D.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginLoader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\font\menu.ttf">
+      <Filter>リソース ファイル</Filter>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="Sakura.manifest">
+      <Filter>リソース ファイル</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>

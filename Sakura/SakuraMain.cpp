@@ -1,50 +1,92 @@
 #include "stdafx.h"
+#include <PluginEntry.h>
 #include <string>
+#include  <ansi/BasicColorTable.h>
 #include "FailToThrow.h"
 #include "SakuraMain.h"
-#include "ConsoleWindow.h"
 #include "IOCPMgr.h"
-#include "BasicShellContext.h"
-#include <selene.h>
+#include "DefinedResource.h"
+#include "PluginLoader.h"
 using tignear::sakura::Sakura;
 using tignear::sakura::ConsoleWindow;
+using tignear::sakura::MenuWindow;
 using Microsoft::WRL::ComPtr;
 using tignear::FailToThrowHR;
 using tignear::sakura::iocp::IOCPMgr;
+using tignear::ansi::ColorTable;
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPTSTR lpCmdLine,
 	int nCmdShow)
 {
 	CoInitialize(NULL);
-	auto r= Sakura::Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	int r;
+	{
+		Sakura s;
+		Sakura::m_sakura = &s;
+		r=Sakura::m_sakura->Main(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	}
 	CoUninitialize();
 	return r;
 }
 
-LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK Sakura::WndProc(HWND hWnd,UINT message, WPARAM wParam, LPARAM lParam) 
 {
+	if(message>=WM_APP&&message<=WM_APP+0xafff)
+	{
+		auto itr = m_sakura->m_contexts.find(wParam);
+		if (std::end(m_sakura->m_contexts) == itr) {
+			return static_cast<LPARAM>(LONG_PTR_MAX);
+		}
+		return itr->second->shell->OnMessage(message, lParam);
+	}
 	switch (message)
 	{
+
+	case WM_COPYDATA:
+	{
+		auto itr = m_sakura->m_contexts.find(wParam);
+		if (std::end(m_sakura->m_contexts) == itr) {
+			return static_cast<LPARAM>(LONG_PTR_MAX);
+		}
+		return itr->second->shell->OnMessage(message,lParam);
+	}
 	case WM_CLOSE:
 		DestroyWindow(hWnd);
 		break;
 	case WM_SETFOCUS:
-		if (m_console) {
-			if (SetFocus(m_console->GetHWnd()) == NULL) {
+		if (m_sakura->m_console) {
+			if (SetFocus(m_sakura->m_console->GetHWnd()) == NULL) {
 				DestroyWindow(hWnd);
 				break;
 			}
 		}
 		break;
+
 	case WM_SIZING:
 	case WM_SIZE:
-		if (m_console) {
-			RECT rect;
-			GetClientRect(m_sakura, &rect);
-			SetWindowPos(m_console->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOOWNERZORDER);
-		}
+	{
+		m_sakura->Size();
 		break;
+
+	}
+	case WM_DPICHANGED:
+	{
+		m_sakura->m_dpi.SetDpi(LOWORD(wParam));
+		LPRECT rect= reinterpret_cast<LPRECT>(lParam);
+		SetWindowPos(hWnd,
+			NULL,
+			rect->left,
+			rect->top,
+			rect->right - rect->left,
+			rect->bottom - rect->top,
+			SWP_NOZORDER | SWP_NOACTIVATE);
+		m_sakura->m_menu->OnDpiChange();
+		m_sakura->m_console->OnDpiChange();
+
+		break;
+	}
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -53,13 +95,30 @@ LRESULT CALLBACK Sakura::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	}
 	return 0;
 }
+void Sakura::Size() {
+	RECT rect;
 
+	GetClientRect(m_hwnd, &rect);
+
+	auto&& m_height_px = Sakura::m_dpi.Pixel(MenuWindow::m_menu_height);
+	if (m_console) {
+		SetWindowPos(m_console->GetHWnd(), 0, rect.left, rect.top + m_height_px, rect.right - rect.left, rect.bottom - rect.top - m_height_px, SWP_NOOWNERZORDER);
+	}
+	if (m_menu) {
+		SetWindowPos(m_menu->GetHWnd(), 0, rect.left, rect.top, rect.right - rect.left, m_height_px, SWP_NOOWNERZORDER);
+	}
+}
 int Sakura::Main(HINSTANCE hInstance,
 	HINSTANCE,
 	LPTSTR,
 	int)
 {
+	
 	appInstance = hInstance;
+
+	m_plugins = tignear::sakura::loadPlugin(tignear::win::GetModuleFilePath(NULL) / "plugins");
+	m_factory = tignear::sakura::loadShellContext(m_plugins);
+
 	WNDCLASS wc;
 	setlocale(LC_CTYPE, "JPN");
 
@@ -77,7 +136,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	if (!RegisterClass(&wc)) {
 		return -1;
 	}
-	m_sakura=CreateWindowEx(
+	m_hwnd=CreateWindowEx(
 		0,      
 		className,  
 		_T("Sakura"), 
@@ -111,44 +170,80 @@ int Sakura::Main(HINSTANCE hInstance,
 
 
 	RECT rect;
-	GetWindowRect(m_sakura, (LPRECT)&rect);
-
-
-	ConsoleWindow::Create(m_sakura,0,0, rect.right - rect.left,rect.bottom - rect.top,(HMENU)0x20,m_thread_mgr.Get(),m_clientId,m_category_mgr.Get(),m_attribute_mgr.Get(),m_d2d_factory.Get(),m_dwrite_factory.Get(),&m_console);
+	GetClientRect(m_hwnd, (LPRECT)&rect);
 	auto iocpmgr = std::make_shared<IOCPMgr>();
-	std::shared_ptr<ShellContext> shell= tignear::sakura::BasicShellContext::Create(_T("nyagos.exe"), iocpmgr,65001);
-	//shell->InputString(L"dir");
-		//shell->InputString("dir\br\r\n");
+	m_resource[resource::IOCPMgr] = iocpmgr;
 
-	//shell->InputKey();
-	//shell->InputKey(0x75);
-	//shell->InputString("i");
-	//shell->InputString("\t");
-	//shell->InputKey(3);
-	//shell->InputKey('\b');
+	auto config = LoadConfig("config.lua");
+	auto ishell = config.shells[config.initshell];
+	m_menu = MenuWindow::Create(
+		hInstance,
+		m_hwnd,
+		m_dpi,
+		0,
+		0,
+		m_dpi.Dip(rect.right - rect.left),
+		m_menu_hmenu,
+		m_contexts,
+		[this](auto c){
+			m_contexts[reinterpret_cast<uintptr_t>(c->shell.get())] = c;
+			c->shell->AddExitListener(
+				[this](auto e) {
+					auto k = reinterpret_cast<uintptr_t>(e);
+					auto f=m_contexts.find(k);
+					if (f == m_contexts.end()) {
+						return;
+					}
+					m_contexts.erase(f);
+					if (m_contexts.empty()) {
+						SendMessage(m_hwnd,WM_DESTROY,0,0);
+						return;
+					}
 
-	//shell->InputString("\r\n");
-	auto console = std::make_shared<ConsoleWindow::ConsoleContext>(shell,false);
+				}
+			);
+		},
+		[this]() {
+			if (m_console) {
+				Sakura::m_console->ReGetConsoleContext();
+			}
+		},
+		config,
+		[this](std::string k) {
+			return m_factory.at(k).get();
+		},
+		[this](std::string k) {
+			return m_resource.at(k);
+		}
+	);
+	m_console = ConsoleWindow::Create(
+		hInstance,
+		m_hwnd,
+		m_dpi,
+		0, 
+		MenuWindow::m_menu_height, 
+		static_cast<FLOAT>(rect.right - rect.left), 
+		static_cast<FLOAT>(rect.bottom - rect.top - MenuWindow::m_menu_height),
+		m_console_hmenu,
+		m_thread_mgr.Get(),
+		m_clientId,
+		m_category_mgr.Get(),
+		m_attribute_mgr.Get(),
+		m_d2d_factory.Get(),
+		m_dwrite_factory.Get(),
+		std::function([this](DIP w,DIP h) {
+			return m_menu->GetCurrentContext(w, h);
+		})
+	);
 
-	m_console->SetConsoleContext(console);
-	/*shell->InputChar(L'c');
-	shell->InputChar(L'd');
-	shell->InputChar(L' ');
-	shell->InputChar(L'c');
-	shell->InputChar(L':');
-	shell->InputChar(L'\\');
-	shell->InputChar(L'‚Ù');
-	shell->InputChar(L'‚°');
-	shell->InputChar(L'‚Ù');
-	shell->InputChar(L'\b');
-	shell->InputChar(L'‚Ù');
-	shell->InputChar(L'‚°');
-	//shell->InputKey(VK_TAB);
-	shell->InputKey(VK_RETURN);*/
-	//shell->InputString("cd ../\r\n");
-	ShowWindow(m_sakura, SW_SHOWDEFAULT);
-	UpdateWindow(m_sakura);
+	ShowWindow(m_hwnd, SW_SHOWDEFAULT);
+	UpdateWindow(m_hwnd);
 	auto r= Run();
+	for (auto itr = m_contexts.begin(); itr != m_contexts.end();) {
+		auto e = itr->second->shell;
+		itr = m_contexts.erase(itr);
+		e->Terminate();
+	}
 	m_thread_mgr->Deactivate();
 	return r;
 }
@@ -172,7 +267,7 @@ int Sakura::Run() {
 		BOOL fEaten;
 		BOOL focus;
 		m_thread_mgr->IsThreadFocus(&focus);
-		OutputDebugStringA(focus ? "" : "~");
+		OutputDebugString(focus ? _T("") : _T("~"));
 		try {
 			if (FAILED(msgPump->GetMessage(&msg, 0, 0, 0, &fResult)))
 			{
@@ -214,12 +309,4 @@ int Sakura::Run() {
 	}
 }
 //static fields
- HWND Sakura::m_sakura;
- HINSTANCE Sakura::appInstance;
- Microsoft::WRL::ComPtr<ITfThreadMgr> Sakura::m_thread_mgr;
- TfClientId Sakura::m_clientId;
- Microsoft::WRL::ComPtr<ID2D1Factory> Sakura::m_d2d_factory;
- Microsoft::WRL::ComPtr<IDWriteFactory> Sakura::m_dwrite_factory;
- ComPtr<ConsoleWindow> Sakura::m_console;
- ComPtr<ITfCategoryMgr> Sakura::m_category_mgr;
- ComPtr<ITfDisplayAttributeMgr> Sakura::m_attribute_mgr;
+tignear::sakura::Sakura* Sakura::m_sakura;
