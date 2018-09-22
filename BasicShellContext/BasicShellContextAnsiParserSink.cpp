@@ -5,8 +5,8 @@
 #include <numeric>
 #include <cassert>
 #include <algorithm>
+#include <split.h>
 #include "BasicShellContext.h"
-#include "split.h"
 #include "EastAsianWidth.h"
 using tignear::sakura::BasicShellContext;
 using tignear::ansi::AttributeText;

@@ -1,4 +1,5 @@
 #pragma once
+#include <tchar.h>
 #include <string>
 namespace tignear::ansi {
 	constexpr std::wstring_view csi_charsW=L"0123456789;:? ";

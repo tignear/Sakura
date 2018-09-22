@@ -5,6 +5,7 @@
 #include "BasicShellContextLineText.h"
 #include "EastAsianWidth.h"
 #include "Looper.h"
+#undef min
 using tignear::sakura::BasicShellContextLineText;
 using tignear::sakura::AttributeTextImpl;
 using tignear::icuex::EastAsianWidth;

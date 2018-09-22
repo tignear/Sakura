@@ -1,12 +1,13 @@
 #pragma once
 #include "stdafx.h"
 #include <ModuleFilePath.h>
-#include "BasicShellContextFactory.h"
+#include <strconv.h>
+#include <ansi/BasicColorTable.h>
+#include <DefinedResource.h>
+
+#include "RedirectShellContextFactory.h"
 #include "ShellExecuteExShellContext.h"
 #include "RedirectShellContext.h"
-#include "strconv.h"
-#include "ansi/BasicColorTable.h"
-#include "DefinedResource.h"
 
 namespace tignear::sakura {
 	std::shared_ptr<ShellContext> RedirectShellContextFactory::Create(const Information& info)const {

@@ -21,19 +21,22 @@
     <ClInclude Include="targetver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="RedirectShellContext.h">
+    <ClInclude Include="Looper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ShellExecuteExShellContext.h">
+    <ClInclude Include="EastAsianWidth.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ConsoleReadShellContextFactory.h">
+    <ClInclude Include="BasicShellContextLineText.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ConsoleReadShellContext.h">
+    <ClInclude Include="BasicShellContextDocument.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="RedirectShellContextFactory.h">
+    <ClInclude Include="BasicShellContextAttributeText.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicShellContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,19 +44,19 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="dllmain.cpp">
+    <ClCompile Include="BasicShellContextAttributeText.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="RedirectShellContext.cpp">
+    <ClCompile Include="BasicShellContextAnsiParserSink.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="AdminRedirectShellContext.cpp">
+    <ClCompile Include="BasicShellContextDocument.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="RedirectShellContextFactory.cpp">
+    <ClCompile Include="BasicShellContextLineText.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ConsoleReadShellContext.cpp">
+    <ClCompile Include="BasicShellContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

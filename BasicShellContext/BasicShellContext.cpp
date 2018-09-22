@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "strconv.h"
+#include <strconv.h>
+#include <ansi/AttributeText.h>
 #include "split.h"
 #include "BasicShellContext.h"
-#include "ansi/AttributeText.h"
 using namespace tignear;
 using namespace sakura;
 using namespace stdex;
