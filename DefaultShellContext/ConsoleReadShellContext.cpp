@@ -14,8 +14,8 @@ namespace tignear::sakura {
 		}
 		return std::wstring_view(m_nodata_text);
 	}
-	std::shared_ptr<ConsoleReadShellContext> ConsoleReadShellContext::Create(stdex::tstring exe, stdex::tstring cmd, LPVOID, stdex::tstring) {
-		auto r = std::make_shared<ConsoleReadShellContext>(exe,cmd);
+	std::shared_ptr<ConsoleReadShellContext> ConsoleReadShellContext::Create(stdex::tstring exe, stdex::tstring cmd, LPVOID , stdex::tstring ,std::wstring font,double fontsize) {
+		auto r = std::make_shared<ConsoleReadShellContext>(exe,cmd,font,fontsize);
 		r->m_close_watch_thread=std::thread( [r]() {
 			WaitForSingleObject(r->m_child_process, INFINITE);
 			for (auto&& e : r->m_exit_listeners) {
@@ -131,12 +131,11 @@ namespace tignear::sakura {
 	void ConsoleReadShellContext::Resize(UINT , UINT ) {
 
 	}
-	auto f = std::wstring(L"Cica");
 	const std::wstring& ConsoleReadShellContext::DefaultFont()const {
-		return f;
+		return m_default_font;
 	}
 	double ConsoleReadShellContext::FontSize()const {
-		return 16.0;
+		return m_fontsize;
 	}
 	bool ConsoleReadShellContext::UseTerminalEchoBack()const {
 		return false;

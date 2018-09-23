@@ -15,15 +15,9 @@ namespace tignear::sakura {
 		ConsoleReadShellContextFactory(HINSTANCE hinst) :m_hinst(hinst) {}
 		std::shared_ptr<ShellContext> Create(const Information& info)const override {
 			auto cmd = info.shellConf.get<std::string>("cmd");
-			//auto iocpMgr = std::static_pointer_cast<iocp::IOCPMgr>(info.getResource(resource::IOCPMgr));
-			//auto cp = info.shellConf.get<int>("codepage");
-			/*auto terminal_echo = info.shellConf.get<bool>("use_terminal_echoback");
 			auto fontsize = info.shellConf.get<double>("fontsize");
 			auto fontmap = std::vector<std::wstring>();
-			LuaIntf::LuaRef fonts = info.shellConf["fonts"];
-			for (auto e : fonts) {
-				fontmap.push_back(cp_to_wide(e.value().toValue<std::string>(), 65001));
-			}*/
+			auto font = info.shellConf.get<std::string>("font");
 			auto admin = false;
 			auto hasAdminParam = info.shellConf.has("admin");
 			if (hasAdminParam) {
@@ -35,7 +29,7 @@ namespace tignear::sakura {
 			auto cmdc = std::move(cmd);
 #endif // UNICODE
 
-			return ConsoleReadShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) /(admin?"AdminConsoleReadShellContext.exe" :"ConsoleReadShellContext.exe")), cmdc,nullptr,L"");
+			return ConsoleReadShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) /(admin?"AdminConsoleReadShellContext.exe" :"ConsoleReadShellContext.exe")), cmdc,nullptr,L"",utf8_to_wide(font),fontsize);
 
 			
 		}
