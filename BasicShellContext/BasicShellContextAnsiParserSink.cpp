@@ -2,6 +2,7 @@
 #include <unicode/ubrk.h>
 #include <unicode/brkiter.h>
 #include <unicode/locid.h>
+#include <strconv.h>
 #include <numeric>
 #include <cassert>
 #include <algorithm>
@@ -14,223 +15,232 @@ using tignear::stdex::split;
 using icu::UnicodeString;
 using tignear::icuex::EastAsianWidth;
 
-void BasicShellContext::ParseColor(std::wstring_view sv) {
-	auto elems=split<wchar_t, std::vector<std::wstring>>(std::wstring(sv), L";");
-	for (auto itr = elems.begin(); itr != elems.end();++itr) {
-		auto num = std::stoul(*itr);
-		switch (num)
-		{
-		case 0://reset
-			m_document.SetAttriuteDefault();
-			continue;
-		case 1:
-			m_document.EditCurrentAttribute().bold = true;
-			continue;
-		case 2:
-			m_document.EditCurrentAttribute().faint = true;
-			continue;
-		case 3:
-			m_document.EditCurrentAttribute().italic = true;
-			continue;
-		case 4:
-			m_document.EditCurrentAttribute().underline = true;
-			continue;
-		case 5:
-			m_document.EditCurrentAttribute().blink = ansi::Blink::Slow;
-			continue;
-		case 6:
-			m_document.EditCurrentAttribute().blink = ansi::Blink::Fast;
-			continue;
-		case 7:
-			m_document.EditCurrentAttribute().reverse = true;
-			continue;
-		case 8:
-			m_document.EditCurrentAttribute().conceal = true;
-			continue;
-		case 9:
-			m_document.EditCurrentAttribute().crossed_out=true;
-			continue;
-		case 20:
-			m_document.EditCurrentAttribute().fluktur = true;
-			continue;
-		case 21:
-			m_document.EditCurrentAttribute().bold = false;
-			continue;
-		case 22:
-			m_document.EditCurrentAttribute().bold = false;
-			m_document.EditCurrentAttribute().faint = false;
-			continue;
-		case 23:
-			m_document.EditCurrentAttribute().italic = false;
-			m_document.EditCurrentAttribute().fluktur = false;
-			continue;
-		case 24:
-			m_document.EditCurrentAttribute().underline = false;
-			continue;
-		case 25:
-			m_document.EditCurrentAttribute().blink = ansi::Blink::None;
-			continue;
-		case 27://???
-			m_document.EditCurrentAttribute().reverse = false;
-			continue;
-		case 28:
-			m_document.EditCurrentAttribute().conceal = false;
-			continue;
-		case 29:
-			m_document.EditCurrentAttribute().crossed_out = false;
-			continue;
-		case 38:
-		{
-			++itr;
-			auto t = std::stoul(std::wstring(*itr));
-			switch (t)
+void BasicShellContext::ParseColor(std::string_view sv) {
+	if (sv.empty()) {
+		m_document.SetAttriuteDefault();
+		return;
+	}
+	auto elems = split<char, std::vector<std::string>>(std::string(sv), ";");
+	try {
+		for (auto itr = elems.begin(); itr != elems.end(); ++itr) {
+			auto num = std::stoul(*itr);
+			switch (num)
 			{
-			case 5:
-			{
-				itr++;
-				m_document.EditCurrentAttribute().frColor.color_256=static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				m_document.EditCurrentAttribute().frColor.type = ColorType::Color256;
-				break;
-			}
+			case 0://reset
+				m_document.SetAttriuteDefault();
+				continue;
+			case 1:
+				m_document.EditCurrentAttribute().bold = true;
+				continue;
 			case 2:
+				m_document.EditCurrentAttribute().faint = true;
+				continue;
+			case 3:
+				m_document.EditCurrentAttribute().italic = true;
+				continue;
+			case 4:
+				m_document.EditCurrentAttribute().underline = true;
+				continue;
+			case 5:
+				m_document.EditCurrentAttribute().blink = ansi::Blink::Slow;
+				continue;
+			case 6:
+				m_document.EditCurrentAttribute().blink = ansi::Blink::Fast;
+				continue;
+			case 7:
+				m_document.EditCurrentAttribute().reverse = true;
+				continue;
+			case 8:
+				m_document.EditCurrentAttribute().conceal = true;
+				continue;
+			case 9:
+				m_document.EditCurrentAttribute().crossed_out = true;
+				continue;
+			case 20:
+				m_document.EditCurrentAttribute().fluktur = true;
+				continue;
+			case 21:
+				m_document.EditCurrentAttribute().bold = false;
+				continue;
+			case 22:
+				m_document.EditCurrentAttribute().bold = false;
+				m_document.EditCurrentAttribute().faint = false;
+				continue;
+			case 23:
+				m_document.EditCurrentAttribute().italic = false;
+				m_document.EditCurrentAttribute().fluktur = false;
+				continue;
+			case 24:
+				m_document.EditCurrentAttribute().underline = false;
+				continue;
+			case 25:
+				m_document.EditCurrentAttribute().blink = ansi::Blink::None;
+				continue;
+			case 27://???
+				m_document.EditCurrentAttribute().reverse = false;
+				continue;
+			case 28:
+				m_document.EditCurrentAttribute().conceal = false;
+				continue;
+			case 29:
+				m_document.EditCurrentAttribute().crossed_out = false;
+				continue;
+			case 38:
 			{
-				m_document.EditCurrentAttribute().frColor.type = ColorType::ColorTrue;
 				++itr;
-				m_document.EditCurrentAttribute().frColor.color_true.r = static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				++itr;
-				m_document.EditCurrentAttribute().frColor.color_true.g= static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				++itr;
-				m_document.EditCurrentAttribute().frColor.color_true.b = static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				break;
+				auto t = std::stoul(std::string(*itr));
+				switch (t)
+				{
+				case 5:
+				{
+					itr++;
+					m_document.EditCurrentAttribute().frColor.color_256 = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					m_document.EditCurrentAttribute().frColor.type = ColorType::Color256;
+					break;
+				}
+				case 2:
+				{
+					m_document.EditCurrentAttribute().frColor.type = ColorType::ColorTrue;
+					++itr;
+					m_document.EditCurrentAttribute().frColor.color_true.r = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					++itr;
+					m_document.EditCurrentAttribute().frColor.color_true.g = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					++itr;
+					m_document.EditCurrentAttribute().frColor.color_true.b = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					break;
+				}
+				default:
+					break;
+				}
+				continue;
 			}
+			case 39:
+				m_document.EditCurrentAttribute().frColor = m_document.GetDefaultAttribute().frColor;
+				continue;
+			case 48:
+			{
+				++itr;
+				auto t = std::stoul(std::string(*itr));
+				switch (t)
+				{
+				case 5:
+				{
+					itr++;
+					m_document.EditCurrentAttribute().bgColor.color_256 = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					m_document.EditCurrentAttribute().bgColor.type = ColorType::Color256;
+					break;
+				}
+				case 2:
+				{
+					m_document.EditCurrentAttribute().bgColor.type = ColorType::ColorTrue;
+					++itr;
+					m_document.EditCurrentAttribute().bgColor.color_true.r = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					++itr;
+					m_document.EditCurrentAttribute().bgColor.color_true.g = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					++itr;
+					m_document.EditCurrentAttribute().bgColor.color_true.b = static_cast<unsigned char>(std::stoul(std::string(*itr)));
+					break;
+				}
+				default:
+					break;
+				}
+				continue;
+			}
+			case 49:
+				m_document.EditCurrentAttribute().bgColor = m_document.GetDefaultAttribute().bgColor;
+				continue;
 			default:
 				break;
 			}
-			continue;
-		}
-		case 39:
-			m_document.EditCurrentAttribute().frColor =m_document.GetDefaultAttribute().frColor;
-			continue;
-		case 48:
-		{
-			++itr;
-			auto t = std::stoul(std::wstring(*itr));
-			switch (t)
-			{
-			case 5:
-			{
-				itr++;
-				m_document.EditCurrentAttribute().bgColor.color_256 = static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				m_document.EditCurrentAttribute().bgColor.type = ColorType::Color256;
-				break;
+			if (num >= 10 && num <= 19) {
+				m_document.EditCurrentAttribute().font = num - 10;
+				continue;
 			}
-			case 2:
-			{
-				m_document.EditCurrentAttribute().bgColor.type = ColorType::ColorTrue;
-				++itr;
-				m_document.EditCurrentAttribute().bgColor.color_true.r = static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				++itr;
-				m_document.EditCurrentAttribute().bgColor.color_true.g = static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				++itr;
-				m_document.EditCurrentAttribute().bgColor.color_true.b = static_cast<unsigned char>(std::stoul(std::wstring(*itr)));
-				break;
+			if ((num >= 30 && num <= 37) || (num >= 90 && num <= 97)) {
+				m_document.EditCurrentAttribute().frColor.type = ColorType::ColorSystem;
+				m_document.EditCurrentAttribute().frColor.color_system = static_cast<unsigned char>(num);
+				continue;
 			}
-			default:
-				break;
+			if ((num >= 40 && num <= 47) || (num >= 100 && num <= 107)) {
+				m_document.EditCurrentAttribute().bgColor.type = ColorType::ColorSystem;
+				m_document.EditCurrentAttribute().bgColor.color_system = static_cast<unsigned char>(num);
+				continue;
 			}
-			continue;
 		}
-		case 49:
-			m_document.EditCurrentAttribute().bgColor = m_document.GetDefaultAttribute().bgColor;
-			continue;
-		default:
-			break;
-		}
-		if (num>=10&&num<=19) {
-			m_document.EditCurrentAttribute().font = num - 10;
-			continue;
-		}
-		if ((num >= 30 && num <= 37)||(num >= 90 && num <= 97)) {
-			m_document.EditCurrentAttribute().frColor.type = ColorType::ColorSystem;
-			m_document.EditCurrentAttribute().frColor.color_system= static_cast<unsigned char>(num);
-			continue;
-		}
-		if ((num >= 40 && num <= 47)||( num >= 100 && num <= 107)) {
-			m_document.EditCurrentAttribute().bgColor.type = ColorType::ColorSystem;
-			m_document.EditCurrentAttribute().bgColor.color_system = static_cast<unsigned char>(num);
-			continue;
-		}
+	}catch(...){
+
 	}
 }
-void BasicShellContext::FindString(std::wstring_view str) {
-	/*if (m_attr_updated) {
-		m_text.back().push_back(CreateAttrText(u"",m_current_attr));
-		m_attr_updated = false;
-	}*/
-	m_document.Insert(std::wstring(str));
+void BasicShellContext::FindString(std::string_view str) {
+
+	m_document.Insert(cp_to_wide(str,m_codepage));
 }
-void BasicShellContext::FindCSI(std::wstring_view sv) {
+void BasicShellContext::FindCSI(std::string_view sv) {
 	switch (sv.back())
 	{
-	case L'A'://cursor up
+	case 'A'://cursor up
 		sv.remove_suffix(1);
 		if (sv.empty()) {
 			m_document.MoveCursorYDown(1);
 			break;
 		}
-		m_document.MoveCursorYDown(std::stoul(std::wstring{ sv }));
+		m_document.MoveCursorYDown(std::stoul(std::string{ sv }));
 		break;
-	case L'B'://cursor down
+	case 'B'://cursor down
 		sv.remove_suffix(1);
 		if (sv.empty()) {
 			m_document.MoveCursorYUp(1);
 			break;
 		}
-		m_document.MoveCursorYUp(std::stoul(std::wstring{ sv }));
+		m_document.MoveCursorYUp(std::stoul(std::string{ sv }));
 		break;
-	case L'C'://cursor right
+	case 'C'://cursor right
 		sv.remove_suffix(1);
 		if (sv.empty()) {
 			m_document.MoveCursorX(1);
 			break;
 		}
-		m_document.MoveCursorX(std::stoi(std::wstring{ sv }));
+		m_document.MoveCursorX(std::stoi(std::string{ sv }));
 		break;
-	case L'D'://curosor left
+	case 'D'://curosor left
 		sv.remove_suffix(1);
 		if (sv.empty()) {
 			m_document.MoveCursorX(-1);
 			break;
 		}
-		m_document.MoveCursorX(-std::stoi(std::wstring{ sv }));
+		m_document.MoveCursorX(-std::stoi(std::string{ sv }));
 		break;
-	case L'E':
+	case 'E':
 		m_document.SetCursorX(0);
 		sv.remove_suffix(1);
 		if (sv.empty()) {
 			m_document.MoveCursorYDown(1);
 			break;
 		}
-		m_document.MoveCursorYDown(std::stoul(std::wstring{ sv }));
+		m_document.MoveCursorYDown(std::stoul(std::string{ sv }));
 		break;
-	case L'F':
+	case 'F':
 		m_document.SetCursorX(0);
 		sv.remove_suffix(1);
 		if (sv.empty()) {
 			m_document.MoveCursorYUp(1);
 			break;
 		}
-		m_document.MoveCursorYDown(std::stoul(std::wstring{ sv }));
+		m_document.MoveCursorYDown(std::stoul(std::string{ sv }));
 		break;
-	case L'G':
+	case 'G':
 		sv.remove_suffix(1);
-		m_document.SetCursorX(std::stoul(std::wstring( sv ))-1);
+		m_document.SetCursorX(std::stoul(std::string( sv ))-1);
 		break;
-	case L'H':
-	case L'f':
+	case 'H':
+	case 'f':
 	{
 		sv.remove_suffix(1);
-		auto vec = split<wchar_t, std::vector<std::wstring>>(std::wstring( sv ), L";");
+		if (sv.empty()) {
+			m_document.SetCursorXY(0, 0);
+			break;
+		}
+		auto vec = split<char, std::vector<std::string>>(std::string( sv ), ";");
 		if (vec.size()<2) {
 			OutputDebugString(_T("Unsupported Opearation\n"));
 			break;
@@ -249,7 +259,7 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		}
 		break;
 	}
-	case L'J':
+	case 'J':
 	{
 		sv.remove_suffix(1);
 		unsigned long prop;
@@ -257,7 +267,7 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 			prop = 0UL;
 		}
 		else {
-			prop = std::stoul(std::wstring{ sv });
+			prop = std::stoul(std::string{ sv });
 		}
 		switch (prop)
 		{
@@ -280,14 +290,15 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		}
 		break;
 	}
-	case L'K':
+	case 'K':
+	{
 		sv.remove_suffix(1);
 		unsigned long prop;
 		if (sv.empty()) {
 			prop = 0UL;
 		}
 		else {
-			prop = std::stoul(std::wstring{ sv });
+			prop = std::stoul(std::string{ sv });
 		}
 		switch (prop)
 		{
@@ -303,30 +314,47 @@ void BasicShellContext::FindCSI(std::wstring_view sv) {
 		default:
 			break;
 		}
-	case L'T':
-	case L'U':
+		break;
+	}
+	case 'T':
+	case 'U':
 		//not implemented
 		break;
-	case L'm':
+	case 'm':
 		sv.remove_suffix(1);
 		ParseColor(sv);
 		break;
-	case L's':
+	case 's':
 		m_document.SaveCursor();
 		break;
-	case L'u':
+	case 'u':
 		m_document.RestoreCursor();
 		break;
+	case 'X':
+	{
+		sv.remove_suffix(1);
+		size_t prop;
+		if (sv.empty()) {
+			prop = 0UL;
+		}
+		else {
+			prop = std::stoul(std::string{ sv });
+		}
+		m_document.Erase(prop);
+		break;
+	}
 	default:
+		OutputDebugStringA((std::string("unsupported CSI") + std::string(sv) + "\n").c_str());
 		break;
 	}
 }
-void BasicShellContext::FindOSC(std::wstring_view sv) {
-	auto r = split<wchar_t, std::vector<std::wstring>>(std::wstring(sv), L";");
+void BasicShellContext::FindOSC(std::string_view sv) {
+
+	auto r = split<char, std::vector<std::string>>(std::string(sv), ";");
 	switch (std::stoul(r[0]))
 	{
 	case 0:
-		m_title = r[1];
+		m_title = cp_to_wide(r[1],m_codepage);
 		break;
 	default:
 		break;
@@ -337,4 +365,11 @@ void BasicShellContext::FindBS() {
 }
 void BasicShellContext::FindFF() {
 	m_document.RemoveAll();
+}
+void BasicShellContext::FindCR() {
+	m_document.SetCursorX(0);
+}
+void BasicShellContext::FindLF() {
+	m_document.SetCursorX(0);
+	m_document.MoveCursorYDown(1);
 }

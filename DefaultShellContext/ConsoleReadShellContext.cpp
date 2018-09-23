@@ -36,9 +36,6 @@ namespace tignear::sakura {
 		}
 	}
 	void ConsoleReadShellContext::InputChar(WPARAM charcode,LPARAM lp) {
-		/*if (charcode <= 127) {
-			return;
-		}*/
 		PostMessage(m_child_hwnd, WM_APP + 3, charcode, lp);
 	}
 	void ConsoleReadShellContext::InputString(std::wstring_view wstr) {
@@ -56,7 +53,7 @@ namespace tignear::sakura {
 		return m_doc_view;
 	}
 	std::wstring_view ConsoleReadShellContext::GetTitle()const {
-		return L"todo";
+		return m_view?m_view.info()->title:L"";
 	}
 	size_t ConsoleReadShellContext::GetLineCount()const {
 		return m_view?m_view.info()->height:0;

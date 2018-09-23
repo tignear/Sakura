@@ -21,7 +21,7 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 			if (!s) {
 				return;
 			}
-			s->OutputWorkerHelper(readCnt,s);
+			OutputWorkerHelper(readCnt,s);
 		}
 	};
 	s->m_outbuf.assign(BUFFER_SIZE, '\0');
@@ -40,8 +40,8 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	s->AddString(cp_to_wide(s->m_outbuf.c_str(),s->m_codepage,cnt));
-	return s->OutputWorker(s);
+	s->AddString(s->m_outbuf);
+	return OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode,LPARAM lp) {
 	if (!m_hwnd) {
@@ -69,11 +69,11 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 	}
 }
 void BasicShellContext::ConfirmString(std::wstring_view view) {
-	AddString(view);
+	m_document.Insert(std::wstring(view));
 }
-void BasicShellContext::AddString(std::wstring_view str) {
+void BasicShellContext::AddString(std::string_view str) {
 	std::lock_guard lock(m_lock);
-	ansi::parseW(str, *this);
+	ansi::parseA(str, *this);
 }
 
 uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)> f) const{
@@ -174,7 +174,7 @@ BasicShellContextLineText& BasicShellContext::GetCursorY(){
 }
 size_t BasicShellContext::GetCursorXWStringPos()const {
 	std::lock_guard lock(m_lock);
-	return m_document.GetCursorX();
+	return m_document.GetCursorXWStringPos();
 }
 ShellContext::attrtext_document& BasicShellContext::GetAll() {
 	return m_document.GetAll();

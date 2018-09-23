@@ -16,9 +16,14 @@ namespace tignear::sakura {
 	}
 
 	void BasicShellContextDocument::NotifyLayoutChange(bool x,bool y) {
+		if (x || y) {
+			m_cursorX_wstringpos_cache_update = true;
+		}
 		m_layout_change_callback(x,y);
+
 	}
 	void BasicShellContextDocument::NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine> v) {
+		m_cursorX_wstringpos_cache_update = true;
 		m_text_change_callback(v);
 	}
 	bool BasicShellContextDocument::FixCursorY(){
@@ -256,6 +261,9 @@ namespace tignear::sakura {
 		SetCursorX(m_cursorY_itr->Insert(m_cursorX, icu::UnicodeString(back.c_str()), m_current_attr));
 		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
 
+	}
+	void BasicShellContextDocument::Erase(size_t count) {
+		m_cursorX=m_cursorY_itr->Erase(m_cursorX, count);
 	}
 	attrtext_document_all_impl& BasicShellContextDocument::GetAll() {
 		return m_all;

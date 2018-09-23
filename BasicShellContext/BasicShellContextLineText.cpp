@@ -168,7 +168,6 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 					itr->ustr().removeBetween(cnt);
 					return r2;
 				}
-				//throw std::runtime_error("Not expected");
 			}
 			r += EastAsianWidth(uc, ambiguous_size);
 			++cnt;
@@ -178,7 +177,63 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 	m_value.emplace_back(ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 	return r2;
 }
-
+size_t BasicShellContextLineText::Erase(size_t p,size_t len) {
+	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
+	auto itr = m_value.begin();
+	if (itr == m_value.end()) {
+		return p;
+	}
+	uint32_t r = 0;
+	while (itr != m_value.end()) {
+		if (itr->ustr().isEmpty()) {
+			itr = m_value.erase(itr);
+			continue;
+		}
+		auto charitr = icu::StringCharacterIterator(itr->ustr());
+		auto cnt = 0;
+		for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
+			if ((u_getCombiningClass(uc) != 0)) {
+				charitr.next();
+				++cnt;
+				continue;
+			}
+			if (r >= static_cast<unsigned>(p)) {
+				uint32_t removedEAW = 0;
+				auto rs = cnt;
+				auto rlen = 0;
+				for (; uc != charitr.DONE&&removedEAW < len; uc = charitr.next()) {
+					++rlen;
+					removedEAW += EastAsianWidth(uc, ambiguous_size);
+				}
+				itr->ustr().remove(rs, rlen);
+				++itr;
+				if (itr == m_value.end()) {
+					return p;
+				}
+				while (removedEAW <len) {
+					rlen = 0;
+					auto charitr = icu::StringCharacterIterator(itr->ustr());
+					for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
+						removedEAW += EastAsianWidth(uc, ambiguous_size);
+						++rlen;
+						if (removedEAW >= len) {
+							itr->ustr().remove(0, rlen);
+							return p;
+						}
+					}
+					itr=m_value.erase(itr);
+					if (itr == m_value.end()) {
+						return p;
+					}
+				}
+			}
+			r += EastAsianWidth(uc, ambiguous_size);
+			++cnt;
+		}
+		++itr;
+	}
+	return p;
+}
 using tignear::sakura::ShellContext;
 ShellContext::attrtext_iterator BasicShellContextLineText::begin(){
 	return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(Value().begin()));
