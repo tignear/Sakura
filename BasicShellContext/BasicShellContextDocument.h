@@ -157,5 +157,7 @@ namespace tignear::sakura {
 		attrtext_document_all_impl& GetAll();
 		attrtext_document_view_impl& GetView();
 		void Insert(const std::wstring&);
+		void Erase(size_t count);
+
 	};
 }

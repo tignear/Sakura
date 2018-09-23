@@ -3,7 +3,6 @@
 #include <Windows.h>
 #include "ansi/AttributeText.h"
 namespace tignear::sakura {
-	using SHELL_CONTEXT_ID = WPARAM;
 	class ShellContext {
 
 	public:

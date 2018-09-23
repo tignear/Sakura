@@ -100,7 +100,7 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 	{
 		std::swap(acpStart, acpEnd);
 	}
-	FLOAT y=0;
+	FLOAT y = 0;
 	auto height = GetAreaDip().height;
 	auto end = m_console->shell->GetView().end();
 	--end;
@@ -108,7 +108,7 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 	auto begin = m_console->shell->GetView().begin();
 	auto&& curY = m_console->shell->GetCursorY();
 	auto nowY = height;
-	for (;true; --itr) {
+	for (; true; --itr) {
 		DWRITE_TEXT_METRICS met{};
 		auto lay = GetLayout(*itr);
 		lay->GetMetrics(&met);
@@ -123,16 +123,19 @@ HRESULT ConsoleWindowTextArea::GetTextExt(
 			break;
 		}
 	}
-	if (nowY>0) {
+	if (nowY > 0) {
 		y = height - nowY;
 	}
 	HRESULT hr;
 	UINT32 count;
-	auto iss=static_cast<UINT32>(m_console->shell->GetCursorXWStringPos());
+
+	LockHolder lock(*m_console->shell);
+	auto iss = static_cast<UINT32>(m_console->shell->GetCursorXWStringPos());
 	auto layout = BuildCurosorYLayoutWithX();
-	if (( hr= layout->HitTestTextRange(iss+acpStart, acpEnd-acpStart, 0, y, NULL, 0, &count))!=E_NOT_SUFFICIENT_BUFFER) {
+	if ((hr = layout->HitTestTextRange(iss + acpStart, acpEnd - acpStart, 0, y, NULL, 0, &count)) != E_NOT_SUFFICIENT_BUFFER) {
 		FailToThrowHR(hr);
 	}
+
 	auto mats = std::make_unique<DWRITE_HIT_TEST_METRICS[]>(count);
 	FailToThrowHR(layout->HitTestTextRange(iss + acpStart, acpEnd - acpStart, 0, y, mats.get(), count, &count));
 	LONG left = LONG_MAX, top = LONG_MAX, right = 0, bottom = 0;

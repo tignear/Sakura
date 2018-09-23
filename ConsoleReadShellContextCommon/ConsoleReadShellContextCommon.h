@@ -2,7 +2,9 @@
 #include <stdexcept>
 #include <Windows.h>
 namespace tignear::sakura {
+	
 	struct MappingInfo {
+		static const constexpr auto TITLE_LENGTH = 4096;
 		unsigned short allocateWidth;
 		unsigned short allocateHeight;
 		unsigned short cursorX;
@@ -11,6 +13,7 @@ namespace tignear::sakura {
 		unsigned short viewSize;
 		unsigned short width;
 		unsigned short height;
+		wchar_t title[TITLE_LENGTH];
 	};
 	class MappingView {
 		HANDLE handle;

@@ -13,7 +13,7 @@ namespace tignear::sakura {
 		sa.nLength = sizeof(sa);
 		sa.bInheritHandle = TRUE;
 		sa.lpSecurityDescriptor = NULL;
-		tstring out_pipename = _T("\\\\.\\pipe\\tignear.sakura.BasicShellContext.out.");
+		tstring out_pipename = _T("\\\\.\\pipe\\tignear.sakura.ShellExecuteExShellContext.out.");
 		auto str_process_id = stdex::to_tstring(GetCurrentProcessId());
 		auto str_process_cnt = stdex::to_tstring(m_process_count);
 		out_pipename += str_process_id;

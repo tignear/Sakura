@@ -41,6 +41,7 @@ namespace tignear::sakura {
 		bool operator!=(const attrtext_line&)const override;
 
 		size_t Insert(size_t,const icu::UnicodeString&, const Attribute& attr);
+		size_t Erase(size_t,size_t);
 	private:
 		std::list<AttributeTextImpl> m_value;
 		const ansi::ColorTable& m_ct_sys;
