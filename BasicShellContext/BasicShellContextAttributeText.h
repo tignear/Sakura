@@ -6,7 +6,7 @@
 #include <ansi/AttributeText.h>
 namespace tignear::sakura {
 	enum class ColorType :unsigned char{
-		ColorTrue=0,Color256=1,ColorSystem=2
+		ColorTrue=0,ColorSystem=1, Color256 =2
 	};
 	struct Color{
 		ColorType type;
@@ -16,10 +16,24 @@ namespace tignear::sakura {
 				unsigned char g;
 				unsigned char b;
 			}color_true;
-			unsigned char color_256;
 			unsigned char color_system;
+			unsigned char color_256;
 		};
 	};
+	static const constexpr inline uint32_t SolveColor(const Color& c, const ansi::ColorTable& color_system_table, const ansi::ColorTable& color256_table) {
+		switch (c.type)
+		{
+		case ColorType::ColorTrue:
+			return c.color_true.r << 16 | c.color_true.g << 8 | c.color_true.b;
+		case ColorType::Color256:
+			return color256_table.at(c.color_256);
+		case ColorType::ColorSystem:
+			return color_system_table.at(c.color_system);
+		default:
+			return 0x000000;
+		}
+	}
+
 	static constexpr bool operator==(Color a, Color b) {
 		if (a.type != b.type) {
 			return false;
@@ -67,12 +81,12 @@ namespace tignear::sakura {
 			a.font == b.font;
 	}
 	class AttributeTextImpl:public ansi::AttributeText{
-		std::uint32_t ColorHelper(Color c) const;
 		const Attribute m_attr;
 		const ansi::ColorTable& m_system_color_table;
 		const ansi::ColorTable& m_256_color_table;
 		const std::vector<std::wstring>& m_font_map;
 		mutable icu::UnicodeString m_ustr;
+		uint32_t ColorHelper(const Color& color)const;
 	public:
 		AttributeTextImpl(const icu::UnicodeString& ustr, const ansi::ColorTable& c_system, const ansi::ColorTable&c_256,const std::vector<std::wstring>& font) :m_ustr(ustr),m_system_color_table(c_system),m_256_color_table(c_256),m_font_map(font),m_attr(){}
 		AttributeTextImpl(const icu::UnicodeString& ustr, const ansi::ColorTable& c_system, const ansi::ColorTable&c_256,const std::vector<std::wstring>& font,const  Attribute& attr ) :m_ustr(ustr), m_system_color_table(c_system), m_256_color_table(c_256),m_font_map(font), m_attr(attr) {}

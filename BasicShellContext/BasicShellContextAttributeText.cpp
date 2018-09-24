@@ -4,18 +4,8 @@ using tignear::sakura::AttributeTextImpl;
 using tignear::ansi::Blink;
 using tignear::sakura::Color;
 using tignear::sakura::Attribute;
-std::uint32_t AttributeTextImpl::ColorHelper(Color c)const {
-	switch (c.type)
-	{
-	case ColorType::ColorTrue:
-		return c.color_true.r<<16| c.color_true.g <<8| c.color_true.b;
-	case ColorType::Color256:
-		return m_256_color_table.at(c.color_256);
-	case ColorType::ColorSystem:
-		return m_system_color_table.at(c.color_system);
-	default:
-		return 0x000000;
-	}
+uint32_t AttributeTextImpl::ColorHelper(const Color& color)const {
+	return SolveColor(color, m_system_color_table,m_256_color_table);
 }
 std::wstring_view AttributeTextImpl::textW()const{
 	return std::wstring_view(reinterpret_cast<const wchar_t*>(m_ustr.getBuffer()), m_ustr.length());

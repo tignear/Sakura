@@ -115,7 +115,8 @@ namespace tignear::sakura {
 			m_lock_holder = id;
 			++m_lock_count;
 		}
-		else {
+		else
+		{
 			++m_lock_count;
 		}
 
@@ -130,6 +131,12 @@ namespace tignear::sakura {
 	}
 	void ConsoleReadShellContext::Resize(UINT , UINT ) {
 
+	}
+	uint32_t ConsoleReadShellContext::BackgroundColor()const {
+		return 0x000000;
+	}
+	uint32_t ConsoleReadShellContext::FrontColor()const {
+		return 0xFFFFFF;
 	}
 	const std::wstring& ConsoleReadShellContext::DefaultFont()const {
 		return m_default_font;

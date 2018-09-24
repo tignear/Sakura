@@ -263,7 +263,7 @@ namespace tignear::sakura {
 
 	}
 	void BasicShellContextDocument::Erase(size_t count) {
-		m_cursorX=m_cursorY_itr->Erase(m_cursorX, count);
+		m_cursorY_itr->Erase(m_cursorX, count);//ignor
 	}
 	attrtext_document_all_impl& BasicShellContextDocument::GetAll() {
 		return m_all;
@@ -282,7 +282,7 @@ namespace tignear::sakura {
 		auto end = l.cend();
 		for (auto itr = l.cbegin(); itr != end&&nowEAW<m_cursorX;++itr) {
 			auto charitr = icu::StringCharacterIterator(itr->ustr());
-			for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
+			for (UChar uc = charitr.first(); uc != charitr.DONE&&nowEAW < m_cursorX; uc = charitr.next()) {
 				if ((u_getCombiningClass(uc) != 0)) {
 					charitr.next();
 					++cnt;

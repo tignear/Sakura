@@ -165,6 +165,12 @@ double BasicShellContext::FontSize()const {
 bool BasicShellContext::UseTerminalEchoBack()const {
 	return m_use_terminal_echoback;
 };
+uint32_t BasicShellContext::BackgroundColor()const {
+	return m_bg_color;
+}
+uint32_t BasicShellContext::FrontColor()const {
+	return m_fr_color;
+}
 const std::wstring& BasicShellContext::DefaultFont()const {
 	return m_fontmap.at(m_document.GetDefaultAttribute().font);
 }

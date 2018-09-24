@@ -33,6 +33,8 @@ namespace tignear::sakura {
 		void AddString(std::string_view);
 		constexpr static unsigned int BUFFER_SIZE = 4096;
 		const unsigned int m_codepage;
+		const uint32_t m_bg_color;
+		const uint32_t m_fr_color;
 		static std::atomic_uintmax_t m_process_count;
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
 		HANDLE m_out_pipe;
@@ -68,6 +70,8 @@ namespace tignear::sakura {
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
 			m_codepage(codepage),
+			m_fr_color(SolveColor(def.frColor,c_sys,c_256)),
+			m_bg_color(SolveColor(def.bgColor, c_sys, c_256)),
 			m_document(BasicShellContextDocument(c_sys, c_256, fontmap, def, std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this), std::placeholders::_1, std::placeholders::_2), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this), std::placeholders::_1))),
 			m_use_terminal_echoback(use_terminal_echoback),
 			m_fontmap(fontmap),
@@ -107,6 +111,8 @@ namespace tignear::sakura {
 		attrtext_document& GetView() override;
 		double FontSize()const override;
 		bool UseTerminalEchoBack()const override;
+		uint32_t BackgroundColor()const override;
+		uint32_t FrontColor()const override;
 		const std::wstring& DefaultFont()const override;
 		void Lock()override;
 		void Unlock()override;

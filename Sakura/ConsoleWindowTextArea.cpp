@@ -763,6 +763,8 @@ std::pair<bool,Microsoft::WRL::ComPtr<IDWriteTextLayout1>> ConsoleWindowTextArea
 Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildCurosorYLayoutWithX() {
 	auto&& t = m_d2d->GetRenderTarget();
 	auto rc = GetAreaDip();
+	ComPtr<ID2D1SolidColorBrush> textColor;
+	t->CreateSolidColorBrush(D2D1::ColorF(m_console->shell->FrontColor(), 1.0f), &textColor);
 	auto allowCaching = true;
 	std::wstring ftext;
 	auto&& l = m_console->shell->GetCursorY();
@@ -839,10 +841,10 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::BuildCurosorYL
 			//attr‚É‘®«‚ª“ü‚Á‚Ä‚¢‚é‚Ì‚Å‘®«‚ÉŠî‚Ã‚¢‚Ä•`‰æ‚³‚¹‚é
 			ComPtr<DWriteDrawerEffect> effect = new DWriteDrawerEffect(
 				convertColor(attr.crBk, t, m_d2d->transparency.Get()).Get(),
-				convertColor(attr.crText, t, m_d2d->textColor.Get()).Get(),
+				convertColor(attr.crText, t, textColor.Get()).Get(),
 				attr.lsStyle == TF_LS_NONE ? std::unique_ptr<DWriteDrawerEffectUnderline>() : std::make_unique<DWriteDrawerEffectUnderline>(convertLineStyle(attr.lsStyle),
 					static_cast<bool>(attr.fBoldLine),
-					convertColor(attr.crLine, t, m_d2d->textColor.Get()).Get())
+					convertColor(attr.crLine, t, textColor.Get()).Get())
 			);
 			ComPtr<ITfRangeACP> rangeAcp;
 			range.As(&rangeAcp);
@@ -957,10 +959,11 @@ void ConsoleWindowTextArea::DrawShellText() {
 			break;
 		}
 	}
-
+	ComPtr<ID2D1SolidColorBrush> textColor;
+	m_d2d->GetRenderTarget()->CreateSolidColorBrush(D2D1::ColorF(m_console->shell->FrontColor(),1.0f),&textColor);
 	ComPtr<DWriteDrawerEffect> defaultEffect = new DWriteDrawerEffect{
 		m_d2d->transparency.Get(),
-		m_d2d->textColor.Get(),
+		textColor.Get(),
 		std::unique_ptr<DWriteDrawerEffectUnderline>()
 	};
 	auto t = m_d2d->GetRenderTarget();
@@ -1063,13 +1066,9 @@ void ConsoleWindowTextArea::OnPaint() {
 		BeginPaint(m_textarea_hwnd, &pstruct);
 
 		t->BeginDraw();
-		t->Clear(m_d2d->clearColor);
+		t->Clear(D2D1::ColorF(m_console->shell->BackgroundColor()));
 
 		DrawShellText();
-
-
-
-		/**/
 
 		FailToThrowHR(t->EndDraw());
 

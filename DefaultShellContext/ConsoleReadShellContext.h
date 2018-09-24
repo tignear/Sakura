@@ -11,7 +11,7 @@
 #include <unordered_map>
 namespace tignear::sakura {
 	class ConsoleReadShellContext:public ShellContext {
-		static const constexpr std::hash<std::wstring_view> hash = {};
+		static const constexpr std::hash<std::wstring_view> hash{};
 		std::condition_variable m_update_watch_variable;
 		std::mutex m_update_watch_mutex;
 		bool m_update_watch_closing=false;
@@ -379,6 +379,8 @@ namespace tignear::sakura {
 		void Lock()override;//no lock call
 		void Unlock()override;//lock call
 		void Resize(UINT w, UINT h)override;//no lock call
+		uint32_t BackgroundColor()const override;//no lock call
+		uint32_t FrontColor()const override;//no lock call
 		const std::wstring& DefaultFont()const override;//no lock call
 		double FontSize()const override;//no lock call
 		bool UseTerminalEchoBack()const override;//no lock call

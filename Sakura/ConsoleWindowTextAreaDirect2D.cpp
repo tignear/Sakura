@@ -3,7 +3,6 @@
 #include "ConsoleWindowTextAreaDirect2D.h"
 using Microsoft::WRL::ComPtr;
 namespace tignear::sakura {
-	D2D1::ColorF ConsoleWindowTextAreaDirect2D::clearColor = D2D1::ColorF(D2D1::ColorF::LightPink, 1.0f);
 
 	void ConsoleWindowTextAreaDirect2D::InitResource() {
 		auto&& t = GetRenderTarget();
@@ -11,15 +10,6 @@ namespace tignear::sakura {
 		t->CreateSolidColorBrush(
 			D2D1::ColorF(D2D1::ColorF::Red, 1.0f),
 			&red
-		);
-		t->CreateSolidColorBrush(
-			D2D1::ColorF(D2D1::ColorF::Black, 1.0f),
-			&textColor
-		);
-
-		t->CreateSolidColorBrush(
-			clearColor,
-			&clearColorBrush
 		);
 		t->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 0.0f), &transparency);
 	}

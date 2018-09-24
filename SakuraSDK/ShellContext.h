@@ -170,7 +170,7 @@ namespace tignear::sakura {
 		virtual void SetPageSize(size_t count)=0;//no lock call
 		virtual size_t GetViewStart()const=0;//no lock call
 		virtual attrtext_line& GetCursorY()=0;
-		virtual size_t GetCursorXWStringPos()const = 0;//no lock call.wstring_view position
+		virtual size_t GetCursorXWStringPos()const = 0;//no lock call. wstring_view position.
 		virtual void SetViewStart(size_t)=0;//no lock call
 		virtual uintptr_t AddTextChangeListener(std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)>)const=0;//no lock call
 		virtual void RemoveTextChangeListener(uintptr_t)const = 0;//no lock call
@@ -178,13 +178,11 @@ namespace tignear::sakura {
 		virtual void RemoveLayoutChangeListener(uintptr_t)const = 0;//no lock call
 		virtual uintptr_t AddExitListener(std::function<void(ShellContext*)>)const = 0;//no lock call
 		virtual void RemoveExitListener(uintptr_t)const = 0;//no lock call
-		//virtual void Set256Color(const std::unordered_map<unsigned int,uint32_t>&)=0;//no lock call
-		//virtual void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
-		//virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&)=0;//no lock call
-		//virtual void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)=0;//no lock call
 		virtual void Lock()=0;//no lock call
 		virtual void Unlock()=0;//lock call
 		virtual void Resize(UINT w,UINT h)=0;//no lock call
+		virtual uint32_t BackgroundColor()const=0;//no lock call
+		virtual uint32_t FrontColor()const=0;//no lock call
 		virtual const std::wstring& DefaultFont()const=0;//no lock call
 		virtual double FontSize()const =0;//no lock call
 		virtual bool UseTerminalEchoBack()const=0;//no lock call
