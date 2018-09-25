@@ -33,13 +33,14 @@ namespace tignear::sakura {
 		size_t Remove();
 		size_t RemoveAfter(size_t p);
 		size_t RemoveBefore(size_t p);
-		
+		static inline std::pair<int32_t,uint32_t> EAWtoIndex(const icu::UnicodeString&, uint32_t eaw,unsigned char ambiguous_size);
+
 		ShellContext::attrtext_iterator begin() override;
 		ShellContext::attrtext_iterator end() override;
 		std::shared_ptr<void>& resource()override;
 		bool operator==(const attrtext_line&)const override;
 		bool operator!=(const attrtext_line&)const override;
-
+		bool IsEmpty()const;
 		size_t Insert(size_t,const icu::UnicodeString&, const Attribute& attr);
 		size_t Erase(size_t,size_t);
 	private:

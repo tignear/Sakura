@@ -73,7 +73,9 @@ size_t BasicShellContextLineText::RemoveBefore(size_t p) {
 	return p;
 }
 
-
+bool BasicShellContextLineText::IsEmpty()const {
+	return m_value.empty();
+}
 size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr, const Attribute& attr) {
 	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
 	auto eaw = EastAsianWidth(ustr, ambiguous_size);
@@ -100,9 +102,10 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 			}
 			if (r >= static_cast<unsigned>(p)) {//挿入位置を探し出した
 				if (itr->attribute() == attr) {//属性がおんなじ場合
-					if (ustr.length() > itr->ustr().length()+cnt) {//新しい文字列のほうが長いから古い文字列を新しい文字のぶん消す
-						itr->ustr().replace(cnt, itr->ustr().length(), ustr);
-						auto removing = ustr.length() - itr->ustr().length()+cnt;
+					auto len = itr->ustr().length();
+					if (ustr.length() > len+cnt) {//新しい文字列のほうが長いから古い文字列を新しい文字のぶん消す
+						itr->ustr().replace(cnt, len, ustr);
+						auto removing = ustr.length() - (len +cnt);
 						while (removing>0) {
 							++itr;
 							if (itr == m_value.end()) {
@@ -121,27 +124,27 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 				if (charitr.getIndex()==0||charitr.getIndex()==charitr.getLength()-1) {//境界にあるから次のとこも見てみる
 					{
 						auto n = std::next(itr);
-						if (n != m_value.end()) {
-							if (itr->attribute() == attr) {
-								if (ustr.length() > n->ustr().length()) {
-									n->ustr().replace(0, n->ustr().length(), ustr);
-									auto removing = ustr.length() - n->ustr().length();
-									while (removing > 0) {
-										++n;
-										if (n == m_value.end()) {
-											break;
-										}
-										auto nr = std::min(removing, n->ustr().length());
-										n->ustr().remove(0, nr);
-										removing -= nr;
+						if (n != m_value.end()&& itr->attribute() == attr) {
+							auto len = n->ustr().length();
+							if (ustr.length() > len) {
+								n->ustr().replace(0, len, ustr);
+								auto removing = ustr.length() - len;
+								while (removing > 0) {
+									++n;
+									if (n == m_value.end()) {
+										break;
 									}
+									auto nr = std::min(removing, n->ustr().length());
+									n->ustr().remove(0, nr);
+									removing -= nr;
 								}
-								else {
-									n->ustr().replace(0, ustr.length(), ustr);
-								}
-								return r2;
 							}
+							else {
+								n->ustr().replace(0, ustr.length(), ustr);
+							}
+							return r2;
 						}
+						
 					}
 					m_value.emplace(itr, ustr, m_ct_sys, m_ct_256, m_fontmap, attr);
 					auto removing = ustr.length();
@@ -157,7 +160,7 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 					return r2;
 				}
 				else {//割り込む。
-					auto n = std::next(itr);
+					/*auto n = std::next(itr);
 					m_value.emplace(n, ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 					if (n != m_value.end()) {
 						n=std::next(itr);
@@ -166,7 +169,7 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 						m_value.emplace(n, icu::UnicodeString(itr->ustr(), cnt-ustr.length()), m_ct_sys, m_ct_256, m_fontmap, attr);
 					}
 					itr->ustr().removeBetween(cnt);
-					return r2;
+					return r2;*/
 				}
 			}
 			r += EastAsianWidth(uc, ambiguous_size);
@@ -177,64 +180,49 @@ size_t BasicShellContextLineText::Insert(size_t p,const icu::UnicodeString& ustr
 	m_value.emplace_back(ustr, m_ct_sys, m_ct_256, m_fontmap,attr);
 	return r2;
 }
-size_t BasicShellContextLineText::Erase(size_t p,size_t len) {
+size_t BasicShellContextLineText::Erase(size_t ps,size_t lenEAWs) {
+	auto p = static_cast<int32_t>(ps);
+	auto lenEAW= static_cast<int32_t>(lenEAWs);
 	unsigned char ambiguous_size = UINT8_C(2);//MAGIC_NUMBER
 	auto itr = m_value.begin();
 	if (itr == m_value.end()) {
 		return p;
 	}
-	uint32_t r = 0;
-	while (itr != m_value.end()) {
-		if (itr->ustr().isEmpty()) {
+	auto r = EAWtoIndex(itr->ustr(), p, ambiguous_size);
+	auto r2 = EAWtoIndex(itr->ustr(), p +lenEAW, ambiguous_size);
+	itr->ustr().removeBetween(r.first,r2.first);
+	auto removingEAW = r2.second - p + lenEAW;
+	++itr;
+	while (removingEAW > 0&&itr != m_value.end()) {
+		auto r3 = EAWtoIndex(itr->ustr(), removingEAW, ambiguous_size);
+		if (itr->ustr().length() == r3.first) {
 			itr = m_value.erase(itr);
-			continue;
 		}
-		auto charitr = icu::StringCharacterIterator(itr->ustr());
-		auto cnt = 0;
-		for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
-			if ((u_getCombiningClass(uc) != 0)) {
-				charitr.next();
-				++cnt;
-				continue;
-			}
-			if (r >= static_cast<unsigned>(p)) {
-				uint32_t removedEAW = 0;
-				auto rs = cnt;
-				auto rlen = 0;
-				for (; uc != charitr.DONE&&removedEAW < len; uc = charitr.next()) {
-					++rlen;
-					removedEAW += EastAsianWidth(uc, ambiguous_size);
-				}
-				itr->ustr().remove(rs, rlen);
-				++itr;
-				if (itr == m_value.end()) {
-					return p;
-				}
-				while (removedEAW <len) {
-					rlen = 0;
-					auto charitr = icu::StringCharacterIterator(itr->ustr());
-					for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
-						removedEAW += EastAsianWidth(uc, ambiguous_size);
-						++rlen;
-						if (removedEAW >= len) {
-							itr->ustr().remove(0, rlen);
-							return p;
-						}
-					}
-					itr=m_value.erase(itr);
-					if (itr == m_value.end()) {
-						return p;
-					}
-				}
-			}
-			r += EastAsianWidth(uc, ambiguous_size);
-			++cnt;
+		else {
+			itr->ustr().replace(0,r3.first,icu::UnicodeString(r3.first,32,r3.first));
+			++itr;
 		}
-		++itr;
+		removingEAW -= r3.second;
 	}
 	return p;
 }
 using tignear::sakura::ShellContext;
+std::pair<int32_t,uint32_t> BasicShellContextLineText::EAWtoIndex(const icu::UnicodeString& ustr, uint32_t eaw,unsigned char ambiguous_size) {
+	auto cnt = 0U;
+	auto eawCnt = 0U;
+	auto charitr = icu::StringCharacterIterator(ustr);
+	for (UChar uc = charitr.first(); uc != charitr.DONE&&eawCnt<eaw; uc = charitr.next()) {
+
+		if ((u_getCombiningClass(uc) != 0)) {
+			charitr.next();
+			++cnt;
+			continue;
+		}
+		eawCnt += EastAsianWidth(uc, ambiguous_size);
+		++cnt;
+	}
+	return { cnt,eawCnt };
+}
 ShellContext::attrtext_iterator BasicShellContextLineText::begin(){
 	return ShellContext::attrtext_iterator(std::make_unique<attrtext_iterator_impl>(Value().begin()));
 }

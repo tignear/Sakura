@@ -11,6 +11,7 @@
 namespace tignear::sakura {
 	using stdex::For;
 	using ansi::ColorTable;
+
 	BasicShellContextDocument::TextUpdateInfoLine BasicShellContextDocument::BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus s, ShellContext::attrtext_line& l) {
 		return TextUpdateInfoLine(std::make_unique<TextUpdateInfoImpl>(s,l));
 	}
@@ -26,6 +27,20 @@ namespace tignear::sakura {
 		m_cursorX_wstringpos_cache_update = true;
 		m_text_change_callback(v);
 	}
+	void BasicShellContextDocument::FixEmptyLine() {
+		auto ri = m_text.rbegin();
+		auto re=decltype(ri)(m_cursorY_itr);
+		//http://izmiz.hateblo.jp/entry/2014/11/01/140233
+		while(ri != re) {
+			if (ri->IsEmpty()) {
+				NotifyTextChange({ BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, *ri) });
+				m_text.erase(--(ri.base())); 
+			}
+			else {
+				break;
+			}
+		}
+	}
 	bool BasicShellContextDocument::FixCursorY(){
 		if (m_text.begin() == m_text.end()) {
 			return false;
@@ -35,18 +50,6 @@ namespace tignear::sakura {
 			--m_cursorY;
 		}
 		return true;
-	}
-	void BasicShellContextDocument::SetSystemColorTable(const ColorTable& t) {
-		m_color_sys = t;
-	}
-	void BasicShellContextDocument::SetSystemColorTable(const ColorTable&& t) {
-		m_color_sys = t;
-	}
-	void BasicShellContextDocument::Set256ColorTable(const ColorTable& t) {
-		m_color_256 = t;
-	}
-	void BasicShellContextDocument::Set256ColorTable(const ColorTable&& t) {
-		m_color_256 = t;
 	}
 	void BasicShellContextDocument::SetCursorXY(size_t x, size_t y) {
 		SetCursorX(x);
@@ -260,6 +263,7 @@ namespace tignear::sakura {
 		}
 		SetCursorX(m_cursorY_itr->Insert(m_cursorX, icu::UnicodeString(back.c_str()), m_current_attr));
 		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
+		FixEmptyLine();
 
 	}
 	void BasicShellContextDocument::Erase(size_t count) {

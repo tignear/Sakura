@@ -27,11 +27,11 @@ namespace tignear::sakura {
 			auto str_process_id = stdex::to_tstring(GetCurrentProcessId());
 			auto str_process_cnt = stdex::to_tstring(m_process_count);
 
-			tstring out_pipename = _T("\\\\.\\pipe\\tignear.sakura.ShellExecuteExShellContext.out.");
+			tstring out_pipename = _T("\\\\.\\pipe\\tignear.sakura.ConPTYShellContext.out.");
 			out_pipename += str_process_id;
 			out_pipename += _T(".");
 			out_pipename += str_process_cnt;
-			tstring in_pipename = _T("\\\\.\\pipe\\tignear.sakura.ShellExecuteExShellContext.in.");
+			tstring in_pipename = _T("\\\\.\\pipe\\tignear.sakura.ConPTYShellContext.in.");
 			in_pipename += str_process_id;
 			in_pipename += _T(".");
 			in_pipename += str_process_cnt;
@@ -89,6 +89,9 @@ namespace tignear::sakura {
 
 		}
 		void InputChar(WPARAM c, LPARAM)override {
+			if (c == '\b') {
+				c = 0x7f;//DEL
+			}
 			auto w=std::make_shared<std::string>(wide_to_utf8(std::wstring(1,static_cast<wchar_t>(c))));
 			auto buf = w->c_str();
 			auto len =static_cast<DWORD>(w->length());
@@ -98,14 +101,17 @@ namespace tignear::sakura {
 			WriteFile(m_in_pipe,buf,len,NULL,&info->overlapped);
 		}
 		void InputKey(WPARAM keycode, LPARAM)override {
+			
 			auto w = std::make_shared<std::string>(ansi::encode(keycode));
+			if (w->empty()) {
+				return;
+			}
 			auto buf = w->c_str();
 			auto len = static_cast<DWORD>(w->length());
 			auto info = new iocp::IOCPInfo{
 				{},[w](DWORD) {}
 			};
 			WriteFile(m_in_pipe, buf, len, NULL, &info->overlapped);
-
 		}
 		void InputKey(WPARAM keycode, unsigned int count)override {
 			for (auto i = 0U; i < count; i++) {
@@ -169,6 +175,7 @@ namespace tignear::sakura {
 		}
 		void Terminate()override{
 			win32::TerminateProcessTree(win32::ProcessTree(GetProcessId(m_childProcess)));
+
 			if (m_thread.joinable()) {
 				m_thread.join();
 			}
@@ -176,6 +183,10 @@ namespace tignear::sakura {
 		virtual ~ConPTYShellContext() {
 			if (m_in_pipe) {
 				CloseHandle(m_in_pipe);
+				m_in_pipe = NULL;
+			}
+			if (m_childProcess) {
+				CloseHandle(m_childProcess);
 				m_in_pipe = NULL;
 			}
 			if (m_thread.joinable()) {

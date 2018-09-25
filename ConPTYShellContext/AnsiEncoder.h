@@ -12,10 +12,6 @@ namespace tignear::ansi {
 			return "\x1b[C";
 		case VK_LEFT:
 			return "\x1b[D";
-		case VK_RETURN:
-			return "\n";
-		case VK_SPACE:
-			return " ";
 		default:
 			return "";
 		}
