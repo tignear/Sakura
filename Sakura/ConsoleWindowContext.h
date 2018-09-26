@@ -2,21 +2,22 @@
 #include <Windows.h>
 #include <msctf.h>
 #include <memory>
+#include "ConsoleWindowTextAreaSelectionMgr.h"
 #include "ShellContext.h"
 namespace tignear::sakura::cwnd {
+	enum class Direction {
+		Left,Right,None
+	};
 	struct TextAreaContext {
 		//friend ConsoleWindowTextArea;
-		TextAreaContext() :
+		TextAreaContext(std::shared_ptr<ShellContext> s) :
 			inputarea_selection_start(0),
 			inputarea_selection_end(0),
 			selend(TS_AE_NONE),
-			interim_char(false)
+			interim_char(false),
+			sel_mgr(s)
 		{}
-		size_t selection_start_line;
-		size_t selection_end_line;
-		LONG selection_start_x;
-		LONG selection_end_x;
-		std::wstring selection_buffer;
+		SelectionMgr sel_mgr;
 		LONG inputarea_selection_start;
 		LONG inputarea_selection_end;
 		TsActiveSelEnd selend;
@@ -26,13 +27,14 @@ namespace tignear::sakura::cwnd {
 	class Context {
 
 	public:
-		Context(std::shared_ptr<ShellContext> shell) :shell(shell), textarea_context() {
+		std::shared_ptr<ShellContext> shell;
+		TextAreaContext textarea_context;
+		Context(std::shared_ptr<ShellContext> shell) :shell(shell), textarea_context(shell) {
 
 		}
 		~Context() {
 			//shell->RemoveExitListener(exitListener_removekey);
 		}
-		std::shared_ptr<ShellContext> shell;
-		TextAreaContext textarea_context;
+
 	};
 }

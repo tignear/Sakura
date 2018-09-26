@@ -87,18 +87,15 @@ void BasicShellContext::RemoveTextChangeListener(uintptr_t key)const {
 	m_text_change_listeners.erase(key);
 }
 uintptr_t BasicShellContext::AddLayoutChangeListener(std::function<void(ShellContext*,bool,bool)> f)const {
-	std::lock_guard lock(m_lock);
 
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_layout_change_listeners[key] = f;
 	return key;
 }
 void BasicShellContext::RemoveLayoutChangeListener(uintptr_t key)const{
-	std::lock_guard lock(m_lock);
 	m_layout_change_listeners.erase(key);
 }
 uintptr_t BasicShellContext::AddExitListener(std::function<void(ShellContext*)> f)const {
-	std::lock_guard lock(m_lock);
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_exit_listeners[key] = f;
 	return key;
@@ -179,6 +176,10 @@ BasicShellContextLineText& BasicShellContext::GetCursorY(){
 	std::lock_guard lock(m_lock);
 	return m_document.GetCursorY();
 }
+ShellContext::attrtext_line_iterator BasicShellContext::GetCursorYItr(){
+	return m_document.GetCursorYItr();
+}
+
 size_t BasicShellContext::GetCursorXWStringPos()const {
 	std::lock_guard lock(m_lock);
 	return m_document.GetCursorXWStringPos();

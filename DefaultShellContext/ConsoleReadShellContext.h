@@ -368,6 +368,7 @@ namespace tignear::sakura {
 		void SetPageSize(size_t count)override;//no lock call
 		size_t GetViewStart()const override;//no lock call
 		attrtext_line_impl& GetCursorY()override;
+		attrtext_line_iterator GetCursorYItr()override;
 		size_t GetCursorXWStringPos()const override;//no lock call.wstring_view position
 		void SetViewStart(size_t)override;//no lock call
 		uintptr_t AddTextChangeListener(std::function<void(ShellContext*, std::vector<TextUpdateInfoLine>)>)const override;//no lock call

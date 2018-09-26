@@ -320,12 +320,11 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param,LPARAM lp) {
 	CallWithAppLock(true, [this, param]() {
 		InputtingString([this, param](auto&str) {
 			Selection([this,param,&str](auto& start, auto& end, auto& ase, auto& interim) {
-			
-
 				if (GetKeyState(VK_LEFT) & 0x80)
 				{
 					if (GetKeyState(VK_SHIFT) & 0x80)
 					{
+						m_console->textarea_context.sel_mgr.shift_left();
 						if (start == end)
 						{
 							if (start == 0)
@@ -365,6 +364,8 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param,LPARAM lp) {
 					}
 					else
 					{
+						m_console->textarea_context.sel_mgr.left();
+
 						if (start !=end)
 						{
 							auto cnt = end -start;
@@ -393,6 +394,8 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param,LPARAM lp) {
 				{
 					if (GetKeyState(VK_SHIFT) & 0x80)
 					{
+						m_console->textarea_context.sel_mgr.shift_right();
+
 						if (start == end)
 						{
 							if (end == str.length())
@@ -431,6 +434,8 @@ void ConsoleWindowTextArea::OnKeyDown(WPARAM param,LPARAM lp) {
 					}
 					else
 					{
+						m_console->textarea_context.sel_mgr.right();
+
 						if (start != end)
 						{
 							auto cnt = end - start;

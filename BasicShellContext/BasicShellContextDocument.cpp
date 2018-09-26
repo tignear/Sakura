@@ -311,7 +311,10 @@ namespace tignear::sakura {
 		}
 		return *m_cursorY_itr;
 	}
-
+	ShellContext::attrtext_line_iterator  BasicShellContextDocument::GetCursorYItr() {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_cursorY_itr == m_text.end() ?
+			std::prev(m_cursorY_itr) : m_cursorY_itr));
+	}
 	void attrtext_line_iterator_impl::operator++() {
 		++m_elem;
 	}

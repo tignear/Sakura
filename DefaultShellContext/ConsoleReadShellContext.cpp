@@ -78,6 +78,9 @@ namespace tignear::sakura {
 			return m_lines.at(0);
 		}
 	}
+	ShellContext::attrtext_line_iterator ConsoleReadShellContext::GetCursorYItr() {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(this,m_view.info()->cursorY));
+	}
 	size_t ConsoleReadShellContext::GetCursorXWStringPos()const {
 		return m_view?m_view.info()->cursorX:0;
 	}

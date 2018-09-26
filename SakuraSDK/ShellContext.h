@@ -170,6 +170,8 @@ namespace tignear::sakura {
 		virtual void SetPageSize(size_t count)=0;//no lock call
 		virtual size_t GetViewStart()const=0;//no lock call
 		virtual attrtext_line& GetCursorY()=0;
+		virtual attrtext_line_iterator GetCursorYItr() = 0;
+
 		virtual size_t GetCursorXWStringPos()const = 0;//no lock call. wstring_view position.
 		virtual void SetViewStart(size_t)=0;//no lock call
 		virtual uintptr_t AddTextChangeListener(std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)>)const=0;//no lock call

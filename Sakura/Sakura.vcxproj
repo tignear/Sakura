@@ -205,6 +205,7 @@
   <ItemGroup>
     <ClInclude Include="ConsoleWindowTextAreaDirect2D.h" />
     <ClInclude Include="ConsoleWindowTextAreaRender.h" />
+    <ClInclude Include="ConsoleWindowTextAreaSelectionMgr.h" />
     <ClInclude Include="MenuWindow.h" />
     <ClInclude Include="PluginLoader.h" />
     <ClInclude Include="SakuraConfig.h" />

@@ -105,6 +105,7 @@ namespace tignear::sakura {
 		uintptr_t AddExitListener(std::function<void(ShellContext*)>)const override;
 		void RemoveExitListener(uintptr_t)const override;
 		BasicShellContextLineText& GetCursorY()override;
+		attrtext_line_iterator GetCursorYItr()override;
 		size_t GetCursorXWStringPos()const override;
 		void Resize(UINT w, UINT h)override;
 		attrtext_document& GetAll() override;
