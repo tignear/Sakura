@@ -286,6 +286,9 @@ namespace tignear::sakura {
 				auto ccmd = (cmd + _T(" ") + stdex::to_tstring(GetCurrentProcessId()) + _T(" ") + stdex::to_tstring(reinterpret_cast<uintptr_t>(this)));
 				sei.lpParameters = ccmd.c_str();
 				ShellExecuteEx(&sei);
+				if (!sei.hProcess) {
+					throw std::runtime_error("creation failed");
+				}
 				return sei.hProcess;
 			}()),
 			m_child_pid(GetProcessId(m_child_process)),
