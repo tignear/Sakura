@@ -204,8 +204,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleWindowTextAreaDirect2D.h" />
-    <ClInclude Include="ConsoleWindowTextAreaRender.h" />
-    <ClInclude Include="ConsoleWindowTextAreaSelectionMgr.h" />
     <ClInclude Include="MenuWindow.h" />
     <ClInclude Include="PluginLoader.h" />
     <ClInclude Include="SakuraConfig.h" />
@@ -228,7 +226,6 @@
     <ClCompile Include="ConsoleWindowTextArea.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaCompositionSink.cpp" />
     <ClCompile Include="ConsoleWindowTextAreaDirect2D.cpp" />
-    <ClCompile Include="ConsoleWindowTextAreaRender.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="MenuWindow.cpp" />
     <ClCompile Include="PluginLoader.cpp" />
