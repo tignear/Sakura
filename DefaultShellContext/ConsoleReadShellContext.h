@@ -355,7 +355,9 @@ namespace tignear::sakura {
 			})
 		{
 			WaitForInputIdle(m_child_process,INFINITE);
-			m_child_hwnd = win32::GetHwndFromProcess(m_child_pid);
+			while (!(m_child_hwnd)) {
+				m_child_hwnd = win32::GetHwndFromProcess(m_child_pid);
+			}
 		}
 		static std::shared_ptr<ConsoleReadShellContext> Create(stdex::tstring exe, stdex::tstring cmd,LPVOID env,stdex::tstring cdir,std::wstring font,double fontsize);
 		void InputKey(WPARAM keycode,LPARAM)override;//no lock call
