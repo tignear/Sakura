@@ -15,14 +15,21 @@ namespace tignear::sakura {
 		return std::wstring_view(m_nodata_text);
 	}
 	std::shared_ptr<ConsoleReadShellContext> ConsoleReadShellContext::Create(stdex::tstring exe, stdex::tstring cmd, LPVOID , stdex::tstring ,std::wstring font,double fontsize) {
-		auto r = std::make_shared<ConsoleReadShellContext>(exe,cmd,font,fontsize);
-		r->m_close_watch_thread=std::thread( [r]() {
-			WaitForSingleObject(r->m_child_process, INFINITE);
-			for (auto&& e : r->m_exit_listeners) {
-				e.second(r.get());
-			}
-		} );
-		return r;
+		try {
+			auto r = std::make_shared<ConsoleReadShellContext>(exe, cmd, font, fontsize);
+			r->m_close_watch_thread = std::thread([r]() {
+				WaitForSingleObject(r->m_child_process, INFINITE);
+				for (auto&& e : r->m_exit_listeners) {
+					e.second(r.get());
+				}
+			});
+			return r;
+		}
+		catch(std::runtime_error e){
+
+			return std::shared_ptr<ConsoleReadShellContext>();
+		}
+
 	}
 	void ConsoleReadShellContext::InputKey(WPARAM keycode,LPARAM lp) {
 		if (keycode > 0x39) {
