@@ -152,6 +152,9 @@ namespace tignear::sakura {
 	}
 	void ConsoleReadShellContext::Terminate() {
 		win32::TerminateProcessTree(win32::ProcessTree(m_child_pid));
+		if (m_close_watch_thread.joinable()) {
+			m_close_watch_thread.join();
+		}
 	}
 	LRESULT ConsoleReadShellContext::OnMessage(UINT msg,LPARAM lp) {
 		if(WM_APP+2==msg){
