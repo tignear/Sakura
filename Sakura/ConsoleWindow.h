@@ -180,6 +180,7 @@ namespace tignear::sakura {
 		}
 
 		FLOAT GetTextWidthDip() {
+			LockHolder lock(*m_console->shell);
 			auto lay = BuildCurosorYLayoutWithX();
 			DWRITE_TEXT_METRICS met{};
 			lay->GetMetrics(&met);

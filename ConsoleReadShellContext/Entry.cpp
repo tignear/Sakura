@@ -213,6 +213,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					view.info()->height = info.dwSize.Y;
 					view.info()->cursorX = info.dwCursorPosition.X;
 					view.info()->cursorY = info.dwCursorPosition.Y;
+					GetConsoleTitleW(view.info()->title, MappingInfo::TITLE_LENGTH);
 					SendMessage(parent,WM_APP+2,id,num);
 					++num;
 				}
@@ -223,11 +224,13 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					view.info()->height = info.dwSize.Y;
 					view.info()->cursorX = info.dwCursorPosition.X;
 					view.info()->cursorY = info.dwCursorPosition.Y;
+					GetConsoleTitleW(view.info()->title,MappingInfo::TITLE_LENGTH);
 				}
 				for (short i =0; i < view.info()->viewSize; ++i) {
 					DWORD read;
 					ReadConsoleOutputCharacterW(console_outbuf_handle, view.buf() + i * view.info()->allocateWidth, view.info()->width, {0,view.info()->viewBeginY+i},&read);
 				}
+				
 				PostMessage(parent, WM_APP + 3, id, 0);
 			}
 			if (!GetExitCodeProcess(hprocess, &exitcode)) {

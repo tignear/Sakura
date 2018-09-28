@@ -12,12 +12,16 @@ namespace tignear::dwrite {
 		const bool boldLine;
 		const Microsoft::WRL::ComPtr<ID2D1Brush> lineColor;
 		DWriteDrawerEffectUnderline(const LineStyle ls,const bool bold, ID2D1Brush* b):lineStyle(ls),boldLine(bold),lineColor(b) {}
+		DWriteDrawerEffectUnderline(const DWriteDrawerEffectUnderline& from) :lineStyle(from.lineStyle), boldLine(from.boldLine), lineColor(from.lineColor) {}
+
 	};
 	struct DWriteDrawerEffect :IUnknown {
 		const Microsoft::WRL::ComPtr<ID2D1Brush> backgroundColor;
 		const Microsoft::WRL::ComPtr<ID2D1Brush> textColor;
 		const std::unique_ptr<DWriteDrawerEffectUnderline> underline;
 		DWriteDrawerEffect(ID2D1Brush* bg, ID2D1Brush* fr ,std::unique_ptr<DWriteDrawerEffectUnderline> under) :backgroundColor(bg), textColor(fr),underline(std::move(under)), m_ref_cnt(0) {}
+		DWriteDrawerEffect(const DWriteDrawerEffect& from) :backgroundColor(from.backgroundColor), textColor(from.textColor), underline(std::make_unique<DWriteDrawerEffectUnderline>(*underline)), m_ref_cnt(0) {}
+
 		// IUnknown methods
 		ULONG STDMETHODCALLTYPE AddRef() override;
 		ULONG STDMETHODCALLTYPE Release() override;

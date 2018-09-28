@@ -11,7 +11,7 @@
 #include <unordered_map>
 namespace tignear::sakura {
 	class ConsoleReadShellContext:public ShellContext {
-		static const constexpr std::hash<std::wstring_view> hash = {};
+		static const constexpr std::hash<std::wstring_view> hash{};
 		std::condition_variable m_update_watch_variable;
 		std::mutex m_update_watch_mutex;
 		bool m_update_watch_closing=false;
@@ -30,14 +30,17 @@ namespace tignear::sakura {
 		std::atomic<std::thread::id> m_lock_holder;
 		unsigned int m_lock_count = 0;
 		std::wstring m_nodata_text;
+		const std::wstring m_default_font;
+		const double m_fontsize;
 		HWND m_child_hwnd=0;
 		//metods
 		std::wstring_view GetStringAtLineCount(int lc);
 		
 		class AttributeTextImpl:public ansi::AttributeText {
 			std::wstring_view text;
+			const std::wstring& m_font;
 		public:
-			AttributeTextImpl(std::wstring_view text):text(text) {
+			AttributeTextImpl(std::wstring_view text, const std::wstring& font):text(text), m_font(font) {
 				 
 			}
 			std::wstring_view textW()const {
@@ -77,7 +80,6 @@ namespace tignear::sakura {
 				return false;
 			}
 			const std::wstring& font()const {
-				static std::wstring m_font = std::wstring(L"Cica");
 				return m_font;//TODO
 			}
 			~AttributeTextImpl() {};
@@ -121,8 +123,9 @@ namespace tignear::sakura {
 
 			}
 			attrtext_iterator_impl(
-				std::wstring_view text
-			):impl(std::make_unique<AttributeTextImpl>(text)) {
+				std::wstring_view text,
+				const std::wstring& font
+			):impl(std::make_unique<AttributeTextImpl>(text,font)) {
 
 			}
 			explicit attrtext_iterator_impl() {
@@ -142,7 +145,7 @@ namespace tignear::sakura {
 
 			}
 			attrtext_iterator begin() {
-				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(self->GetStringAtLineCount(line_count)));
+				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(self->GetStringAtLineCount(line_count), self->m_default_font));
 			}
 			attrtext_iterator end() {
 				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>());
@@ -271,7 +274,9 @@ namespace tignear::sakura {
 			}
 		};
 	public:
-		ConsoleReadShellContext(stdex::tstring exe,stdex::tstring cmd) :
+		ConsoleReadShellContext(stdex::tstring exe,stdex::tstring cmd,std::wstring default_font,double fontsize) :
+			m_default_font(default_font),
+			m_fontsize(fontsize),
 			m_child_process([this,&exe,&cmd]() {
 				SHELLEXECUTEINFO sei{};
 				sei.cbSize = sizeof(sei);
@@ -349,7 +354,7 @@ namespace tignear::sakura {
 			WaitForInputIdle(m_child_process,INFINITE);
 			m_child_hwnd = win32::GetHwndFromProcess(m_child_pid);
 		}
-		static std::shared_ptr<ConsoleReadShellContext> Create(stdex::tstring exe, stdex::tstring cmd,LPVOID env,stdex::tstring cdir);
+		static std::shared_ptr<ConsoleReadShellContext> Create(stdex::tstring exe, stdex::tstring cmd,LPVOID env,stdex::tstring cdir,std::wstring font,double fontsize);
 		void InputKey(WPARAM keycode,LPARAM)override;//no lock call
 		void InputKey(WPARAM keycode, unsigned int count)override;//no lock call
 		void InputChar(WPARAM charcode,LPARAM)override;//no lock call
@@ -363,6 +368,7 @@ namespace tignear::sakura {
 		void SetPageSize(size_t count)override;//no lock call
 		size_t GetViewStart()const override;//no lock call
 		attrtext_line_impl& GetCursorY()override;
+		attrtext_line_iterator GetCursorYItr()override;
 		size_t GetCursorXWStringPos()const override;//no lock call.wstring_view position
 		void SetViewStart(size_t)override;//no lock call
 		uintptr_t AddTextChangeListener(std::function<void(ShellContext*, std::vector<TextUpdateInfoLine>)>)const override;//no lock call
@@ -374,6 +380,8 @@ namespace tignear::sakura {
 		void Lock()override;//no lock call
 		void Unlock()override;//lock call
 		void Resize(UINT w, UINT h)override;//no lock call
+		uint32_t BackgroundColor()const override;//no lock call
+		uint32_t FrontColor()const override;//no lock call
 		const std::wstring& DefaultFont()const override;//no lock call
 		double FontSize()const override;//no lock call
 		bool UseTerminalEchoBack()const override;//no lock call

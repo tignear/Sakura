@@ -11,15 +11,35 @@
 namespace tignear::sakura {
 	using stdex::For;
 	using ansi::ColorTable;
+
 	BasicShellContextDocument::TextUpdateInfoLine BasicShellContextDocument::BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus s, ShellContext::attrtext_line& l) {
 		return TextUpdateInfoLine(std::make_unique<TextUpdateInfoImpl>(s,l));
 	}
 
 	void BasicShellContextDocument::NotifyLayoutChange(bool x,bool y) {
+		if (x || y) {
+			m_cursorX_wstringpos_cache_update = true;
+		}
 		m_layout_change_callback(x,y);
+
 	}
 	void BasicShellContextDocument::NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine> v) {
+		m_cursorX_wstringpos_cache_update = true;
 		m_text_change_callback(v);
+	}
+	void BasicShellContextDocument::FixEmptyLine() {
+		auto ri = m_text.rbegin();
+		auto re=decltype(ri)(m_cursorY_itr);
+		//http://izmiz.hateblo.jp/entry/2014/11/01/140233
+		while(ri != re) {
+			if (ri->IsEmpty()) {
+				NotifyTextChange({ BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, *ri) });
+				m_text.erase(--(ri.base())); 
+			}
+			else {
+				break;
+			}
+		}
 	}
 	bool BasicShellContextDocument::FixCursorY(){
 		if (m_text.begin() == m_text.end()) {
@@ -30,18 +50,6 @@ namespace tignear::sakura {
 			--m_cursorY;
 		}
 		return true;
-	}
-	void BasicShellContextDocument::SetSystemColorTable(const ColorTable& t) {
-		m_color_sys = t;
-	}
-	void BasicShellContextDocument::SetSystemColorTable(const ColorTable&& t) {
-		m_color_sys = t;
-	}
-	void BasicShellContextDocument::Set256ColorTable(const ColorTable& t) {
-		m_color_256 = t;
-	}
-	void BasicShellContextDocument::Set256ColorTable(const ColorTable&& t) {
-		m_color_256 = t;
 	}
 	void BasicShellContextDocument::SetCursorXY(size_t x, size_t y) {
 		SetCursorX(x);
@@ -255,7 +263,11 @@ namespace tignear::sakura {
 		}
 		SetCursorX(m_cursorY_itr->Insert(m_cursorX, icu::UnicodeString(back.c_str()), m_current_attr));
 		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
+		FixEmptyLine();
 
+	}
+	void BasicShellContextDocument::Erase(size_t count) {
+		m_cursorY_itr->Erase(m_cursorX, count);//ignor
 	}
 	attrtext_document_all_impl& BasicShellContextDocument::GetAll() {
 		return m_all;
@@ -274,7 +286,7 @@ namespace tignear::sakura {
 		auto end = l.cend();
 		for (auto itr = l.cbegin(); itr != end&&nowEAW<m_cursorX;++itr) {
 			auto charitr = icu::StringCharacterIterator(itr->ustr());
-			for (UChar uc = charitr.first(); uc != charitr.DONE; uc = charitr.next()) {
+			for (UChar uc = charitr.first(); uc != charitr.DONE&&nowEAW < m_cursorX; uc = charitr.next()) {
 				if ((u_getCombiningClass(uc) != 0)) {
 					charitr.next();
 					++cnt;
@@ -299,7 +311,10 @@ namespace tignear::sakura {
 		}
 		return *m_cursorY_itr;
 	}
-
+	ShellContext::attrtext_line_iterator  BasicShellContextDocument::GetCursorYItr() {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_cursorY_itr == m_text.end() ?
+			std::prev(m_cursorY_itr) : m_cursorY_itr));
+	}
 	void attrtext_line_iterator_impl::operator++() {
 		++m_elem;
 	}

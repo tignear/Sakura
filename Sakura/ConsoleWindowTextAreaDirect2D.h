@@ -11,11 +11,8 @@ namespace tignear::sakura {
 	protected:
 		virtual void InitResource()override;
 	public:
-		static D2D1::ColorF clearColor;
 		ComPtr<IDWriteTextLayout1> inputtingstring_layout;
 		ComPtr<ID2D1SolidColorBrush> red;
-		ComPtr<ID2D1SolidColorBrush> textColor;
-		ComPtr<ID2D1SolidColorBrush> clearColorBrush;
 		ComPtr<ID2D1SolidColorBrush> transparency;
 	};
 	class ConsoleWindowTextAreaDirect2DWithHWnd :virtual public ConsoleWindowTextAreaDirect2D,virtual public Direct2DWithHWnd {

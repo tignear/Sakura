@@ -3,12 +3,13 @@
 #include <unordered_map>
 #include <atomic>
 #include <mutex>
-#include "IOCPMgr.h"
+#include <IOCPMgr.h>
+#include <ShellContext.h>
+#include <ansi/AttributeText.h>
+#include <ansi/AnsiParser.h>
+#include <tstring.h>
 #include "BasicShellContextDocument.h"
-#include "ShellContext.h"
-#include "ansi/AttributeText.h"
-#include "ansi/AnsiParser.h"
-#include "tstring.h"
+
 namespace tignear::sakura {
 	class BasicShellContext:public ShellContext {
 	public:
@@ -17,19 +18,23 @@ namespace tignear::sakura {
 
 		//ansi parser call backs
 
-		friend BasicShellContext& ansi::parseW<BasicShellContext>(std::wstring_view,BasicShellContext&);
-		void FindCSI(std::wstring_view);
-		void FindString(std::wstring_view);
-		void FindOSC(std::wstring_view);
+		friend BasicShellContext& ansi::parseA<BasicShellContext>(std::string_view,BasicShellContext&);
+		void FindCSI(std::string_view);
+		void FindString(std::string_view);
+		void FindOSC(std::string_view);
 		void FindBS();
-		void FindFF();		
-		void ParseColor(std::wstring_view sv);
+		void FindFF();
+		void FindCR();
+		void FindLF();
+		void ParseColor(std::string_view sv);
 		//other class members
 		static bool OutputWorker(std::shared_ptr<BasicShellContext>);
 		static bool OutputWorkerHelper(DWORD cnt,std::shared_ptr<BasicShellContext>);
-		void AddString(std::wstring_view);
+		void AddString(std::string_view);
 		constexpr static unsigned int BUFFER_SIZE = 4096;
 		const unsigned int m_codepage;
+		const uint32_t m_bg_color;
+		const uint32_t m_fr_color;
 		static std::atomic_uintmax_t m_process_count;
 		std::shared_ptr<iocp::IOCPMgr> m_iocpmgr;
 		HANDLE m_out_pipe;
@@ -65,6 +70,8 @@ namespace tignear::sakura {
 			m_iocpmgr(iocpmgr),
 			m_outbuf(BUFFER_SIZE, '\0'),
 			m_codepage(codepage),
+			m_fr_color(SolveColor(def.frColor,c_sys,c_256)),
+			m_bg_color(SolveColor(def.bgColor, c_sys, c_256)),
 			m_document(BasicShellContextDocument(c_sys, c_256, fontmap, def, std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this), std::placeholders::_1, std::placeholders::_2), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this), std::placeholders::_1))),
 			m_use_terminal_echoback(use_terminal_echoback),
 			m_fontmap(fontmap),
@@ -78,7 +85,6 @@ namespace tignear::sakura {
 				CloseHandle(m_out_pipe);
 				m_out_pipe = NULL;
 			}
-
 		}
 
 		void InputChar(WPARAM c,LPARAM lp) override;
@@ -98,17 +104,16 @@ namespace tignear::sakura {
 		void RemoveLayoutChangeListener(uintptr_t)const override;
 		uintptr_t AddExitListener(std::function<void(ShellContext*)>)const override;
 		void RemoveExitListener(uintptr_t)const override;
-		//void Set256Color(const std::unordered_map<unsigned int, uint32_t>&)override;
-		//void Set256Color(const std::unordered_map<unsigned int, uint32_t>&&)override;
-		//void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&) override;
-		//void SetSystemColor(const std::unordered_map<unsigned int, uint32_t>&&)override;
 		BasicShellContextLineText& GetCursorY()override;
+		attrtext_line_iterator GetCursorYItr()override;
 		size_t GetCursorXWStringPos()const override;
 		void Resize(UINT w, UINT h)override;
 		attrtext_document& GetAll() override;
 		attrtext_document& GetView() override;
 		double FontSize()const override;
 		bool UseTerminalEchoBack()const override;
+		uint32_t BackgroundColor()const override;
+		uint32_t FrontColor()const override;
 		const std::wstring& DefaultFont()const override;
 		void Lock()override;
 		void Unlock()override;

@@ -5,7 +5,6 @@
 #include "BasicShellContextLineText.h"
 namespace tignear::sakura {
 
-
 	class attrtext_line_iterator_impl :public ShellContext::attrtext_line_iterator_inner {
 		attrtext_line_iterator_impl(const attrtext_line_iterator_impl&);
 		std::list<BasicShellContextLineText>::iterator m_elem;
@@ -69,17 +68,15 @@ namespace tignear::sakura {
 		std::list<BasicShellContextLineText>::iterator m_viewend_itr;
 		attrtext_document_all_impl m_all;
 		attrtext_document_view_impl m_view;
-		//std::list<BasicShellContextLineText>::iterator m_origin_itr;
 		size_t m_max_line;
 		size_t m_cursorY;
 		size_t m_cursorY_save;
-		//size_t m_origin;
 		size_t m_viewendpos;
 		size_t m_viewcount;
 		size_t m_cursorX;
 		size_t m_curorX_save;
-		ansi::ColorTable m_color_256;
-		ansi::ColorTable m_color_sys;
+		const ansi::ColorTable m_color_256;
+		const ansi::ColorTable m_color_sys;
 		std::vector<std::wstring> m_fontmap;
 		Attribute m_current_attr;
 		Attribute m_default_attr;
@@ -92,6 +89,8 @@ namespace tignear::sakura {
 		bool CreateIfEnd();
 		void NotifyLayoutChange(bool x,bool y);
 		void NotifyTextChange(std::vector<ShellContext::TextUpdateInfoLine>);
+		void FixEmptyLine();
+
 	public:
 		BasicShellContextDocument(
 			const ansi::ColorTable& color_sys,
@@ -119,16 +118,13 @@ namespace tignear::sakura {
 		{
 			CreateIfEnd();
 		}
-		void SetSystemColorTable(const ansi::ColorTable&);
-		void SetSystemColorTable(const ansi::ColorTable&&);
-		void Set256ColorTable(const ansi::ColorTable&);
-		void Set256ColorTable(const ansi::ColorTable&&);
 		void SetCursorXY(size_t x,size_t y);
 		void SetCursorX(size_t x);
 		void SetCursorY(size_t x);
 		size_t GetCursorX()const;
 		size_t GetCursorXWStringPos()const;
 		BasicShellContextLineText& GetCursorY();
+		ShellContext::attrtext_line_iterator GetCursorYItr();
 		void MoveCursorX(int32_t x);
 		void MoveCursorYUp(size_t y);
 		void MoveCursorYDown(size_t y);
@@ -157,5 +153,7 @@ namespace tignear::sakura {
 		attrtext_document_all_impl& GetAll();
 		attrtext_document_view_impl& GetView();
 		void Insert(const std::wstring&);
+		void Erase(size_t count);
+
 	};
 }

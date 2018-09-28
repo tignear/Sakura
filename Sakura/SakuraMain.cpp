@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include <PluginEntry.h>
 #include <string>
-#include  <ansi/BasicColorTable.h>
+#include <ansi/BasicColorTable.h>
+#include <ModuleFilePath.h>
 #include "FailToThrow.h"
 #include "SakuraMain.h"
 #include "IOCPMgr.h"
@@ -174,7 +175,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	auto iocpmgr = std::make_shared<IOCPMgr>();
 	m_resource[resource::IOCPMgr] = iocpmgr;
 
-	auto config = LoadConfig("config.lua");
+	auto config = LoadConfig((win::GetModuleFilePath(NULL)/ "config.lua").string<char>());
 	auto ishell = config.shells[config.initshell];
 	m_menu = MenuWindow::Create(
 		hInstance,

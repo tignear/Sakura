@@ -14,8 +14,8 @@ namespace tignear::sakura {
 		}
 		return std::wstring_view(m_nodata_text);
 	}
-	std::shared_ptr<ConsoleReadShellContext> ConsoleReadShellContext::Create(stdex::tstring exe, stdex::tstring cmd, LPVOID, stdex::tstring) {
-		auto r = std::make_shared<ConsoleReadShellContext>(exe,cmd);
+	std::shared_ptr<ConsoleReadShellContext> ConsoleReadShellContext::Create(stdex::tstring exe, stdex::tstring cmd, LPVOID , stdex::tstring ,std::wstring font,double fontsize) {
+		auto r = std::make_shared<ConsoleReadShellContext>(exe,cmd,font,fontsize);
 		r->m_close_watch_thread=std::thread( [r]() {
 			WaitForSingleObject(r->m_child_process, INFINITE);
 			for (auto&& e : r->m_exit_listeners) {
@@ -36,9 +36,6 @@ namespace tignear::sakura {
 		}
 	}
 	void ConsoleReadShellContext::InputChar(WPARAM charcode,LPARAM lp) {
-		/*if (charcode <= 127) {
-			return;
-		}*/
 		PostMessage(m_child_hwnd, WM_APP + 3, charcode, lp);
 	}
 	void ConsoleReadShellContext::InputString(std::wstring_view wstr) {
@@ -56,7 +53,7 @@ namespace tignear::sakura {
 		return m_doc_view;
 	}
 	std::wstring_view ConsoleReadShellContext::GetTitle()const {
-		return L"todo";
+		return m_view?m_view.info()->title:L"";
 	}
 	size_t ConsoleReadShellContext::GetLineCount()const {
 		return m_view?m_view.info()->height:0;
@@ -80,6 +77,9 @@ namespace tignear::sakura {
 			}
 			return m_lines.at(0);
 		}
+	}
+	ShellContext::attrtext_line_iterator ConsoleReadShellContext::GetCursorYItr() {
+		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(this,m_view.info()->cursorY));
 	}
 	size_t ConsoleReadShellContext::GetCursorXWStringPos()const {
 		return m_view?m_view.info()->cursorX:0;
@@ -118,7 +118,8 @@ namespace tignear::sakura {
 			m_lock_holder = id;
 			++m_lock_count;
 		}
-		else {
+		else
+		{
 			++m_lock_count;
 		}
 
@@ -134,12 +135,17 @@ namespace tignear::sakura {
 	void ConsoleReadShellContext::Resize(UINT , UINT ) {
 
 	}
-	auto f = std::wstring(L"Cica");
+	uint32_t ConsoleReadShellContext::BackgroundColor()const {
+		return 0x000000;
+	}
+	uint32_t ConsoleReadShellContext::FrontColor()const {
+		return 0xFFFFFF;
+	}
 	const std::wstring& ConsoleReadShellContext::DefaultFont()const {
-		return f;
+		return m_default_font;
 	}
 	double ConsoleReadShellContext::FontSize()const {
-		return 16.0;
+		return m_fontsize;
 	}
 	bool ConsoleReadShellContext::UseTerminalEchoBack()const {
 		return false;

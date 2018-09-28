@@ -13,11 +13,11 @@ namespace tignear::win {
 		while (true) {
 			buf.clear();
 			buf.reserve(reserve);
-			auto copyed = GetModuleFileName(m, buf.data(), static_cast<DWORD>(buf.capacity()-1));
-			if (copyed == 0) {
+			auto copied = GetModuleFileName(m, buf.data(), static_cast<DWORD>(buf.capacity()-1));
+			if (copied == 0) {
 				throw std::runtime_error("GetModuleFileName is Failed");
 			}
-			if (copyed != buf.capacity()) {
+			if (copied != buf.capacity()) {
 				auto p = std::filesystem::path(buf.c_str());
 				//auto p = std::filesystem::path(std::move(buf));//??? do not working this 
 				p.remove_filename();

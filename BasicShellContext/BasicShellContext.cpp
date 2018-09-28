@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "strconv.h"
+#include <strconv.h>
+#include <ansi/AttributeText.h>
 #include "split.h"
 #include "BasicShellContext.h"
-#include "ansi/AttributeText.h"
 using namespace tignear;
 using namespace sakura;
 using namespace stdex;
@@ -21,7 +21,7 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 			if (!s) {
 				return;
 			}
-			s->OutputWorkerHelper(readCnt,s);
+			OutputWorkerHelper(readCnt,s);
 		}
 	};
 	s->m_outbuf.assign(BUFFER_SIZE, '\0');
@@ -40,8 +40,9 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	s->AddString(cp_to_wide(s->m_outbuf.c_str(),s->m_codepage,cnt));
-	return s->OutputWorker(s);
+	s->m_outbuf.resize(cnt+1);
+	s->AddString(s->m_outbuf);
+	return OutputWorker(s);
 }
 void BasicShellContext::InputKey(WPARAM keycode,LPARAM lp) {
 	if (!m_hwnd) {
@@ -69,11 +70,11 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 	}
 }
 void BasicShellContext::ConfirmString(std::wstring_view view) {
-	AddString(view);
+	m_document.Insert(std::wstring(view));
 }
-void BasicShellContext::AddString(std::wstring_view str) {
+void BasicShellContext::AddString(std::string_view str) {
 	std::lock_guard lock(m_lock);
-	ansi::parseW(str, *this);
+	ansi::parseA(str, *this);
 }
 
 uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellContext*,std::vector<TextUpdateInfoLine>)> f) const{
@@ -86,18 +87,15 @@ void BasicShellContext::RemoveTextChangeListener(uintptr_t key)const {
 	m_text_change_listeners.erase(key);
 }
 uintptr_t BasicShellContext::AddLayoutChangeListener(std::function<void(ShellContext*,bool,bool)> f)const {
-	std::lock_guard lock(m_lock);
 
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_layout_change_listeners[key] = f;
 	return key;
 }
 void BasicShellContext::RemoveLayoutChangeListener(uintptr_t key)const{
-	std::lock_guard lock(m_lock);
 	m_layout_change_listeners.erase(key);
 }
 uintptr_t BasicShellContext::AddExitListener(std::function<void(ShellContext*)> f)const {
-	std::lock_guard lock(m_lock);
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_exit_listeners[key] = f;
 	return key;
@@ -165,6 +163,12 @@ double BasicShellContext::FontSize()const {
 bool BasicShellContext::UseTerminalEchoBack()const {
 	return m_use_terminal_echoback;
 };
+uint32_t BasicShellContext::BackgroundColor()const {
+	return m_bg_color;
+}
+uint32_t BasicShellContext::FrontColor()const {
+	return m_fr_color;
+}
 const std::wstring& BasicShellContext::DefaultFont()const {
 	return m_fontmap.at(m_document.GetDefaultAttribute().font);
 }
@@ -172,9 +176,13 @@ BasicShellContextLineText& BasicShellContext::GetCursorY(){
 	std::lock_guard lock(m_lock);
 	return m_document.GetCursorY();
 }
+ShellContext::attrtext_line_iterator BasicShellContext::GetCursorYItr(){
+	return m_document.GetCursorYItr();
+}
+
 size_t BasicShellContext::GetCursorXWStringPos()const {
 	std::lock_guard lock(m_lock);
-	return m_document.GetCursorX();
+	return m_document.GetCursorXWStringPos();
 }
 ShellContext::attrtext_document& BasicShellContext::GetAll() {
 	return m_document.GetAll();
