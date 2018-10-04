@@ -40,7 +40,7 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	s->m_outbuf.resize(cnt+1);
+	s->m_outbuf.resize(cnt);
 	s->AddString(s->m_outbuf);
 	return OutputWorker(s);
 }

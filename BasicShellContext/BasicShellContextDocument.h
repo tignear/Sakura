@@ -28,7 +28,7 @@ namespace tignear::sakura {
 	};
 
 	class attrtext_document_all_impl:public ShellContext::attrtext_document {
-		std::list<BasicShellContextLineText>& m_text;
+		 std::list<BasicShellContextLineText>& m_text;
 	public:
 		attrtext_document_all_impl(std::list<BasicShellContextLineText>& text):m_text(text){}
 		ShellContext::attrtext_line_iterator begin() override;
@@ -66,13 +66,13 @@ namespace tignear::sakura {
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr_save;
 		std::list<BasicShellContextLineText>::iterator m_viewend_itr;
+		size_t m_viewcount;
 		attrtext_document_all_impl m_all;
 		attrtext_document_view_impl m_view;
 		size_t m_max_line;
 		size_t m_cursorY;
 		size_t m_cursorY_save;
 		size_t m_viewendpos;
-		size_t m_viewcount;
 		size_t m_cursorX;
 		size_t m_curorX_save;
 		const ansi::ColorTable m_color_256;
