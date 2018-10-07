@@ -23,6 +23,7 @@ namespace tignear::sakura {
 			if (hasAdminParam) {
 				admin = info.shellConf.get<bool>("admin");
 			}
+			
 #ifdef UNICODE
 			auto cmdc = cp_to_wide(cmd, 65001);
 #else

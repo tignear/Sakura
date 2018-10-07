@@ -214,21 +214,30 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					view.info()->cursorX = info.dwCursorPosition.X;
 					view.info()->cursorY = info.dwCursorPosition.Y;
 					GetConsoleTitleW(view.info()->title, MappingInfo::TITLE_LENGTH);
+					for (short i = 0; i < view.info()->viewSize; ++i) {
+						DWORD read_char;
+						ReadConsoleOutputCharacterW(console_outbuf_handle, view.buf() + i * view.info()->allocateWidth, view.info()->width, { 0,view.info()->viewBeginY + i }, &read_char);
+						DWORD read_attr;
+						ReadConsoleOutputAttribute(console_outbuf_handle, view.attribute() + i * view.info()->allocateWidth, view.info()->width, { 0,view.info()->viewBeginY + 1 }, &read_attr);
+					}
 					SendMessage(parent,WM_APP+2,id,num);
+					SendMessage(parent, WM_APP + 3, id,0);
 					++num;
+					continue;
 				}
-				else {
-					view.info()->viewBeginY = g_beginY;
-					view.info()->viewSize = g_size;
-					view.info()->width = info.dwSize.X;
-					view.info()->height = info.dwSize.Y;
-					view.info()->cursorX = info.dwCursorPosition.X;
-					view.info()->cursorY = info.dwCursorPosition.Y;
-					GetConsoleTitleW(view.info()->title,MappingInfo::TITLE_LENGTH);
-				}
+				
+				view.info()->viewBeginY = g_beginY;
+				view.info()->viewSize = g_size;
+				view.info()->width = info.dwSize.X;
+				view.info()->height = info.dwSize.Y;
+				view.info()->cursorX = info.dwCursorPosition.X;
+				view.info()->cursorY = info.dwCursorPosition.Y;
+				GetConsoleTitleW(view.info()->title,MappingInfo::TITLE_LENGTH);	
 				for (short i =0; i < view.info()->viewSize; ++i) {
-					DWORD read;
-					ReadConsoleOutputCharacterW(console_outbuf_handle, view.buf() + i * view.info()->allocateWidth, view.info()->width, {0,view.info()->viewBeginY+i},&read);
+					DWORD read_char;
+					ReadConsoleOutputCharacterW(console_outbuf_handle, view.buf() + i * view.info()->allocateWidth, view.info()->width, {0,view.info()->viewBeginY+i},&read_char);
+					DWORD read_attr;
+					ReadConsoleOutputAttribute(console_outbuf_handle, view.attribute() + i * view.info()->allocateWidth, view.info()->width, { 0,view.info()->viewBeginY + 1 }, &read_attr);
 				}
 				
 				PostMessage(parent, WM_APP + 3, id, 0);

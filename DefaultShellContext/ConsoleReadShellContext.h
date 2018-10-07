@@ -4,14 +4,17 @@
 #include <condition_variable>
 #include <shellapi.h>
 #include <ConsoleReadShellContextCommon.h>
+#include <array_view.h>
 #include <tstring.h>
 #include <atomic>
 #include <thread>
 #include <ShellContext.h>
 #include <unordered_map>
+#include <algorithm>
+#undef min
 namespace tignear::sakura {
 	class ConsoleReadShellContext:public ShellContext {
-		static const constexpr std::hash<std::wstring_view> hash{};
+		static const constexpr std::hash<std::wstring_view> wstr_hash{};
 		std::condition_variable m_update_watch_variable;
 		std::mutex m_update_watch_mutex;
 		bool m_update_watch_closing=false;
@@ -34,13 +37,14 @@ namespace tignear::sakura {
 		const double m_fontsize;
 		HWND m_child_hwnd=0;
 		//metods
-		std::wstring_view GetStringAtLineCount(int lc);
-		
+		std::wstring_view GetStringAtLineCount(int lc)const;
+		stdex::array_view<WORD> GetAttributesAtLineCount(int lc)const;
 		class AttributeTextImpl:public ansi::AttributeText {
 			std::wstring_view text;
 			const std::wstring& m_font;
+			WORD m_attribute;
 		public:
-			AttributeTextImpl(std::wstring_view text, const std::wstring& font):text(text), m_font(font) {
+			AttributeTextImpl(std::wstring_view text,WORD attribute, const std::wstring& font):text(text),m_attribute(attribute), m_font(font) {
 				 
 			}
 			std::wstring_view textW()const {
@@ -80,38 +84,37 @@ namespace tignear::sakura {
 				return false;
 			}
 			const std::wstring& font()const {
-				return m_font;//TODO
+				return m_font;
+			}
+			WORD word()const{
+				return m_attribute;
 			}
 			~AttributeTextImpl() {};
 		};
 
 		class attrtext_iterator_impl :public attrtext_iterator_innner {
-			std::shared_ptr<AttributeTextImpl> impl;
-			bool end=false;
+			std::vector<AttributeTextImpl>::iterator itr;
 		public:
 			void operator++() {
-				end = true;
+				++itr;
 			}
 			attrtext_iterator_innner* operator++(int) {
 				auto temp = clone();
-				end = true;
+				++itr;
 				return temp;
 			}
-			reference operator*() const{
-				return *impl;
+			const reference operator*() const{
+				return *itr;
 			}
-			pointer operator->() const{
-				return impl.get();
+			const pointer operator->() const{
+				return &*itr;
 			}
 			bool operator==(const attrtext_iterator_innner& iterator)const {
 				auto c=dynamic_cast<const attrtext_iterator_impl*>(&iterator);
 				if (c == nullptr) {
 					return false;
 				}
-				if (end&&c->end) {
-					return true;
-				}
-				return impl.get() == c->impl.get();
+				return itr == c->itr;
 			};
 			bool operator!=(const attrtext_iterator_innner& iterator)const {
 				return !operator==(iterator);
@@ -119,36 +122,46 @@ namespace tignear::sakura {
 			attrtext_iterator_innner* clone()const {
 				return new attrtext_iterator_impl(*this);
 			}
-			attrtext_iterator_impl(const attrtext_iterator_impl& from):impl(from.impl) {
+			attrtext_iterator_impl(const attrtext_iterator_impl& from):itr(from.itr) {
 
 			}
-			attrtext_iterator_impl(
-				std::wstring_view text,
-				const std::wstring& font
-			):impl(std::make_unique<AttributeTextImpl>(text,font)) {
+			explicit attrtext_iterator_impl(
+				std::vector<AttributeTextImpl>::iterator itr
+			):itr(itr) {
 
-			}
-			explicit attrtext_iterator_impl() {
-				end = true;
 			}
 			~attrtext_iterator_impl() {};
 			
 		};
 		class attrtext_line_impl :public attrtext_line {
-			size_t m_hash;
+			size_t m_text_hash;
 			const unsigned short line_count;
 			ConsoleReadShellContext* self;
 			std::shared_ptr<void> m_resource;
+			std::vector<AttributeTextImpl> m_attr_text;
+			std::vector<AttributeTextImpl> buildAttrText()const {
+				std::vector<AttributeTextImpl> ret;
+				auto arr=self->GetAttributesAtLineCount(line_count);
+				auto sv = self->GetStringAtLineCount(line_count);
+				auto e = arr.front();
+				for (size_t i = 0; i < arr.size();) {
+					auto n=arr.find_first_not_of(e,i);
+					e = arr[i];
+					ret.emplace_back(sv.substr(i,n),e,self->DefaultFont());
+					i = n;
+				}
+				return ret;
+			}
 		public:
-			attrtext_line_impl(const attrtext_line_impl& from) :m_hash(from.m_hash),line_count(from.line_count), self(from.self),m_resource(from.m_resource){}
+			attrtext_line_impl(const attrtext_line_impl& from) :m_text_hash(from.m_text_hash),line_count(from.line_count), self(from.self),m_resource(from.m_resource){}
 			attrtext_line_impl(ConsoleReadShellContext* self,unsigned short lc):self(self),line_count(lc) {
 
 			}
 			attrtext_iterator begin() {
-				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(self->GetStringAtLineCount(line_count), self->m_default_font));
+				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_attr_text.begin()));
 			}
 			attrtext_iterator end() {
-				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>());
+				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_attr_text.end()));
 			}
 			std::shared_ptr<void>& resource()override {
 				return m_resource;
@@ -163,21 +176,45 @@ namespace tignear::sakura {
 			bool operator!=(const attrtext_line& l)const {
 				return !operator==(l);
 			}
+			const std::vector<AttributeTextImpl>attr_text()const {
+				return m_attr_text;
+			}
 			bool isUpdated(){
-				auto begin = self->m_view.info()->viewBeginY;
-				if ((!self->m_view) || line_count < begin || line_count>begin+self->m_view.info()->viewSize) {
-					return false;
+				bool r = false;
+				//text
+				{
+					auto begin = self->m_view.info()->viewBeginY;
+					if ((!self->m_view) || line_count < begin || line_count>begin + self->m_view.info()->viewSize) {
+						return false;
+					}
+					auto && str = self->GetStringAtLineCount(line_count);
+					auto temp = wstr_hash(str);
+					if (m_text_hash != temp) {
+						r = true;
+						m_text_hash = temp;
+					}
 				}
-				auto && str = self->GetStringAtLineCount(line_count);
-				auto temp = hash(str);
-				auto r=m_hash != temp;
-				m_hash = temp;	
+				//attr
+				{
+					auto attr = self->GetAttributesAtLineCount(line_count);
+					std::vector<WORD> buf;
+					for (auto&& e : m_attr_text) {
+						std::vector<WORD> m(e.length(), e.word());
+						buf.insert(buf.end(),m.begin(),m.end());
+					}
+					if (!memcmp(buf.data(), attr.data(), std::min(buf.size(), attr.size()))) {
+						r = true;
+					}
+				}
+				if (r) {
+					m_attr_text = buildAttrText();
+				}
 				return r;
 			}
 		};
 		
 		std::vector<attrtext_line_impl> m_lines;
-		attrtext_line_impl& Lines(size_t i) {
+		attrtext_line_impl& Lines(size_t i){
 			if (m_view&&i > m_view.info()->height) {
 				throw std::runtime_error("");
 			}
@@ -216,10 +253,16 @@ namespace tignear::sakura {
 				--line_count;
 				return temp;
 			}
-			reference operator*()const override {
+			const reference operator*()const override {
 				return self->Lines(line_count);
 			}
-			pointer operator->()const override {
+			const pointer operator->()const override {
+				return &self->m_lines.at(line_count);
+			}
+			reference operator*()override {
+				return self->Lines(line_count);
+			}
+			pointer operator->()override {
 				return &self->m_lines.at(line_count);
 			}
 			bool operator==(const attrtext_line_iterator_inner& iterator)const override {
@@ -318,6 +361,7 @@ namespace tignear::sakura {
 				}
 				if (m_update) {
 					//text update
+					Lock();
 					auto s = m_view.info()->viewBeginY;
 					auto e = s + m_view.info()->viewSize;
 					std::vector<TextUpdateInfoLine> up;
@@ -344,7 +388,7 @@ namespace tignear::sakura {
 						}
 						memcpy(&prev_info, m_view.info(), sizeof(prev_info));
 					}
-
+					Unlock();
 					{
 						std::lock_guard lock(m_update_watch_mutex);
 						m_update = false;

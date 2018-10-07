@@ -10,8 +10,8 @@ namespace tignear::sakura {
 		}
 		void operator++()override;
 		attrtext_iterator_impl* operator++(int) override;
-		reference operator*()const override;
-		pointer operator->()const override;
+		const reference operator*()const override;
+		const pointer operator->()const override;
 		bool operator==(const attrtext_iterator_innner& iterator)const override;
 		bool operator!=(const attrtext_iterator_innner& iterator)const override;
 		attrtext_iterator_impl* clone()const override;

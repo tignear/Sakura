@@ -133,6 +133,8 @@
     <ClInclude Include="ansi\AnsiParser.h" />
     <ClInclude Include="ansi\AttributeText.h" />
     <ClInclude Include="ansi\BasicColorTable.h" />
+    <ClInclude Include="array_hash.h" />
+    <ClInclude Include="array_view.h" />
     <ClInclude Include="ComHolder.h" />
     <ClInclude Include="DefinedResource.h" />
     <ClInclude Include="Dpi.h" />
@@ -141,6 +143,7 @@
     <ClInclude Include="GetHwndFromPid.h" />
     <ClInclude Include="IOCPMgr.h" />
     <ClInclude Include="PluginEntry.h" />
+    <ClInclude Include="pointer_iterator.h" />
     <ClInclude Include="ProcessTree.h" />
     <ClInclude Include="ShellContext.h" />
     <ClInclude Include="ShellContextFactory.h" />
