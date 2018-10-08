@@ -54,10 +54,16 @@ namespace tignear::sakura {
 				return text.length();
 			}
 			std::uint32_t textColor()const {
-				return 0;
+				char r=m_attribute&FOREGROUND_RED ? 0xff : 0x00;
+				char g = m_attribute & FOREGROUND_GREEN ? 0xff : 0x00;
+				char b = m_attribute & FOREGROUND_BLUE ? 0xff: 0x00;
+				return r << 16 | g << 8 | b;
 			}
 			std::uint32_t backgroundColor()const {
-				return 0xffffff;
+				char r = m_attribute & BACKGROUND_RED ? 0xff : 0x00;
+				char g = m_attribute & BACKGROUND_GREEN ? 0xff : 0x00;
+				char b = m_attribute & BACKGROUND_BLUE ? 0xff : 0x00;
+				return r << 16 | g << 8 | b;
 			}
 			bool bold()const {
 				return false;
