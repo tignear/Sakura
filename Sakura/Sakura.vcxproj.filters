@@ -19,6 +19,9 @@
     <Filter Include="ソース ファイル\tsf">
       <UniqueIdentifier>{04d3606a-5fb3-40b1-bf75-a4e32c4b47d8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\fonts">
+      <UniqueIdentifier>{4c4afadf-d968-47a6-ab34-33d69f9489ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -112,13 +115,23 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Font Include="..\font\menu.ttf">
-      <Filter>リソース ファイル</Filter>
-    </Font>
-  </ItemGroup>
-  <ItemGroup>
     <Manifest Include="Sakura.manifest">
       <Filter>リソース ファイル</Filter>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="config.lua">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\menu.ttf">
+      <Filter>リソース ファイル\fonts</Filter>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fonts\LICENSE">
+      <Filter>リソース ファイル\fonts</Filter>
+    </None>
   </ItemGroup>
 </Project>

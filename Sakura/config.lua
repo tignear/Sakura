@@ -1,11 +1,10 @@
 local conf={
     shells={
         {
-            display="Cmd",
+            display="cmd",
             factory="ConPTYShellContextFactory",
             cmd=[[cmd]],
-            codepage=65001,
-            use_terminal_echoback=false,
+            codepage=932,
             fontsize=16.0,
             fonts={"Cica"}
         },
@@ -15,12 +14,28 @@ local conf={
             admin=true,
             cmd=[[cmd]],
             codepage=932,
-            use_terminal_echoback=false,
             fontsize=16.0,
             fonts={"Cica"}
-        }
+        },
+        {
+            display="cmd(ConsoleRead)",
+            factory="ConsoleReadShellContextFactory",
+            cmd=[[cmd]],
+            codepage=932,
+            fontsize=16.0,
+            font="Cica"
+        },
+        {
+            display="cmd(ConsoleRead&admin)",
+            factory="ConsoleReadShellContextFactory",
+            admin=true,
+            cmd=[[cmd]],
+            codepage=932,
+            fontsize=16.0,
+            font="Cica"
+        },
     },
-    initshell=0
+    initshell=3
 }
 
 return conf
