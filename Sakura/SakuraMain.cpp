@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include <PluginEntry.h>
+#include <Plugin.h>
 #include <string>
 #include <ansi/BasicColorTable.h>
 #include <ModuleFilePath.h>
@@ -116,10 +116,14 @@ int Sakura::Main(HINSTANCE hInstance,
 {
 	
 	appInstance = hInstance;
+	auto L=std::make_shared<LuaIntf::LuaContext>();
+	m_plugin_mgr = tignear::sakura::PluginManager::loadPlugin(win::GetModuleFilePath(NULL)/"plugins",L);
+	for (auto&& plugin : m_plugin_mgr.plugins()) {
+		for (auto&& factory : plugin->CreateShellContextFactorys()) {
+			m_factory[factory.first] = std::move(factory.second);
 
-	m_plugins = tignear::sakura::loadPlugin(tignear::win::GetModuleFilePath(NULL) / "plugins");
-	m_factory = tignear::sakura::loadShellContext(m_plugins);
-
+		}
+	}
 	WNDCLASS wc;
 	setlocale(LC_CTYPE, "JPN");
 
@@ -175,7 +179,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	auto iocpmgr = std::make_shared<IOCPMgr>();
 	m_resource[resource::IOCPMgr] = iocpmgr;
 
-	auto config = LoadConfig((win::GetModuleFilePath(NULL)/ "config.lua").string<char>());
+	auto config = LoadConfig(L,(win::GetModuleFilePath(NULL)/ "config.lua").u8string());
 	auto ishell = config.shells[config.initshell];
 	m_menu = MenuWindow::Create(
 		hInstance,
@@ -210,10 +214,10 @@ int Sakura::Main(HINSTANCE hInstance,
 			}
 		},
 		config,
-		[this](std::string k) {
+		[this](std::string_view k) {
 			return m_factory.at(k).get();
 		},
-		[this](std::string k) {
+		[this](std::string_view k) {
 			return m_resource.at(k);
 		}
 	);

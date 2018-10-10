@@ -23,10 +23,10 @@ namespace tignear::sakura {
 		HINSTANCE appInstance;
 		win::dpi::Dpi m_dpi;
 		HWND m_hwnd;
-		tignear::sakura::Plugins m_plugins;
+		PluginManager  m_plugin_mgr;
 		std::unordered_map<uintptr_t, std::shared_ptr<cwnd::Context>> m_contexts;
-		std::unordered_map<std::string, std::shared_ptr<void>>  m_resource;
-		std::unordered_map<std::string, std::unique_ptr<ShellContextFactory>> m_factory;
+		std::unordered_map<std::string_view, std::shared_ptr<void>>  m_resource;
+		std::unordered_map<std::string_view, std::unique_ptr<ShellContextFactory>> m_factory;
 		std::unique_ptr<tignear::sakura::ConsoleWindow> m_console;
 		std::unique_ptr<tignear::sakura::MenuWindow> m_menu;
 

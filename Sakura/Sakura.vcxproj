@@ -228,7 +228,6 @@
     <ClCompile Include="ConsoleWindowTextAreaDirect2D.cpp" />
     <ClCompile Include="Direct2D.cpp" />
     <ClCompile Include="MenuWindow.cpp" />
-    <ClCompile Include="PluginLoader.cpp" />
     <ClCompile Include="SakuraMain.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -274,6 +273,9 @@
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)fonts\</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)fonts\</DestinationFolders>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="init.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

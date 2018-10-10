@@ -1,19 +1,129 @@
 #pragma once
+#define TIGNEAR_SAKURA_IMPORT
+#include <Plugin.h>
 #include <Windows.h>
+#include <unordered_set>
 #include <unordered_map>
 #include <string>
+
 #include <ShellContextFactory.h>
 #include <filesystem>
+#include <LuaIntf/LuaIntf.h>
 namespace tignear::sakura {
-	struct handle_deleter
-	{
-		void operator()(HMODULE p) const
-		{
+	struct PluginInfo{
+		unsigned int manifestVersion;
+		virtual ~PluginInfo()noexcept{}
+	};
+	struct PluginInfov1:public PluginInfo {
+		std::string name;
+		std::unordered_set<std::string> dependencies;
+		LuaIntf::LuaRef main;
+		std::filesystem::path manifestFilePath;
+	};
+	struct FreeLib {
+		void operator()(HMODULE p) {
 			FreeLibrary(p);
 		}
 	};
-	using Plugin = std::unique_ptr<std::remove_pointer<HMODULE>::type, handle_deleter>;
-	using Plugins = std::vector<Plugin>;
-	Plugins loadPlugin(std::filesystem::path pluginDir);
-	std::unordered_map < std::string, std::unique_ptr<ShellContextFactory>> loadShellContext(const Plugins&);
+	class PluginManager {
+		std::unordered_set<std::unique_ptr<std::remove_pointer<HMODULE>::type,FreeLib>> m_hmodules;
+		std::unordered_set<std::unique_ptr<Plugin>> m_plugins;
+		std::shared_ptr<LuaIntf::LuaContext> L;
+	private:
+
+		static std::unordered_map<std::string,std::unique_ptr<PluginInfo>> loadPluginInfo(LuaIntf::LuaContext& L,std::filesystem::path pluginDir) {
+			namespace fs = std::filesystem;
+			using LuaIntf::LuaRef;
+			std::unordered_map<std::string, std::unique_ptr<PluginInfo>> ret;
+
+			auto&& dofile = L.getGlobal("dofile");
+			for (auto&& entry : fs::directory_iterator(pluginDir)) {
+				try {
+					auto manifestFilePath = entry.path() / "manifest.lua";
+					auto manifest = dofile.call<LuaRef>(manifestFilePath.u8string().c_str());
+					auto infop=std::make_unique<PluginInfov1>();
+					auto& info = *infop;
+					auto manifestVersion = manifest.get<unsigned int>("manifestVersion");
+					if (manifestVersion != 1) {
+						continue;
+					}
+					info.manifestVersion = manifestVersion;
+					info.manifestFilePath = manifestFilePath;
+					info.name = manifest.get<std::string>("name");
+					LuaRef dependencies = manifest["dependencies"];
+					for (auto&& dentry : dependencies) {
+						info.dependencies.insert(dentry.value().toValue<std::string>());
+					}
+					info.main = manifest["main"];
+					ret.insert({ info.name,std::move(infop) });
+				}
+				catch (LuaIntf::LuaException e) {
+					auto what=e.what();
+					OutputDebugStringA(what);
+				}
+			}
+			return ret;
+		}
+		void executeMain(const PluginInfo& info,const std::unordered_map<std::string, std::unique_ptr<PluginInfo>>& infos, std::unordered_set<std::string>& executed) {
+			using LuaIntf::LuaRef;
+			switch (info.manifestVersion) {
+			case 1:
+			{
+				const auto& infov = dynamic_cast<const PluginInfov1&>(info);
+				for (const auto& e : infov.dependencies) {
+					if (executed.find(e)==executed.end()) {
+						continue;
+					}
+					executeMain(*infos.at(e),infos,executed);
+				}
+				auto table=LuaRef::createTable(infov.main.state());
+				table["manifestPath"] = infov.manifestFilePath.u8string();
+				infov.main.call(table);
+				executed.insert(infov.name);
+			}
+			}
+		}
+		const void executeMain(const std::unordered_map<std::string, std::unique_ptr<PluginInfo>>& infos) {
+			std::unordered_set<std::string> executed;
+			for (const auto& e : infos) {
+				executeMain(*e.second,infos,executed);
+			}
+		}
+		
+	public:
+		const std::unordered_set<std::unique_ptr<Plugin>>& plugins() {
+			return m_plugins;
+		}
+
+		static PluginManager loadPlugin(std::filesystem::path pluginDir, std::shared_ptr<LuaIntf::LuaContext> L) {
+			PluginManager mgr;
+			mgr.L = L;
+			try {
+				L->doString(
+					R"(tignear=tignear or {}
+					tignear.sakura = tignear.sakura or {})");
+				LuaIntf::LuaBinding(L->getGlobal("tignear.sakura")).addFunction("loadPluginDLL", [&mgr](std::string str) {
+					auto path = std::filesystem::u8path(str);
+					auto mod=(mgr.m_hmodules.emplace(LoadLibraryExW(path.wstring().c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)).first)->get();
+					if (!mod) {
+						return false;
+					}
+					
+					auto proc = reinterpret_cast<CreatePluginFP>(GetProcAddress(mod, "CreatePlugin"));
+					if (!proc) {
+						return false;
+					}
+					mgr.m_plugins.emplace(proc());
+					return true;
+				});
+				auto&& pluginInfos = loadPluginInfo(*L, pluginDir);
+				mgr.executeMain(pluginInfos);
+			}catch (LuaIntf::LuaException e) {
+				auto what = e.what();
+				OutputDebugStringA(what);
+			}
+			return mgr;
+		}
+	};
+
 }

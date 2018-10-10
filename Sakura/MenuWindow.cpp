@@ -63,8 +63,8 @@ std::unique_ptr<MenuWindow> MenuWindow::Create(
 	std::function<void(std::shared_ptr<Context>)> newContxet,
 	std::function<void()> contextUpdate,
 	Config& conf,
-	std::function<ShellContextFactory*(std::string)> getFactory,
-	std::function<std::shared_ptr<void>(std::string)> getResource
+	std::function<ShellContextFactory*(std::string_view)> getFactory,
+	std::function<std::shared_ptr<void>(std::string_view)> getResource
 ) {
 	auto ttf = win::GetModuleFilePath(NULL);
 	ttf += _T("\\fonts\\menu.ttf");

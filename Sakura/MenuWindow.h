@@ -67,8 +67,8 @@ public:
 		std::function<void(std::shared_ptr<cwnd::Context>)>,
 		std::function<void()> contextUpdate,
 		Config& conf,
-		std::function<ShellContextFactory*(std::string)>,
-		std::function<std::shared_ptr<void>(std::string)> getResource);
+		std::function<ShellContextFactory*(std::string_view)>,
+		std::function<std::shared_ptr<void>(std::string_view)> getResource);
 	HWND GetHWnd();
 	std::shared_ptr<cwnd::Context> GetCurrentContext(DIP width,DIP height);
 
