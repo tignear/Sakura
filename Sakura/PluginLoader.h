@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
-
+#include "Environment.h"
 #include <ShellContextFactory.h>
 #include <filesystem>
 #include <LuaIntf/LuaIntf.h>
@@ -71,13 +71,23 @@ namespace tignear::sakura {
 			{
 				const auto& infov = dynamic_cast<const PluginInfov1&>(info);
 				for (const auto& e : infov.dependencies) {
-					if (executed.find(e)==executed.end()) {
+					if (executed.find(e)!=executed.end()) {
 						continue;
 					}
 					executeMain(*infos.at(e),infos,executed);
 				}
 				auto table=LuaRef::createTable(infov.main.state());
 				table["manifestPath"] = infov.manifestFilePath.u8string();
+
+
+				switch (environment::arch()) {
+				case environment::CPU_ARCH::X64:
+					table["arch"] = "x64";
+					break;
+				case environment::CPU_ARCH::X86:
+					table["arch"] = "x86";
+					break;
+				}
 				infov.main.call(table);
 				executed.insert(infov.name);
 			}
@@ -100,22 +110,34 @@ namespace tignear::sakura {
 			mgr.L = L;
 			try {
 				L->doString(
-					R"(tignear=tignear or {}
-					tignear.sakura = tignear.sakura or {})");
-				LuaIntf::LuaBinding(L->getGlobal("tignear.sakura")).addFunction("loadPluginDLL", [&mgr](std::string str) {
-					auto path = std::filesystem::u8path(str);
-					auto mod=(mgr.m_hmodules.emplace(LoadLibraryExW(path.wstring().c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)).first)->get();
-					if (!mod) {
-						return false;
-					}
+				R"(
+					tignear=tignear or {}
+					tignear.sakura = tignear.sakura or {}
+				)"
+				);
+				LuaIntf::LuaBinding(L->getGlobal("tignear.sakura"))
+					.addFunction("loadPluginDLL", [&mgr](std::string str) {
+						auto path = std::filesystem::u8path(str);
+						auto mod=(mgr.m_hmodules.emplace(LoadLibraryExW(path.wstring().c_str(), NULL, LOAD_LIBRARY_SEARCH_USER_DIRS| LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)).first)->get();
+						if (!mod) {
+							return false;
+						}
 					
-					auto proc = reinterpret_cast<CreatePluginFP>(GetProcAddress(mod, "CreatePlugin"));
-					if (!proc) {
-						return false;
-					}
-					mgr.m_plugins.emplace(proc());
-					return true;
-				});
+						auto proc = reinterpret_cast<CreatePluginFP>(GetProcAddress(mod, CreatePluginFunctionNameA));
+						if (!proc) {
+							return false;
+						}
+						mgr.m_plugins.emplace(proc());
+						return true;
+					})
+					.addFunction("AddDllDirectory", [](std::string pstr) {
+						auto path = std::filesystem::u8path(pstr);
+						auto wstr = path.wstring();
+						if (!AddDllDirectory(wstr.c_str())) {
+							return false;
+						}
+						return true;
+					});
 				auto&& pluginInfos = loadPluginInfo(*L, pluginDir);
 				mgr.executeMain(pluginInfos);
 			}catch (LuaIntf::LuaException e) {

@@ -75,6 +75,9 @@
     <ClInclude Include="PluginLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Environment.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -122,10 +125,5 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="fonts\LICENSE" />
     <CopyFileToFolders Include="fonts\menu.ttf" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="init.lua">
-      <Filter>リソース ファイル</Filter>
-    </None>
   </ItemGroup>
 </Project>

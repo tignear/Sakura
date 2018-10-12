@@ -26,3 +26,4 @@ namespace tignear::sakura {
 //Ownership to move to the caller!
 extern "C" {TIGNEAR_SAKURA_EXPORT tignear::sakura::Plugin* WINAPI CreatePlugin(); }
 using CreatePluginFP = decltype(&CreatePlugin);
+constexpr const char* CreatePluginFunctionNameA = "CreatePlugin";

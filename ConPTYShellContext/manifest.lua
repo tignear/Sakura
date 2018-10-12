@@ -5,6 +5,6 @@ local ret={
 		tignear.sakura.loadPluginDLL(dir..'plugin.dll')
 	end,
 	name='tignear.sakura.ConPTYShellContext',
-	dependencies={}
+	dependencies={'tignear.sakura.ICULoader'}
 }
 return ret
