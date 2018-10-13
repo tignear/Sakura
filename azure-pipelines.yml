@@ -11,8 +11,8 @@ variables:
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
 
-
-task: VSBuild@1
+steps:
+-task: VSBuild@1
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
