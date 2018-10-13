@@ -13,26 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="リソース ファイル\x64">
-      <UniqueIdentifier>{c278c374-cfd9-45b7-87c7-bb476afe9967}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="..\ICU\bin64\icuuc62.dll">
-      <Filter>リソース ファイル\x64</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\ICU\bin64\icudt62.dll">
-      <Filter>リソース ファイル\x64</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\ICU\bin64\icuin62.dll">
-      <Filter>リソース ファイル\x64</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\ICU\bin64\icuio62.dll">
-      <Filter>リソース ファイル\x64</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="..\ICU\bin64\icutu62.dll">
-      <Filter>リソース ファイル\x64</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="manifest.lua" />
+    <ClInclude Include="stdafx.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Entry.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

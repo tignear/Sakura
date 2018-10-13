@@ -35,7 +35,7 @@
     <ProjectGuid>{C057C63E-9DB2-4E5B-B1E4-D8D8E6F300C6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>AdminConsoleReadShellContext</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
