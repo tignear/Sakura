@@ -21,6 +21,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{2E0D6978-5D82-4A0B-9149-0B7E0E139885}"
 	ProjectSection(SolutionItems) = preProject
 		doc\ANSItoIDWriteTextLayoutMapping.md = doc\ANSItoIDWriteTextLayoutMapping.md
+		doc\LuaAPI-en.md = doc\LuaAPI-en.md
+		doc\manifest-en.md = doc\manifest-en.md
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LuaIntf", "LuaIntf\LuaIntf.vcxproj", "{7C6D2C66-9034-44FE-ABB3-521DC081226A}"

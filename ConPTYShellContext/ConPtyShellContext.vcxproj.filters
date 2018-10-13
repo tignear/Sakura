@@ -40,6 +40,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="manifest.lua" />
+    <CopyFileToFolders Include="manifest.lua">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>
