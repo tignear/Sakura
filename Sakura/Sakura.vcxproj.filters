@@ -19,6 +19,15 @@
     <Filter Include="ソース ファイル\tsf">
       <UniqueIdentifier>{04d3606a-5fb3-40b1-bf75-a4e32c4b47d8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\fonts">
+      <UniqueIdentifier>{4c4afadf-d968-47a6-ab34-33d69f9489ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\x64">
+      <UniqueIdentifier>{ad3c528a-dac9-4fcb-a8a0-97b214d5fa5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\x64\debug">
+      <UniqueIdentifier>{b42b23db-c3da-45f2-8a85-bdb2ac3d9c77}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -72,6 +81,9 @@
     <ClInclude Include="PluginLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Environment.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -107,18 +119,20 @@
     <ClCompile Include="ConsoleWindowTextAreaDirect2D.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="PluginLoader.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="..\font\menu.ttf">
-      <Filter>リソース ファイル</Filter>
-    </Font>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Sakura.manifest">
       <Filter>リソース ファイル</Filter>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="config.lua">
+      <Filter>リソース ファイル</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="fonts\LICENSE" />
+    <CopyFileToFolders Include="fonts\menu.ttf" />
+    <CopyFileToFolders Include="..\Lua\x64\Debug\Lua.dll">
+      <Filter>リソース ファイル\x64\debug</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

@@ -257,7 +257,7 @@ class CppObjectValue : public CppObject
 private:
     CppObjectValue()
     {
-        if (MAX_PADDING > 0) {
+		if constexpr (MAX_PADDING > 0) {
             uintptr_t offset = reinterpret_cast<uintptr_t>(&m_data[0]) % alignof(T);
             if (offset > 0) offset = alignof(T) - offset;
             assert(offset < MAX_PADDING);
@@ -274,7 +274,7 @@ public:
 
     virtual void* objectPtr() override
     {
-        if (MAX_PADDING == 0) {
+        if constexpr(MAX_PADDING == 0) {
             return &m_data[0];
         } else {
             return &m_data[0] + m_data[sizeof(m_data) - 1];

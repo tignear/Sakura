@@ -258,10 +258,10 @@ attrtext_iterator_impl* attrtext_iterator_impl::operator++(int) {
 	return self;
 }
 
-attrtext_iterator_impl::reference attrtext_iterator_impl::operator*()const {
+const attrtext_iterator_impl::reference attrtext_iterator_impl::operator*()const {
 	return *m_elem;
 }
-attrtext_iterator_impl::pointer attrtext_iterator_impl::operator->()const {
+const attrtext_iterator_impl::pointer attrtext_iterator_impl::operator->()const {
 	return m_elem.operator->();
 }
 bool attrtext_iterator_impl::operator==(const attrtext_iterator_innner& iterator)const {

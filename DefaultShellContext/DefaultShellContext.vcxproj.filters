@@ -57,4 +57,7 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="manifest.lua" />
+  </ItemGroup>
 </Project>

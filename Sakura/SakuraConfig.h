@@ -4,7 +4,7 @@
 #include <LuaIntf/LuaIntf.h>
 namespace tignear::sakura {
 	struct Config {
-		LuaIntf::LuaContext L= LuaIntf::LuaContext();
+		std::shared_ptr<LuaIntf::LuaContext> L;
 		INT initshell;
 		std::vector<std::tuple<std::string,std::string,LuaIntf::LuaRef>> shells;
 	};
@@ -13,12 +13,12 @@ namespace tignear::sakura {
 	/*
 	 *@throw config_exception
 	 */
-	static inline Config LoadConfig(std::string path) {
+	static inline Config LoadConfig(std::shared_ptr<LuaIntf::LuaContext> L,std::string path) {
 		using namespace LuaIntf;
 		try {
 			Config rconfig{};
-			auto& L = rconfig.L;
-			auto loadfile = L.getGlobal("dofile");
+			auto&& Ls = *L;
+			auto loadfile = Ls.getGlobal("dofile");
 			auto conf = loadfile.call<LuaRef>(path);
 			{
 				auto& rshells = rconfig.shells;

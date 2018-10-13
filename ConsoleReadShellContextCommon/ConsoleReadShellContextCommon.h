@@ -19,15 +19,16 @@ namespace tignear::sakura {
 		HANDLE handle;
 		MappingInfo* m_info;
 		wchar_t* m_buf;//allocateWidth*allocateHeight
+		WORD* m_attributes;//allocateWidth*allocateHeight
 	public:
 
 		~MappingView() {
-			if (handle != NULL) {
+			if (handle != NULL&&handle!=INVALID_HANDLE_VALUE) {
 				CloseHandle(handle);
 				UnmapViewOfFile(m_info);
 			}
 		}
-		MappingView(HANDLE handle, MappingInfo* info, wchar_t* buf) :handle(handle), m_info(info), m_buf(buf) {}
+		MappingView(HANDLE handle, MappingInfo* info, wchar_t* buf, WORD* attr) :handle(handle), m_info(info), m_buf(buf),m_attributes(attr) {}
 		MappingView(const MappingView&) = delete;
 		MappingView(MappingView&& from)noexcept {
 			*this = std::move(from);
@@ -39,6 +40,8 @@ namespace tignear::sakura {
 			from.m_info = nullptr;
 			m_buf = from.m_buf;
 			from.m_buf = nullptr;
+			m_attributes = from.m_attributes;
+			from.m_attributes = nullptr;
 			return *this;
 		}
 		MappingView():handle(NULL),m_info(nullptr),m_buf(nullptr){}
@@ -51,6 +54,15 @@ namespace tignear::sakura {
 		wchar_t* buf() {
 			return m_buf;
 		}
+		const wchar_t* buf()const {
+			return m_buf;
+		}
+		WORD* attribute() {
+			return m_attributes;
+		}
+		const WORD* attribute()const{
+			return m_attributes;
+		}
 		operator bool()const{
 			return handle&& m_info&&m_buf;
 		}
@@ -58,7 +70,7 @@ namespace tignear::sakura {
 #pragma warning(disable:4505)
 
 	static MappingView CreateMappingViewW(const wchar_t* name,unsigned short width, unsigned short height){
-		auto size =static_cast<DWORD>(sizeof(MappingInfo)+ width * height*sizeof(wchar_t));
+		auto size =static_cast<DWORD>(sizeof(MappingInfo)+ width * height*(sizeof(wchar_t)+sizeof(uint32_t)));
 		auto handle=CreateFileMappingW(INVALID_HANDLE_VALUE,NULL, PAGE_READWRITE,0,size,name);
 		if (handle == INVALID_HANDLE_VALUE) {
 			throw std::runtime_error(__FILE__);
@@ -68,7 +80,8 @@ namespace tignear::sakura {
 		info->allocateWidth = width;
 		info->allocateHeight = height;
 		wchar_t* buf= reinterpret_cast<wchar_t*>(p + sizeof(MappingInfo));
-		return MappingView{handle, info,buf };
+		WORD* attr = reinterpret_cast<WORD*>(buf + width * height * sizeof(wchar_t));
+		return MappingView{handle, info,buf,attr };
 	}
 	static MappingView OpenMappingViewW(const wchar_t* name) {
 		HANDLE handle=OpenFileMappingW(FILE_MAP_READ, FALSE, name);
@@ -77,13 +90,12 @@ namespace tignear::sakura {
 		}
 		char* p = reinterpret_cast<char*>(MapViewOfFile(handle, FILE_MAP_READ, 0, 0, 0));
 		if (p==nullptr) {
-#pragma warning(disable:4189)
-			auto e = GetLastError();
-			OutputDebugStringW(L"");
+			return MappingView{ INVALID_HANDLE_VALUE, {},nullptr,nullptr };
 		}
 		MappingInfo* info = reinterpret_cast<MappingInfo*>(p);
 		wchar_t* buf = reinterpret_cast<wchar_t*>(p + sizeof(MappingInfo));
-		return MappingView{ handle, info,buf };
+		WORD* attr = reinterpret_cast<WORD*>(buf + info->allocateWidth * info->allocateHeight * sizeof(wchar_t));
+		return MappingView{ handle, info,buf,attr };
 	}
 #pragma warning(default:4505)
 

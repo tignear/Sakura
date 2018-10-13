@@ -1,19 +1,34 @@
 #include "stdafx.h"
 #include <ProcessTree.h>
 #include <shellapi.h>
+#include <algorithm>
 #include "ConsoleReadShellContext.h"
 namespace tignear::sakura {
 	using namespace stdex;
-	std::wstring_view ConsoleReadShellContext::GetStringAtLineCount(int lc) {
+	std::wstring_view ConsoleReadShellContext::GetStringAtLineCount(int lc)const {
 		if (!m_view) {
 			return std::wstring_view(m_nodata_text);
 		}
 		auto flc = lc - m_view.info()->viewBeginY;
 		if (flc>=0&&flc<m_view.info()->viewSize) {
-			return std::wstring_view(m_view.buf() + m_view.info()->allocateWidth*flc, m_view.info()->width);
+			auto sv=std::wstring_view(m_view.buf() + m_view.info()->allocateWidth*flc, m_view.info()->width);
+			sv.remove_suffix(sv.size() - sv.find_last_not_of(L'\0'));
+			return sv;
 		}
 		return std::wstring_view(m_nodata_text);
 	}
+	stdex::array_view<WORD> ConsoleReadShellContext::GetAttributesAtLineCount(int lc)const {
+		if (!m_view) {
+			return stdex::array_view<WORD>();
+		}
+		auto flc = lc - m_view.info()->viewBeginY;
+		if (flc >= 0 && flc < m_view.info()->viewSize) {
+			return stdex::array_view<WORD>(m_view.attribute() + m_view.info()->allocateWidth*flc,static_cast<size_t>(m_view.info()->width));
+		}
+		return stdex::array_view<WORD>();
+
+	}
+	//std::vector<WORD> 
 	std::shared_ptr<ConsoleReadShellContext> ConsoleReadShellContext::Create(stdex::tstring exe, stdex::tstring cmd, LPVOID , stdex::tstring ,std::wstring font,double fontsize) {
 		try {
 			auto r = std::make_shared<ConsoleReadShellContext>(exe, cmd, font, fontsize);
@@ -89,7 +104,21 @@ namespace tignear::sakura {
 		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(this,m_view.info()->cursorY));
 	}
 	size_t ConsoleReadShellContext::GetCursorXWStringPos()const {
-		return m_view?m_view.info()->cursorX:0;
+		if (!m_view) {
+			return 0;
+		}
+		auto y =  m_view.info()->cursorY;
+		if (m_lines.size() > y) {
+			const auto& e = m_lines.at(y);
+			size_t ret=0;
+			for (auto&& e2 : e.attr_text()) {
+				ret += e2.length();
+			}
+			return ret;
+		}
+		else {
+			return 0;
+		}
 	}
 	void ConsoleReadShellContext::SetViewStart(size_t s) {
 		SendMessage(m_child_hwnd, WM_APP + 1, 0, s);

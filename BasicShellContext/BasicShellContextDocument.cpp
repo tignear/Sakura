@@ -34,7 +34,13 @@ namespace tignear::sakura {
 		while(ri != re) {
 			if (ri->IsEmpty()) {
 				NotifyTextChange({ BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, *ri) });
-				m_text.erase(--(ri.base())); 
+				auto rm = --(ri.base());
+				if (rm == m_viewend_itr) {
+					m_viewend_itr =m_text.erase(rm);
+				}
+				else {
+					m_text.erase(rm);
+				}
 			}
 			else {
 				break;
@@ -84,7 +90,13 @@ namespace tignear::sakura {
 		--m_cursorY_itr;
 		if (m_text.size() > m_max_line) {
 			NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::ERASE, m_text.front())});
-			m_text.pop_front();
+			auto rm = m_text.begin();
+			if (rm == m_viewend_itr) {
+				m_viewend_itr= m_text.erase(rm);
+			}
+			else {
+				m_text.erase(rm);
+			}
 		}
 		return true;
 	}
@@ -127,7 +139,6 @@ namespace tignear::sakura {
 	}
 	void BasicShellContextDocument::ViewPositionDown(size_t count) {
 		for (auto i = 0_z; i < count&&m_viewend_itr != m_text.end(); ++i) {
-
 			++m_viewend_itr;
 			++m_viewendpos;
 		}
@@ -333,11 +344,18 @@ namespace tignear::sakura {
 		return temp;
 	}
 
-	attrtext_line_iterator_impl::reference attrtext_line_iterator_impl::operator*()const {
+	const attrtext_line_iterator_impl::reference attrtext_line_iterator_impl::operator*()const {
 		return (*m_elem);
 	}
-	attrtext_line_iterator_impl::pointer attrtext_line_iterator_impl::operator->()const {
+	const attrtext_line_iterator_impl::pointer attrtext_line_iterator_impl::operator->()const {
 		auto r=m_elem.operator->();
+		return r;
+	}
+	attrtext_line_iterator_impl::reference attrtext_line_iterator_impl::operator*() {
+		return (*m_elem);
+	}
+	attrtext_line_iterator_impl::pointer attrtext_line_iterator_impl::operator->() {
+		auto r = m_elem.operator->();
 		return r;
 	}
 	bool attrtext_line_iterator_impl::operator==(const attrtext_line_iterator_inner& iterator)const {
@@ -353,9 +371,7 @@ namespace tignear::sakura {
 	attrtext_line_iterator_impl* attrtext_line_iterator_impl::clone()const {
 		return new attrtext_line_iterator_impl(*this);
 	}
-	attrtext_line_iterator_impl::attrtext_line_iterator_impl(const attrtext_line_iterator_impl& from) {
-		m_elem = from.m_elem;
-	}
+
 	ShellContext::attrtext_line_iterator attrtext_document_all_impl::end() {
 		return ShellContext::attrtext_line_iterator(std::make_unique<attrtext_line_iterator_impl>(m_text.end()));
 	}

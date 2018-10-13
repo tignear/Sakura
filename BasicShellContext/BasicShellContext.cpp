@@ -40,7 +40,7 @@ bool BasicShellContext::OutputWorker(shared_ptr<BasicShellContext> s) {
 	return true;
 }
 bool BasicShellContext::OutputWorkerHelper(DWORD cnt,shared_ptr<BasicShellContext> s) {
-	s->m_outbuf.resize(cnt+1);
+	s->m_outbuf.resize(cnt);
 	s->AddString(s->m_outbuf);
 	return OutputWorker(s);
 }
@@ -70,6 +70,7 @@ void BasicShellContext::InputString(std::wstring_view wstr) {
 	}
 }
 void BasicShellContext::ConfirmString(std::wstring_view view) {
+	std::lock_guard lock(m_lock);
 	m_document.Insert(std::wstring(view));
 }
 void BasicShellContext::AddString(std::string_view str) {
@@ -84,23 +85,27 @@ uintptr_t BasicShellContext::AddTextChangeListener(std::function<void(ShellConte
 	return key;
 }
 void BasicShellContext::RemoveTextChangeListener(uintptr_t key)const {
+	std::lock_guard lock(m_lock);
 	m_text_change_listeners.erase(key);
 }
 uintptr_t BasicShellContext::AddLayoutChangeListener(std::function<void(ShellContext*,bool,bool)> f)const {
-
+	std::lock_guard lock(m_lock);
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_layout_change_listeners[key] = f;
 	return key;
 }
 void BasicShellContext::RemoveLayoutChangeListener(uintptr_t key)const{
+	std::lock_guard lock(m_lock);
 	m_layout_change_listeners.erase(key);
 }
 uintptr_t BasicShellContext::AddExitListener(std::function<void(ShellContext*)> f)const {
+	std::lock_guard lock(m_lock);
 	auto key = reinterpret_cast<uintptr_t>(&f);
 	m_exit_listeners[key] = f;
 	return key;
 }
 void BasicShellContext::RemoveExitListener(uintptr_t key)const {
+	std::lock_guard lock(m_lock);
 	m_exit_listeners.erase(key);
 }
 std::wstring::size_type BasicShellContext::GetViewCount()const {

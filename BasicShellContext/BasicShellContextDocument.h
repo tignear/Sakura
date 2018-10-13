@@ -6,8 +6,9 @@
 namespace tignear::sakura {
 
 	class attrtext_line_iterator_impl :public ShellContext::attrtext_line_iterator_inner {
-		attrtext_line_iterator_impl(const attrtext_line_iterator_impl&);
 		std::list<BasicShellContextLineText>::iterator m_elem;
+		attrtext_line_iterator_impl(const attrtext_line_iterator_impl& from):m_elem(from.m_elem) {
+		}
 	public:
 		attrtext_line_iterator_impl(std::list<BasicShellContextLineText>::iterator e) :m_elem(e) {
 
@@ -18,8 +19,10 @@ namespace tignear::sakura {
 		attrtext_line_iterator_impl* operator++(int) override;
 		attrtext_line_iterator_impl* operator--(int) override;
 
-		reference operator*()const override;
-		pointer operator->()const override;
+		const reference operator*()const override;
+		const pointer operator->()const override;
+		reference operator*()override;
+		pointer operator->()override;
 		bool operator==(const attrtext_line_iterator_inner& iterator)const override;
 		bool operator!=(const attrtext_line_iterator_inner& iterator)const override;
 		attrtext_line_iterator_impl* clone()const override;
@@ -28,7 +31,7 @@ namespace tignear::sakura {
 	};
 
 	class attrtext_document_all_impl:public ShellContext::attrtext_document {
-		std::list<BasicShellContextLineText>& m_text;
+		 std::list<BasicShellContextLineText>& m_text;
 	public:
 		attrtext_document_all_impl(std::list<BasicShellContextLineText>& text):m_text(text){}
 		ShellContext::attrtext_line_iterator begin() override;
@@ -65,14 +68,14 @@ namespace tignear::sakura {
 		std::list<BasicShellContextLineText> m_text;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr_save;
-		std::list<BasicShellContextLineText>::iterator m_viewend_itr;
+		std::list<BasicShellContextLineText>::iterator m_viewend_itr=m_text.end();
+		size_t m_viewendpos=0;
+		size_t m_viewcount;
 		attrtext_document_all_impl m_all;
 		attrtext_document_view_impl m_view;
 		size_t m_max_line;
 		size_t m_cursorY;
 		size_t m_cursorY_save;
-		size_t m_viewendpos;
-		size_t m_viewcount;
 		size_t m_cursorX;
 		size_t m_curorX_save;
 		const ansi::ColorTable m_color_256;

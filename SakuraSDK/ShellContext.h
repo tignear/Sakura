@@ -16,8 +16,8 @@ namespace tignear::sakura {
 
 			virtual void operator++() = 0;
 			virtual attrtext_iterator_innner* operator++(int) = 0;
-			virtual reference operator*()const = 0;
-			virtual pointer operator->()const = 0;
+			virtual const reference operator*()const = 0;
+			virtual const pointer operator->()const = 0;
 			virtual bool operator==(const attrtext_iterator_innner& iterator)const = 0;
 			virtual bool operator!=(const attrtext_iterator_innner& iterator)const = 0;
 			virtual attrtext_iterator_innner* clone()const = 0;
@@ -80,8 +80,10 @@ namespace tignear::sakura {
 			virtual void operator--() = 0;
 			virtual attrtext_line_iterator_inner* operator++(int) = 0;
 			virtual attrtext_line_iterator_inner* operator--(int) = 0;
-			virtual reference operator*()const = 0;
-			virtual pointer operator->()const = 0;
+			virtual reference operator*() = 0;
+			virtual pointer operator->() = 0;
+			virtual const reference operator*()const = 0;
+			virtual const pointer operator->()const = 0;
 			virtual bool operator==(const attrtext_line_iterator_inner& iterator)const = 0;
 			virtual bool operator!=(const attrtext_line_iterator_inner& iterator)const = 0;
 			virtual attrtext_line_iterator_inner* clone()const = 0;
@@ -117,6 +119,12 @@ namespace tignear::sakura {
 			attrtext_line_iterator operator--(int i) {
 				return attrtext_line_iterator(std::unique_ptr<attrtext_line_iterator_inner>(m_inner->operator--(i)));
 			}
+			const reference operator*()const {
+				return m_inner->operator*();
+			};
+			const pointer operator->()const {
+				return m_inner->operator->();
+			};
 			reference operator*() {
 				return m_inner->operator*();
 			};
