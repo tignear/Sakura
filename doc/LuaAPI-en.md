@@ -1,6 +1,6 @@
 # LuaAPI
 You can use Lua standard library and the following functions.
-## Sakura Functions
+## tignear.sakura
   
 ### boolean loadPluginDLL(string path)
 Load plugin dll.  
