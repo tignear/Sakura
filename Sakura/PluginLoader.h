@@ -8,6 +8,8 @@
 #include "Environment.h"
 #include <ShellContextFactory.h>
 #include <filesystem>
+#include <optional>
+#include <strconv.h>
 #include <LuaIntf/LuaIntf.h>
 namespace tignear::sakura {
 	struct PluginInfo{
@@ -104,19 +106,21 @@ namespace tignear::sakura {
 		const std::unordered_set<std::unique_ptr<Plugin>>& plugins() {
 			return m_plugins;
 		}
-
-		static PluginManager loadPlugin(std::filesystem::path pluginDir, std::shared_ptr<LuaIntf::LuaContext> L) {
+		struct Config {
+			HWND hwnd = NULL;
+		};
+		static PluginManager loadPlugin(std::filesystem::path pluginDir, std::shared_ptr<LuaIntf::LuaContext> L,const Config& conf=Config()) {
 			PluginManager mgr;
 			mgr.L = L;
 			try {
 				L->doString(
-				R"(
+				u8R"(
 					tignear=tignear or {}
 					tignear.sakura = tignear.sakura or {}
 				)"
 				);
-				LuaIntf::LuaBinding(L->getGlobal("tignear.sakura"))
-					.addFunction("loadPluginDLL", [&mgr](std::string str) {
+				LuaIntf::LuaBinding(L->getGlobal(u8"tignear.sakura"))
+					.addFunction(u8"loadPluginDLL", [&mgr](std::string str) {
 						auto path = std::filesystem::u8path(str);
 						auto mod=(mgr.m_hmodules.emplace(LoadLibraryExW(path.wstring().c_str(), NULL, LOAD_LIBRARY_SEARCH_USER_DIRS| LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)).first)->get();
 						if (!mod) {
@@ -130,14 +134,21 @@ namespace tignear::sakura {
 						mgr.m_plugins.emplace(proc());
 						return true;
 					})
-					.addFunction("AddDllDirectory", [](std::string pstr) {
+					.addFunction(u8"AddDllDirectory", [](std::string pstr) {
 						auto path = std::filesystem::u8path(pstr);
 						auto wstr = path.wstring();
 						if (!AddDllDirectory(wstr.c_str())) {
 							return false;
 						}
 						return true;
-					});
+					})
+					.addFunction(u8"MessageBox", [hwnd=conf.hwnd](const std::string& mes, const std::string& title, const int& type) {
+						auto bufm=utf8_to_ansi(mes);
+						auto buft= utf8_to_ansi(title.empty()?"Sakura":title);
+
+						return MessageBoxA(hwnd , bufm.c_str(), buft.c_str(), type);
+					}, LUA_ARGS(std::string, LuaIntf::_opt<std::string>, LuaIntf::_opt<int>));
+
 				auto&& pluginInfos = loadPluginInfo(*L, pluginDir);
 				mgr.executeMain(pluginInfos);
 			}catch (LuaIntf::LuaException e) {

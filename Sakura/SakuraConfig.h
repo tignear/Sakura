@@ -8,7 +8,15 @@ namespace tignear::sakura {
 		INT initshell;
 		std::vector<std::tuple<std::string,std::string,LuaIntf::LuaRef>> shells;
 	};
-	struct config_exception:public std::exception {
+	class config_exception:public std::exception {
+		const std::string m_what;
+	public:
+		config_exception(const char* what):m_what(what) {
+			
+		}
+		const char* what() {
+			return m_what.c_str();
+		}
 	};
 	/*
 	 *@throw config_exception
@@ -38,8 +46,8 @@ namespace tignear::sakura {
 
 			return rconfig;
 		}
-		catch (LuaIntf::LuaException&) {
-			throw config_exception();
+		catch (LuaIntf::LuaException& e) {
+			throw config_exception(e.what());
 		}
 
 	}
