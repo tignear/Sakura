@@ -2,6 +2,7 @@
 #include <ModuleFilePath.h>
 #include <deque>
 #include <memory>
+#include <optional>
 #include "SakuraConfig.h"
 #include "ShellContextFactory.h"
 #include "ConsoleWindowContext.h"
@@ -30,7 +31,7 @@ class MenuWindow {
 	HWND m_tab_hwnd;
 	HWND m_menu_button_hwnd;
 	HMENU m_hmenu_menu;
-	INT m_new_index;
+	std::optional<std::tuple<std::string, std::string, LuaIntf::LuaRef>> m_new_shell;
 	uintptr_t m_current_context_ptr;
 	void CreateAndSetFont();
 	INT GetTabIndexFromId(LPARAM id);
@@ -44,7 +45,7 @@ public:
 		m_getFactory(getFactory),
 		m_getResource(getResource),
 		m_config(config),
-		m_new_index(config.initshell),
+		m_new_shell(config.initshell),
 		m_icon_font(NULL)
 	{
 

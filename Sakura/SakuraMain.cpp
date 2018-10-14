@@ -178,7 +178,6 @@ int Sakura::Main(HINSTANCE hInstance,
 	m_resource[resource::IOCPMgr] = iocpmgr;
 
 	auto config = LoadConfig(L,(win::GetModuleFilePath(NULL)/ "config.lua").u8string());
-	auto ishell = config.shells[config.initshell];
 	m_menu = MenuWindow::Create(
 		hInstance,
 		m_hwnd,

@@ -129,7 +129,7 @@ LRESULT CALLBACK MenuWindow::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 		break;
 	}else{
 		auto s = LOWORD(wParam);
-		self->m_new_index = s;
+		self->m_new_shell =self-> m_config.shells.at(s);
 		self->m_contextUpdate();
 		break;
 	}
@@ -159,10 +159,10 @@ HWND MenuWindow::GetHWnd() {
 	return m_hwnd;
 }
 std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
-	if (m_new_index!=-1) {
-		auto sinfo = m_config.shells.at(m_new_index);
-		auto c = std::make_shared<Context>(m_getFactory(std::get<1>(sinfo))->Create(ShellContextFactory::Information{w,h,std::get<2>(sinfo),m_getResource }));
-		m_new_index = -1;
+	if (m_new_shell) {
+		auto new_shell = m_new_shell.value();
+		auto c = std::make_shared<Context>(m_getFactory(std::get<1>(new_shell))->Create(ShellContextFactory::Information{w,h,std::get<2>(new_shell),m_getResource }));
+		m_new_shell = std::nullopt;
 		if (!c->shell) {
 			throw std::runtime_error("create context failed");
 		}
@@ -179,7 +179,7 @@ std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
 		item.lParam = m_current_context_ptr;
 		auto title = c->shell->GetTitle();
 #ifdef UNICODE
-		auto r = title.empty() ? ansi_to_wide(std::get<0>(sinfo)) : std::wstring(title);
+		auto r = title.empty() ? ansi_to_wide(std::get<0>(new_shell)) : std::wstring(title);
 #else
 		auto r = title.empty() ? std::get<0>(sinfo) : wide_to_ansi(std::wstring(title));
 #endif 

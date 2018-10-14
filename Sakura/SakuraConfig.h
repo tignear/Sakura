@@ -5,7 +5,7 @@
 namespace tignear::sakura {
 	struct Config {
 		std::shared_ptr<LuaIntf::LuaContext> L;
-		INT initshell;
+		std::tuple<std::string, std::string, LuaIntf::LuaRef> initshell;
 		std::vector<std::tuple<std::string,std::string,LuaIntf::LuaRef>> shells;
 	};
 	class config_exception:public std::exception {
@@ -26,22 +26,20 @@ namespace tignear::sakura {
 		try {
 			Config rconfig{};
 			auto&& Ls = *L;
-			auto loadfile = Ls.getGlobal("dofile");
+			auto loadfile = Ls.getGlobal(u8"dofile");
 			auto conf = loadfile.call<LuaRef>(path);
 			{
 				auto& rshells = rconfig.shells;
-				LuaRef shells = conf["shells"];
+				LuaRef shells = conf[u8"shells"];
 				for (auto&& e : shells) {
 
 					auto value = e.value();
-					rshells.emplace_back(value.get<std::string>("display"), value.get<std::string>("factory"), value);
+					rshells.emplace_back(value.get<std::string>(u8"display"), value.get<std::string>(u8"factory"), value);
 				}
 			}
 			{
-				rconfig.initshell = 0;
-				if (conf.has("initshell")) {
-					rconfig.initshell = static_cast<INT>(conf.get<int>("initshell"));
-				}
+				LuaRef value = conf[u8"initshell"];
+				rconfig.initshell = { value.get<std::string>(u8"display"), value.get<std::string>(u8"factory"), value };
 			}
 
 			return rconfig;
