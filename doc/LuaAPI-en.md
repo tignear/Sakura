@@ -20,4 +20,10 @@ Returns true if step 2 return non NULL.Otherwise it return false.
 Similar to win32api's MessageBox function.  
 Convert string from utf8 to ansi.  
 HWND is the apllications's main window handle.  
-Call and return MessageBox(HWND,message,title,flag)  
+Call and return MessageBox(HWND,message,title,flag) 
+### class DLLWrapper
+#### static DLLWrapper LoadLibrary(string dll)
+Similar to win32api's LoadLibrary function.
+
+#### boolean IsDefined(string name)
+GetProcAddress(HMODULE,name)!=null

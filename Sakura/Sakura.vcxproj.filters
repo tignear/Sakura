@@ -123,7 +123,11 @@
     <CopyFileToFolders Include="config.lua">
       <Filter>リソース ファイル</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="fonts\LICENSE" />
-    <CopyFileToFolders Include="fonts\menu.ttf" />
+    <CopyFileToFolders Include="fonts\LICENSE">
+      <Filter>リソース ファイル\fonts</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="fonts\menu.ttf">
+      <Filter>リソース ファイル\fonts</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

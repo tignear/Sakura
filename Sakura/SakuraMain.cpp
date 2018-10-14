@@ -117,13 +117,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	
 	appInstance = hInstance;
 	auto L=std::make_shared<LuaIntf::LuaContext>();
-	m_plugin_mgr = tignear::sakura::PluginManager::loadPlugin(win::GetModuleFilePath(NULL)/"plugins",L);
-	for (auto&& plugin : m_plugin_mgr.plugins()) {
-		for (auto&& factory : plugin->CreateShellContextFactorys()) {
-			m_factory[factory.first] = std::move(factory.second);
 
-		}
-	}
 	WNDCLASS wc;
 	setlocale(LC_CTYPE, "JPN");
 
@@ -145,17 +139,22 @@ int Sakura::Main(HINSTANCE hInstance,
 		0,      
 		className,  
 		_T("Sakura"), 
-		WS_OVERLAPPEDWINDOW,      
-		CW_USEDEFAULT,              
-		CW_USEDEFAULT,            
-		CW_USEDEFAULT,         
-		CW_USEDEFAULT,          
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
 		NULL,      
 		NULL,       
 		appInstance,  
 		NULL      
 	);
-
+	m_plugin_mgr = tignear::sakura::PluginManager::loadPlugin(win::GetModuleFilePath(NULL) / "plugins", L, {m_hwnd});
+	for (auto&& plugin : m_plugin_mgr.plugins()) {
+		for (auto&& factory : plugin->CreateShellContextFactorys()) {
+			m_factory[factory.first] = std::move(factory.second);
+		}
+	}
 	FailToThrowHR(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, IID_PPV_ARGS(&m_d2d_factory)));
 
 	FailToThrowHR(DWriteCreateFactory(
@@ -169,7 +168,6 @@ int Sakura::Main(HINSTANCE hInstance,
 	FailToThrowHR(CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_category_mgr)));
 
 	FailToThrowHR(CoCreateInstance(CLSID_TF_DisplayAttributeMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_attribute_mgr)));
-	//m_attribute_mgr->AddRef();
 
 	m_thread_mgr->Activate(&m_clientId);
 

@@ -178,7 +178,6 @@ std::shared_ptr<Context> MenuWindow::GetCurrentContext(DIP w,DIP h) {
 		item.dwState = TCIS_BUTTONPRESSED;
 		item.lParam = m_current_context_ptr;
 		auto title = c->shell->GetTitle();
-#pragma warning(disable:4189)
 #ifdef UNICODE
 		auto r = title.empty() ? ansi_to_wide(std::get<0>(sinfo)) : std::wstring(title);
 #else

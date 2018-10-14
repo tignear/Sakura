@@ -4,7 +4,6 @@ local conf={
             display="cmd",
             factory="ConPTYShellContextFactory",
             cmd=[[cmd]],
-            codepage=932,
             fontsize=16.0,
             fonts={"Cica"}
         },
@@ -13,7 +12,6 @@ local conf={
             factory="ConPTYShellContextFactory",
             admin=true,
             cmd=[[cmd]],
-            codepage=932,
             fontsize=16.0,
             fonts={"Cica"}
         },
@@ -21,7 +19,6 @@ local conf={
             display="cmd(ConsoleRead)",
             factory="ConsoleReadShellContextFactory",
             cmd=[[cmd]],
-            codepage=932,
             fontsize=16.0,
             font="Cica"
         },
@@ -30,7 +27,6 @@ local conf={
             factory="ConsoleReadShellContextFactory",
             admin=true,
             cmd=[[cmd]],
-            codepage=932,
             fontsize=16.0,
             font="Cica"
         },
