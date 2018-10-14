@@ -1,7 +1,7 @@
 ```
-ret={
+local ret={
 	manifestVersion=1,
-	name='pluginName',#require unique
+	name='pluginName',--require unique
 	dependencies={'name of depends plugin'},
 	main=function(info){
 		local cpuarchString=info.arch -- 'x64' or 'x86'

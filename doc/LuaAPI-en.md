@@ -21,9 +21,10 @@ Similar to win32api's MessageBox function.
 Convert string from utf8 to ansi.  
 HWND is the apllications's main window handle.  
 Call and return MessageBox(HWND,message,title,flag) 
+
 ### class DLLWrapper
 #### static DLLWrapper LoadLibrary(string dll)
-Similar to win32api's LoadLibrary function.
+Similar to win32api's LoadLibrary function.  
 
 #### boolean IsDefined(string name)
-GetProcAddress(HMODULE,name)!=null
+GetProcAddress(HMODULE,name)!=null  
