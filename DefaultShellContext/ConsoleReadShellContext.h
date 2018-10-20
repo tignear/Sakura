@@ -205,7 +205,7 @@ namespace tignear::sakura::conread {
 			}
 			m_lines.reserve(i);
 			std::vector<TextUpdateInfoLine> info;
-			for (unsigned short j =static_cast<unsigned short>( m_lines.size()); j <= i;++j) {
+			for (unsigned short j =static_cast<unsigned short>( m_lines.size()); j < i;++j) {
 				m_lines.emplace_back(this,j);
 				info.emplace_back(std::make_unique<TextUpdateInfoLineImpl>(TextUpdateStatus::NEW,m_lines,j));
 			}
