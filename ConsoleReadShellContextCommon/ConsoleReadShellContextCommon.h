@@ -1,8 +1,23 @@
 #pragma once
 #include <stdexcept>
 #include <Windows.h>
-namespace tignear::sakura {
-	
+namespace tignear::sakura::conread {
+	namespace exe2context{
+		
+		constexpr const static UINT CREATE_VIEW = WM_APP;
+		constexpr const static UINT UPDATE_CARET=WM_APP+1;
+		constexpr const static UINT UPDATE_REGION= WM_APP + 2;
+		constexpr const static UINT UPDATE_SIMPLE= WM_APP + 3;
+		constexpr const static UINT UPDATE_SCROLL= WM_APP + 4;
+		constexpr const static UINT END_OF_MESSAGE= UPDATE_SCROLL;
+	};
+	namespace context2exe {
+		constexpr const static UINT INPUT_CHAR = WM_APP;
+		constexpr const static UINT INPUT_KEY = WM_APP+1;
+		constexpr const static UINT END_OF_MESSAGE = INPUT_KEY;
+
+	}
+
 	struct MappingInfo {
 		static const constexpr auto TITLE_LENGTH = 4096;
 		unsigned short allocateWidth;

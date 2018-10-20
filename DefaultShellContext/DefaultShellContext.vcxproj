@@ -85,13 +85,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)ConsoleReadShellContextCommon;$(SolutionDir)BasicShellContext;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\src;$(SolutionDir)LuaIntf;$(SolutionDir)ConsoleReadShellContextCommon;$(SolutionDir)BasicShellContext;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\plugins\$(ProjectName)\</OutDir>
     <TargetName>plugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\include;$(SolutionDir)LuaIntf;$(SolutionDir)ConsoleReadShellContextCommon;$(SolutionDir)BasicShellContext;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)sakurasdk;$(SolutionDir)icu\include;$(SolutionDir)lua\src;$(SolutionDir)LuaIntf;$(SolutionDir)ConsoleReadShellContextCommon;$(SolutionDir)BasicShellContext;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\plugins\$(ProjectName)\</OutDir>
     <TargetName>plugin</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>

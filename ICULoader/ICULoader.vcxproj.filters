@@ -18,11 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="manifest.lua">
-      <Filter>リソース ファイル</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="..\ICU\bin64\icuuc62.dll">
       <Filter>リソース ファイル\x64</Filter>
     </CopyFileToFolders>
@@ -38,5 +33,6 @@
     <CopyFileToFolders Include="..\ICU\bin64\icutu62.dll">
       <Filter>リソース ファイル\x64</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="manifest.lua" />
   </ItemGroup>
 </Project>

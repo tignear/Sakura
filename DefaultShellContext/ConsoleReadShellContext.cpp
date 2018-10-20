@@ -3,19 +3,78 @@
 #include <shellapi.h>
 #include <algorithm>
 #include "ConsoleReadShellContext.h"
-namespace tignear::sakura {
+namespace tignear::sakura::conread {
 	using namespace stdex;
+	void ConsoleReadShellContext::Worker() {
+		using namespace exe2context;
+		using namespace exe2context;
+		while (true) {
+			auto future = m_message.message();
+			auto eve = future.get();
+			if (eve.msg == 0) {
+				return;
+			}
+			switch (eve.msg)
+			{
+			case UPDATE_CARET:
+				for (auto&& fn : m_layout_change_listeners) {
+					fn.second(this,true,true);
+				}
+				break;
+			case UPDATE_SIMPLE:
+			{
+				auto y = eve.lp & 0xFFFF;
+				auto v= this->GetStringAtLineCount((int)y);
+				Lines(y).update();
+				for (auto fn : m_text_change_listeners) {
+					fn.second(this, { TextUpdateInfoLine(std::make_unique<TextUpdateInfoLineImpl>(TextUpdateStatus::MODIFY,m_lines,y)) });
+				}
+				break;
+
+			}
+			case UPDATE_REGION:
+			{
+				auto ys = eve.lp & 0xFFFF;
+				auto ye = eve.lp>>32 & 0xFFFF;
+				std::vector<TextUpdateInfoLine> info;
+				info.reserve(ye - ys+1);
+				for (auto y = ys; y <= ye; ++y) {
+					Lines(y).update();
+					info.emplace_back(std::make_unique<TextUpdateInfoLineImpl>(TextUpdateStatus::MODIFY, m_lines, y));
+				}
+				for (auto fn : m_text_change_listeners) {
+					fn.second(this, info);
+				}
+				break;
+			}
+			default:
+				continue;
+			}
+		}
+	}
 	std::wstring_view ConsoleReadShellContext::GetStringAtLineCount(int lc)const {
 		if (!m_view) {
-			return std::wstring_view(m_nodata_text);
+			return std::wstring_view();
 		}
 		auto flc = lc - m_view.info()->viewBeginY;
 		if (flc>=0&&flc<m_view.info()->viewSize) {
-			auto sv=std::wstring_view(m_view.buf() + m_view.info()->allocateWidth*flc, m_view.info()->width);
-			sv.remove_suffix(sv.size() - sv.find_last_not_of(L'\0'));
+			auto f = m_view.info()->allocateWidth*flc;
+			auto sv = std::wstring_view(m_view.buf() + f, m_view.info()->width);
+
+			size_t rmc = sv.find_last_not_of(L'\0');
+			if (std::wstring_view::npos == rmc) {
+				return std::wstring_view();
+			}
+			sv.remove_suffix(sv.size() - rmc - 1);
+
+
+			if (std::wstring_view::npos == sv.find_first_not_of(' ')) {
+				return std::wstring_view();
+			}
+
 			return sv;
 		}
-		return std::wstring_view(m_nodata_text);
+		return std::wstring_view();
 	}
 	stdex::array_view<WORD> ConsoleReadShellContext::GetAttributesAtLineCount(int lc)const {
 		if (!m_view) {
@@ -50,7 +109,7 @@ namespace tignear::sakura {
 		if (keycode > 0x39) {
 			return;
 		}
-		PostMessage(m_child_hwnd, WM_APP+2,keycode, lp);
+		PostMessage(m_child_hwnd, context2exe::INPUT_KEY,keycode, lp);
 	}
 	void ConsoleReadShellContext::InputKey(WPARAM keycode, unsigned int count) {
 		for (auto i = 0U; i < count; ++i) {
@@ -58,7 +117,7 @@ namespace tignear::sakura {
 		}
 	}
 	void ConsoleReadShellContext::InputChar(WPARAM charcode,LPARAM lp) {
-		PostMessage(m_child_hwnd, WM_APP + 3, charcode, lp);
+		PostMessage(m_child_hwnd, context2exe::INPUT_CHAR, charcode, lp);
 	}
 	void ConsoleReadShellContext::InputString(std::wstring_view wstr) {
 		for (auto&& e : wstr) {
@@ -81,13 +140,23 @@ namespace tignear::sakura {
 		return m_view?m_view.info()->height:0;
 	}
 	size_t ConsoleReadShellContext::GetViewCount()const {
-		return m_view?m_view.info()->viewSize:0;
+		if (!m_view) {
+			return 0;
+		}
+		size_t beg = m_view.info()->viewBeginY;
+
+		return std::clamp(m_pagesize, beg, beg + m_view.info()->viewSize);
 	}
 	void ConsoleReadShellContext::SetPageSize(size_t psize) {
-		SendMessage(m_child_hwnd, WM_APP + 1, 1, psize);
+		m_pagesize = psize;
+		//SendMessage(m_child_hwnd, context2exe::UPDATE_SIZE, context2exe::update_size::SET_PAGESIZE, psize);
 	}
 	size_t ConsoleReadShellContext::GetViewStart()const {
-		return m_view ? m_view.info()->viewBeginY : 0;
+		if (!m_view) {
+			return 0;
+		}
+		size_t beg = m_view.info()->viewBeginY;
+		return std::clamp(m_view_start,beg,beg+m_view.info()->viewSize);
 	}
 	ConsoleReadShellContext::attrtext_line_impl& ConsoleReadShellContext::GetCursorY(){
 		if (m_view) {
@@ -121,7 +190,8 @@ namespace tignear::sakura {
 		}
 	}
 	void ConsoleReadShellContext::SetViewStart(size_t s) {
-		SendMessage(m_child_hwnd, WM_APP + 1, 0, s);
+		m_view_start = s;
+		//SendMessage(m_child_hwnd, context2exe::UPDATE_SIZE, context2exe::update_size::SET_BEGIN, s);
 	}
 	uintptr_t ConsoleReadShellContext::AddTextChangeListener(std::function<void(ShellContext*, std::vector<TextUpdateInfoLine>)> fn)const {
 		auto k =reinterpret_cast<uintptr_t>(&fn);
@@ -188,22 +258,43 @@ namespace tignear::sakura {
 	}
 	void ConsoleReadShellContext::Terminate() {
 		win32::TerminateProcessTree(win32::ProcessTree(m_child_pid));
+		m_message.postMessage({});
 		if (m_close_watch_thread.joinable()) {
 			m_close_watch_thread.join();
 		}
+		if (m_worker_thread.joinable()) {
+			m_worker_thread.join();
+		}
 	}
 	LRESULT ConsoleReadShellContext::OnMessage(UINT msg,LPARAM lp) {
-		if(WM_APP+2==msg){
+		using namespace exe2context;
+
+		if (!(msg >= static_cast<UINT>(CREATE_VIEW) && msg <= static_cast<UINT>(END_OF_MESSAGE))) {
+			return FALSE;
+		}
+		switch (msg) {
+		case CREATE_VIEW:
+		{
 			auto name = std::wstring(L"tignear.sakura.ConsoleReadShellContext.") + std::to_wstring(GetProcessId(m_child_process)) + L"." + std::to_wstring(lp);
 			m_view = OpenMappingViewW(name.c_str());
+				m_lines.reserve(m_view.info()->height);
+				std::vector<TextUpdateInfoLine> info;
+				for (unsigned short j = static_cast<unsigned short>(m_lines.size()); j <= m_view.info()->height; ++j) {
+					m_lines.emplace_back(this, j);
+					info.emplace_back(std::make_unique<TextUpdateInfoLineImpl>(TextUpdateStatus::NEW, m_lines, j));
+				}
+				if (!info.empty()) {
+					for (auto&& l : m_text_change_listeners) {
+						l.second(this, info);
+					}
+				}
+			
+			break;
 		}
-		else if (WM_APP + 3 == msg) {
-			{
-				std::lock_guard lock(m_update_watch_mutex);
-				m_update = true;
-			}
-			m_update_watch_variable.notify_all();
+		default:
+			m_message.postMessage({msg,lp});
 		}
-		return 0;
+
+		return TRUE;
 	}
 }

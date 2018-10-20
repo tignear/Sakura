@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{ECE41FAD-A694-49B3-9CF3-A3389D0271F8}</ProjectGuid>
     <RootNamespace>SakuraSDK</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -138,6 +138,7 @@
     <ClInclude Include="ComHolder.h" />
     <ClInclude Include="DefinedResource.h" />
     <ClInclude Include="Dpi.h" />
+    <ClInclude Include="MessageQueue.h" />
     <ClInclude Include="ModuleFilePath.h" />
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />

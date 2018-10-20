@@ -8,7 +8,56 @@
 #include "Environment.h"
 #include <ShellContextFactory.h>
 #include <filesystem>
+#include <optional>
+#include <strconv.h>
 #include <LuaIntf/LuaIntf.h>
+namespace LuaIntf
+{
+	LUA_USING_SHARED_PTR_TYPE(std::shared_ptr)
+}
+namespace tignear::sakura {
+	struct FreeLib {
+		void operator()(HMODULE p) {
+			FreeLibrary(p);
+		}
+	};
+	class DLLWrapper {
+	protected:
+		friend std::hash<DLLWrapper>;
+		std::unique_ptr<std::remove_pointer<HMODULE>::type, FreeLib> m_hmodule;
+	public:
+		 explicit DLLWrapper(HMODULE hm) :m_hmodule(hm) {
+
+		}
+		template<class T>
+		T GetProcAddress(const char* name)const {
+			return reinterpret_cast<T>(::GetProcAddress(m_hmodule.get(), name));
+		}
+		void* GetProcAddress(const char* name)const {
+			return reinterpret_cast<void*>(::GetProcAddress(m_hmodule.get(), name));
+		}
+		operator bool()const {
+			return bool(m_hmodule);
+		}
+	};
+	class LuaDLLWrapper:public DLLWrapper {
+	public:
+		explicit LuaDLLWrapper(HMODULE hm) :DLLWrapper(hm) {
+
+		}
+		bool IsDefined(const char* name)const {
+			return GetProcAddress(name);
+		}
+	};
+}
+template<>
+class std::hash<tignear::sakura::DLLWrapper> {
+	std::hash<HMODULE> ptr_hash=decltype(ptr_hash)();
+public:
+	size_t operator()(const tignear::sakura::DLLWrapper& key)const {
+		return ptr_hash(key.m_hmodule.get());
+	}
+};
 namespace tignear::sakura {
 	struct PluginInfo{
 		unsigned int manifestVersion;
@@ -20,13 +69,11 @@ namespace tignear::sakura {
 		LuaIntf::LuaRef main;
 		std::filesystem::path manifestFilePath;
 	};
-	struct FreeLib {
-		void operator()(HMODULE p) {
-			FreeLibrary(p);
-		}
-	};
+
+
+
 	class PluginManager {
-		std::unordered_set<std::unique_ptr<std::remove_pointer<HMODULE>::type,FreeLib>> m_hmodules;
+		std::unordered_set<std::shared_ptr<DLLWrapper>> m_hmodules;
 		std::unordered_set<std::unique_ptr<Plugin>> m_plugins;
 		std::shared_ptr<LuaIntf::LuaContext> L;
 	private:
@@ -104,40 +151,54 @@ namespace tignear::sakura {
 		const std::unordered_set<std::unique_ptr<Plugin>>& plugins() {
 			return m_plugins;
 		}
-
-		static PluginManager loadPlugin(std::filesystem::path pluginDir, std::shared_ptr<LuaIntf::LuaContext> L) {
+		struct Config {
+			HWND hwnd = NULL;
+		};
+		static PluginManager loadPlugin(std::filesystem::path pluginDir, std::shared_ptr<LuaIntf::LuaContext> L,const Config& conf) {
 			PluginManager mgr;
 			mgr.L = L;
 			try {
 				L->doString(
-				R"(
+				u8R"(
 					tignear=tignear or {}
 					tignear.sakura = tignear.sakura or {}
 				)"
 				);
-				LuaIntf::LuaBinding(L->getGlobal("tignear.sakura"))
-					.addFunction("loadPluginDLL", [&mgr](std::string str) {
+				LuaIntf::LuaBinding(L->getGlobal(u8"tignear.sakura"))
+					.beginClass<LuaDLLWrapper>("DLLWrapper")
+						.addStaticFunction("LoadLibrary", [](const char* name) {
+							return std::make_shared<LuaDLLWrapper>(::LoadLibraryA(name));
+						})
+						.addFunction("IsDefined", &LuaDLLWrapper::IsDefined)
+					.endClass()
+					.addFunction(u8"loadPluginDLL", [&mgr](std::string str) {
 						auto path = std::filesystem::u8path(str);
-						auto mod=(mgr.m_hmodules.emplace(LoadLibraryExW(path.wstring().c_str(), NULL, LOAD_LIBRARY_SEARCH_USER_DIRS| LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)).first)->get();
+						auto mod=(*mgr.m_hmodules.insert(std::make_shared<DLLWrapper>(LoadLibraryExW(path.wstring().c_str(), NULL, LOAD_LIBRARY_SEARCH_USER_DIRS| LOAD_LIBRARY_SEARCH_DEFAULT_DIRS))).first);
 						if (!mod) {
 							return false;
 						}
-					
-						auto proc = reinterpret_cast<CreatePluginFP>(GetProcAddress(mod, CreatePluginFunctionNameA));
+						auto* proc=mod->GetProcAddress<CreatePluginFP>(CreatePluginFunctionNameA);
 						if (!proc) {
 							return false;
 						}
 						mgr.m_plugins.emplace(proc());
 						return true;
 					})
-					.addFunction("AddDllDirectory", [](std::string pstr) {
+					.addFunction(u8"AddDllDirectory", [](std::string pstr) {
 						auto path = std::filesystem::u8path(pstr);
 						auto wstr = path.wstring();
 						if (!AddDllDirectory(wstr.c_str())) {
 							return false;
 						}
 						return true;
-					});
+					})
+					.addFunction(u8"MessageBox", [hwnd=conf.hwnd](const std::string& mes, const std::string& title, const int& type) {
+						auto bufm=utf8_to_ansi(mes);
+						auto buft= utf8_to_ansi(title.empty()?"Sakura":title);
+
+						return MessageBoxA(hwnd , bufm.c_str(), buft.c_str(), type);
+					}, LUA_ARGS(std::string, LuaIntf::_opt<std::string>, LuaIntf::_opt<int>));
+
 				auto&& pluginInfos = loadPluginInfo(*L, pluginDir);
 				mgr.executeMain(pluginInfos);
 			}catch (LuaIntf::LuaException e) {
