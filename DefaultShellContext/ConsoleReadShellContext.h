@@ -154,11 +154,13 @@ namespace tignear::sakura::conread {
 				
 				auto sv = self->GetStringAtLineCount(line_count);
 				auto e = arr.empty()?static_cast<WORD>(0):arr.front();
-				for (size_t i = 0; i < arr.size();) {
+				auto end = std::min(arr.size(), sv.size());
+				for (size_t i = 0; i <end;) {
 					auto n=arr.find_first_not_of(e,i);
-					e = arr[i];
-					ret.emplace_back(sv.substr(i,n),e,self->DefaultFont());
+					ret.emplace_back(sv.substr(i,n-i),e,self->DefaultFont());
 					i = n;
+					e = arr[i];
+
 				}
 				return ret;
 			}
