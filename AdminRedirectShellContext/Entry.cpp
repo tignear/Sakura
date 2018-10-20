@@ -7,27 +7,32 @@
 #include <Windows.h>
 #include <iostream>
 #include <nonsugar.hpp>
-enum class Args {
-	HELP,CMD,CURRENT_DIR,PIPE_NAME,PID,SHELLCONTEXT_PTR
-};
-std::atomic<HWND> g_child=0;
-static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	switch (message)
-	{
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-	case WM_KEYDOWN:
-	case WM_CHAR:
-	{
-		return PostMessage(g_child, message, wParam, lParam);
-	}
-	default:
-		return DefWindowProc(hwnd, message, wParam, lParam);
-	}
-	return 0;
-}
 
+namespace {
+	enum class Args {
+		HELP, CMD, CURRENT_DIR, PIPE_NAME, PID, SHELLCONTEXT_PTR
+	};
+	std::atomic<HWND> g_child = 0;
+
+	static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+		switch (message)
+		{
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			break;
+		case WM_KEYDOWN:
+		case WM_CHAR:
+		{
+			return PostMessage(g_child, message, wParam, lParam);
+		}
+		default:
+			return DefWindowProc(hwnd, message, wParam, lParam);
+		}
+		return 0;
+	}
+
+	
+}
 int APIENTRY WinMain(HINSTANCE hInstance,
 	HINSTANCE,
 	LPSTR,
@@ -36,11 +41,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	using namespace nonsugar;
 	const auto cmd = command<Args>("sakura-DefaultShellContext-AdminRedirector")
 		.flag<Args::HELP>({ 'h' }, { "help" }, "", "produce help message", flag_type::exclusive)
-		.flag<Args::CURRENT_DIR, std::string>({ 'c' }, { "currentDir" }, "CURRENT_DIR","set current directory","")
-		.argument<Args::CMD,std::string>("CMD")
+		.flag<Args::CURRENT_DIR, std::string>({ 'c' }, { "currentDir" }, "CURRENT_DIR", "set current directory", "")
+		.argument<Args::CMD, std::string>("CMD")
 		.argument<Args::PIPE_NAME, std::string>("PIPENAME")
-		.argument<Args::PID,DWORD>("PID")
-		.argument<Args::SHELLCONTEXT_PTR,uintptr_t>("SHELLCONTEXT_PTR");
+		.argument<Args::PID, DWORD>("PID")
+		.argument<Args::SHELLCONTEXT_PTR, uintptr_t>("SHELLCONTEXT_PTR");
 	try {
 		auto const opts = parse(__argc, __argv, cmd);
 		if (opts.has<Args::HELP>()) {
@@ -92,10 +97,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			ChangeWindowMessageFilterEx(hwnd, WM_KEYDOWN, MSGFLT_ALLOW, NULL))) {
 			return EXIT_FAILURE;
 		}
-		SendMessage(tignear::win32::GetHwndFromProcess(opts.get<Args::PID>()), WM_APP+1, opts.get<Args::SHELLCONTEXT_PTR>(), reinterpret_cast<LPARAM>(hwnd));
+		SendMessage(tignear::win32::GetHwndFromProcess(opts.get<Args::PID>()), WM_APP + 1, opts.get<Args::SHELLCONTEXT_PTR>(), reinterpret_cast<LPARAM>(hwnd));
 
 		//Create Process
-		auto cmdstr= opts.get<Args::CMD>();
+		auto cmdstr = opts.get<Args::CMD>();
 		auto pipename = opts.get<Args::PIPE_NAME>();
 		auto cdir = opts.get<Args::CURRENT_DIR>();
 
@@ -134,14 +139,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		}
 		auto hprocess = pi.hProcess;
 		CloseHandle(pi.hThread);
-		
+
 		CloseHandle(out_client_pipe);
 		DWORD exitcode = 0;
-		auto th=std::thread(
+		auto th = std::thread(
 			[
 				hwnd,
 				hprocess,
-				pid=pi.dwProcessId,
+				pid = pi.dwProcessId,
 				&exitcode
 			]()->void {
 			while (WaitForSingleObject(hprocess, 200) == WAIT_TIMEOUT) {
@@ -175,7 +180,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 	}
 	catch (error const &e) {
-		std::cerr << e.message() <<std::endl;
+		std::cerr << e.message() << std::endl;
 		return EXIT_FAILURE;
 	}
 

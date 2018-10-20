@@ -9,18 +9,92 @@
 #include <string>
 #include <Windows.h>
 #include <cassert>
-using namespace tignear::sakura;
+#include <MessageQueue.h>
+using namespace tignear::sakura::conread;
+struct WinEvent {
+	HWINEVENTHOOK hWinEventHook;
+	DWORD event;
+	HWND hwnd;
+	LONG idObject;
+	LONG idChild;
+	DWORD idEventThread;
+	DWORD dwmsEventTime;
+};
+namespace {
+	tignear::thread::MessageQueue<WinEvent> g_events;
+	tignear::sakura::conread::MappingView g_view;
+	HWND g_child;
+	HWND g_parent_hwnd;
+	WPARAM g_id;
+	//SHORT g_beginY = 0;
+	//SHORT g_size = 0;
+	enum class Args {
+		HELP, CMD, CURRENT_DIR,/* MUTEX,*/ PID, SHELLCONTEXT_PTR,/*FONT_SIZE*/
+	};
 
-HWND g_child;
-SHORT g_beginY=0;
-SHORT g_size=0;
-static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	void ProcessEvent(HANDLE outbuf, const WinEvent& eve) {
+		using namespace tignear::sakura::conread::exe2context;
+		switch (eve.event) {
+		case EVENT_CONSOLE_CARET:
+		{
+			auto x = LOWORD(eve.idChild);
+			auto y = HIWORD(eve.idChild);
+			g_view.info()->cursorX = x;
+			g_view.info()->cursorY = y;
+			PostMessage(g_parent_hwnd, static_cast<UINT>(UPDATE_CARET), g_id, x << 16 | y);
+			break;
+		}
+		case EVENT_CONSOLE_UPDATE_SIMPLE:
+		{
+			uint64_t x = LOWORD(eve.idObject);
+			uint64_t y = HIWORD(eve.idObject);
+			SHORT c = LOWORD(eve.idChild);
+			SHORT attr = HIWORD(eve.idChild);
+			auto i = y * g_view.info()->allocateWidth + x;
+			g_view.buf()[i] = c;
+			g_view.attribute()[i] = attr;
+			PostMessage(g_parent_hwnd, static_cast<UINT>(UPDATE_SIMPLE), g_id, static_cast<uint64_t>(attr) << 48 | static_cast<uint64_t>(c) << 32 | static_cast<uint64_t>(x) << 16 | y);
+			break;
+		}
+		case EVENT_CONSOLE_UPDATE_REGION:
+		{
+			uint64_t xs = LOWORD(eve.idObject);
+			uint64_t ys = HIWORD(eve.idObject);
+			uint64_t xe = LOWORD(eve.idChild);
+			uint64_t ye = HIWORD(eve.idChild);
+			for (SHORT line = static_cast<SHORT>(ys); line <= ye; ++line) {
+				auto i = line * g_view.info()->allocateWidth;
+				auto w = g_view.info()->width;
+				DWORD read;
+				ReadConsoleOutputCharacterW(outbuf, g_view.buf()+i, w, { 0 ,line }, &read);
+				ReadConsoleOutputAttribute(outbuf, g_view.attribute()+i, w, { 0,line }, &read);
+			}
+			PostMessage(g_parent_hwnd, static_cast<UINT>(UPDATE_REGION), g_id, xe << 48 | ye << 32 | xs << 16 | ys);
+			break;
+		}
+		case EVENT_CONSOLE_UPDATE_SCROLL:
+		{
+			auto vertical = eve.idChild;
+			if (vertical == 0) {
+				break;
+			}
+			PostMessage(g_parent_hwnd, static_cast<UINT>(UPDATE_SCROLL), g_id, vertical);
+			break;
+		}
+
+		default:
+			break;
+		}
+	}
+}
+LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	using namespace context2exe;
 	switch (message)
 	{
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	case WM_APP+2://Input key
+	case INPUT_KEY://Input key
 	{
 		INPUT_RECORD rec[2];
 		rec[0].EventType = KEY_EVENT;
@@ -29,15 +103,15 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 		rec[0].Event.KeyEvent.wVirtualScanCode = (lParam >> 16) & 0xff;
 		rec[0].Event.KeyEvent.dwControlKeyState = GetKeyState(VK_SHIFT) ? SHIFT_PRESSED : 0;//TODO
 		rec[0].Event.KeyEvent.uChar.UnicodeChar = 0;//static_cast<WCHAR>(MapVirtualKeyW(static_cast<UINT>(wParam), MAPVK_VK_TO_CHAR));
-		rec[0].Event.KeyEvent.wVirtualKeyCode =static_cast<WORD>(wParam);
+		rec[0].Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>(wParam);
 		memcpy(&rec[1], &rec[0], sizeof(rec[1]));
 		rec[1].Event.KeyEvent.bKeyDown = FALSE;
 		rec[1].Event.KeyEvent.wRepeatCount = 0;
 		DWORD write;
-		WriteConsoleInput(GetStdHandle(STD_INPUT_HANDLE), &rec[0], 2, &write);
+		WriteConsoleInputW(GetStdHandle(STD_INPUT_HANDLE), &rec[0], 2, &write);
 		break;
 	}
-	case  WM_APP + 3://input char
+	case INPUT_CHAR://input char
 	{
 		INPUT_RECORD rec[2];
 		rec[0].EventType = KEY_EVENT;
@@ -46,7 +120,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 		rec[0].Event.KeyEvent.dwControlKeyState = GetKeyState(VK_SHIFT) ? SHIFT_PRESSED : 0;//TODO
 		rec[0].Event.KeyEvent.uChar.UnicodeChar = static_cast<WCHAR>(wParam);
 		rec[0].Event.KeyEvent.wVirtualScanCode = (lParam >> 16) & 0xff;
-		rec[0].Event.KeyEvent.wVirtualKeyCode = lParam ? static_cast<WORD>(MapVirtualKeyW((lParam >> 16)&0xff, MAPVK_VSC_TO_VK_EX)) : 0;
+		rec[0].Event.KeyEvent.wVirtualKeyCode = lParam ? static_cast<WORD>(MapVirtualKeyW((lParam >> 16) & 0xff, MAPVK_VSC_TO_VK_EX)) : 0;
 		memcpy(&rec[1], &rec[0], sizeof(rec[1]));
 		rec[1].Event.KeyEvent.bKeyDown = FALSE;
 		rec[1].Event.KeyEvent.wRepeatCount = 0;
@@ -54,35 +128,42 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 		WriteConsoleInputW(GetStdHandle(STD_INPUT_HANDLE), &rec[0], 2, &write);
 		break;
 	}
-	case WM_APP+1:
-	{
-		switch (wParam) {
-		case 0:
-			g_beginY =static_cast<SHORT>(lParam);
-			break;
-		case 1://SetPageSize
-			g_size = static_cast<SHORT>(lParam);
-			break;
-		default:
-			return DefWindowProc(hwnd, message, wParam, lParam);
-		}
-	}
-	
+	case WM_CLOSE:
+		g_events.postMessage({});
+		return DefWindowProc(hwnd, message, wParam, lParam);
 	default:
 		return DefWindowProc(hwnd, message, wParam, lParam);
 	}
 	return 0;
 }
-enum class Args {
-	HELP, CMD, CURRENT_DIR,/* MUTEX,*/ PID, SHELLCONTEXT_PTR,/*FONT_SIZE*/
-};
+
+
+void CALLBACK WinEventProc(
+	HWINEVENTHOOK hWinEventHook,
+	DWORD event,
+	HWND hwnd,
+	LONG idObject,
+	LONG idChild,
+	DWORD idEventThread,
+	DWORD dwmsEventTime
+) {
+	g_events.postMessage(
+		{
+			hWinEventHook,
+			event,
+			hwnd,
+			idObject,
+			idChild,
+			idEventThread,
+			dwmsEventTime
+		}
+	);
+}
 int APIENTRY WinMain(HINSTANCE hInstance,
 	HINSTANCE,
 	LPSTR,
 	int) {
 	using namespace nonsugar;
-	FreeConsole();
-
 	const auto cmd = command<Args>("sakura-DefaultShellContext-ConsoleReader")
 		.flag<Args::HELP>({ 'h' }, { "help" }, "", "produce help message", flag_type::exclusive)
 		.flag<Args::CURRENT_DIR, std::string>({ 'c' }, { "currentDir" }, "CURRENT_DIR", "set current directory", "")
@@ -97,6 +178,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			std::cout << usage(cmd);
 			return EXIT_SUCCESS;
 		}
+		FreeConsole();
 
 		static TCHAR szWindowClass[] = _T("tignear.sakura.ConsoleReader");
 		static TCHAR szTitle[] = _T("ConsoleReader");
@@ -105,7 +187,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 		wcex.cbSize = sizeof(WNDCLASSEX);
 		wcex.style = NULL;
-		wcex.lpfnWndProc = WndProc;
+		wcex.lpfnWndProc = &WndProc;
 		wcex.cbClsExtra = 0;
 		wcex.cbWndExtra = 0;
 		wcex.hInstance = hInstance;
@@ -136,6 +218,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		{
 			return EXIT_FAILURE;
 		}
+		if (!SetWinEventHook(EVENT_CONSOLE_CARET, EVENT_CONSOLE_END_APPLICATION, NULL, &WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT| WINEVENT_SKIPOWNPROCESS)) {
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
+		}
 
 		//UIPI
 		if (!(ChangeWindowMessageFilterEx(hwnd, WM_APP + 3, MSGFLT_ALLOW, NULL) &&
@@ -143,9 +228,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			ChangeWindowMessageFilterEx(hwnd,WM_APP+1,MSGFLT_ALLOW,NULL))) {
 			return EXIT_FAILURE;
 		}
-		auto parent=tignear::win32::GetHwndFromProcess(opts.get<Args::PID>());
-		auto id = opts.get<Args::SHELLCONTEXT_PTR>();
-		SendMessage(parent, WM_APP+1,id, reinterpret_cast<LPARAM>(hwnd));
+		g_parent_hwnd=tignear::win32::GetHwndFromProcess(opts.get<Args::PID>());
+		g_id = opts.get<Args::SHELLCONTEXT_PTR>();
 
 		//Create Process
 		auto cmdstr = opts.get<Args::CMD>();
@@ -188,79 +272,55 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		}
 		auto console_outbuf_handle=GetStdHandle(STD_OUTPUT_HANDLE);
 
-		DWORD exitcode = 0;
-		auto th_out = std::thread([hprocess,console_outbuf_handle,parent,id,hwnd,&exitcode]{
-			//SHORT nowpos=0;
-			MappingView view;
-			unsigned int num = 0;
-			while (WaitForSingleObject(hprocess, 100)==WAIT_TIMEOUT) {
-				CONSOLE_SCREEN_BUFFER_INFOEX info;
-				info.cbSize = sizeof(info);
-				if (!GetConsoleScreenBufferInfoEx(console_outbuf_handle, &info)) {
 
-					exitcode = EXIT_FAILURE;
-					PostMessage(hwnd, WM_CLOSE, 0, 0);
+
+		CONSOLE_SCREEN_BUFFER_INFOEX csbie{};
+		csbie.cbSize = sizeof(csbie);
+		GetConsoleScreenBufferInfoEx(console_outbuf_handle, &csbie);
+		auto w = csbie.dwSize.X;
+		auto h = csbie.dwSize.Y;
+		g_view = CreateMappingViewW((std::wstring(L"tignear.sakura.ConsoleReadShellContext.") + std::to_wstring(GetCurrentProcessId()) + L"." + std::to_wstring(0)).c_str(), w, h);
+		auto* info = g_view.info();
+
+		info->width = w;
+		info->height = h;
+		info->cursorX = csbie.dwCursorPosition.X;
+		info->cursorY = csbie.dwCursorPosition.Y;
+		info->viewSize = h;
+		auto aw = info->allocateWidth;
+		for (SHORT line = 0; line < h; ++line) {
+			DWORD read=0;
+			auto index = line * aw;
+			
+			ReadConsoleOutputCharacterW(console_outbuf_handle, g_view.buf()+index, w, {0,line },&read);
+			ReadConsoleOutputAttribute(console_outbuf_handle, g_view.attribute()+index, w, { 0,line }, &read);
+		}
+		PostMessage(g_parent_hwnd, exe2context::CREATE_VIEW, g_id, 0);
+		std::thread worker([console_outbuf_handle, hwnd]() {
+
+
+			while (true)
+			{
+				auto future = g_events.message();
+				auto&& e = future.get();
+				if (!e.event) {
 					return;
 				}
-
-				if (!view || info.dwSize.X > view.info()->allocateWidth || g_size > view.info()->allocateHeight) {
-					auto name = std::wstring(L"tignear.sakura.ConsoleReadShellContext.") + std::to_wstring(GetCurrentProcessId()) + L"." + std::to_wstring(num);
-
-					view=CreateMappingViewW(name.c_str(), info.dwSize.X,info.srWindow.Bottom-info.srWindow.Top);
-					view.info()->viewBeginY = g_beginY;
-					view.info()->viewSize =g_size;
-					view.info()->width = info.dwSize.X;
-					view.info()->height = info.dwSize.Y;
-					view.info()->cursorX = info.dwCursorPosition.X;
-					view.info()->cursorY = info.dwCursorPosition.Y;
-					GetConsoleTitleW(view.info()->title, MappingInfo::TITLE_LENGTH);
-					for (short i = 0; i < view.info()->viewSize; ++i) {
-						DWORD read_char;
-						ReadConsoleOutputCharacterW(console_outbuf_handle, view.buf() + i * view.info()->allocateWidth, view.info()->width, { 0,view.info()->viewBeginY + i }, &read_char);
-						DWORD read_attr;
-						ReadConsoleOutputAttribute(console_outbuf_handle, view.attribute() + i * view.info()->allocateWidth, view.info()->width, { 0,view.info()->viewBeginY + 1 }, &read_attr);
-					}
-					SendMessage(parent,WM_APP+2,id,num);
-					SendMessage(parent, WM_APP + 3, id,0);
-					++num;
-					continue;
-				}
-				
-				view.info()->viewBeginY = g_beginY;
-				view.info()->viewSize = g_size;
-				view.info()->width = info.dwSize.X;
-				view.info()->height = info.dwSize.Y;
-				view.info()->cursorX = info.dwCursorPosition.X;
-				view.info()->cursorY = info.dwCursorPosition.Y;
-				GetConsoleTitleW(view.info()->title,MappingInfo::TITLE_LENGTH);	
-				for (short i =0; i < view.info()->viewSize; ++i) {
-					DWORD read_char;
-					ReadConsoleOutputCharacterW(console_outbuf_handle, view.buf() + i * view.info()->allocateWidth, view.info()->width, {0,view.info()->viewBeginY+i},&read_char);
-					DWORD read_attr;
-					ReadConsoleOutputAttribute(console_outbuf_handle, view.attribute() + i * view.info()->allocateWidth, view.info()->width, { 0,view.info()->viewBeginY + 1 }, &read_attr);
-				}
-				
-				PostMessage(parent, WM_APP + 3, id, 0);
+				ProcessEvent(console_outbuf_handle, std::move(e));
 			}
-			if (!GetExitCodeProcess(hprocess, &exitcode)) {
-				CloseHandle(hprocess);
-				exitcode = EXIT_FAILURE;
-				PostMessage(hwnd, WM_CLOSE, 0, 0);
-				return;
-			}
-			CloseHandle(hprocess);
 
-			PostMessage(hwnd, WM_CLOSE, 0, 0);
+
 		});
-		
+
+
 		MSG msg;
 		while (GetMessage(&msg, NULL, 0, 0))
 		{
 			DispatchMessage(&msg);
 		}
 		TerminateProcess(hprocess,EXIT_FAILURE);
-		th_out.join();
-		return exitcode;
+		worker.join();
+		return EXIT_SUCCESS;
 	}
 	catch (error const &e) {
 		std::cerr << e.message() << std::endl;

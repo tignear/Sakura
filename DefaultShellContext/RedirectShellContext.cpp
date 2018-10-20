@@ -2,10 +2,10 @@
 #include "RedirectShellContext.h"
 #include "GetHwndFromPid.h"
 #include <ProcessTree.h>
-
 using tignear::stdex::tstring;
 using tignear::win32::GetHwndFromProcess;
 namespace tignear::sakura {
+
 	bool RedirectShellContext::CreateShell(std::shared_ptr<RedirectShellContext> s,tstring cmdstr, const Options& opt) {
 		//http://yamatyuu.net/computer/program/sdk/base/cmdpipe1/index.html
 		SECURITY_ATTRIBUTES sa;

@@ -6,7 +6,7 @@
 #include <strconv.h>
 #include <ansi/BasicColorTable.h>
 #include "ConsoleReadShellContext.h"
-namespace tignear::sakura {
+namespace tignear::sakura::conread {
 
 
 	class ConsoleReadShellContextFactory :public ShellContextFactory {

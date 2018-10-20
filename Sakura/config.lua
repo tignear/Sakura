@@ -31,6 +31,6 @@ conf.shells={
         font="Cica"
     },
 }
-conf.initshell=conf.shells[4]
+conf.initshell=conf.shells[3]
 
 return conf

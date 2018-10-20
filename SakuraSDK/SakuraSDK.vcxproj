@@ -138,6 +138,7 @@
     <ClInclude Include="ComHolder.h" />
     <ClInclude Include="DefinedResource.h" />
     <ClInclude Include="Dpi.h" />
+    <ClInclude Include="MessageQueue.h" />
     <ClInclude Include="ModuleFilePath.h" />
     <ClInclude Include="FailToThrow.h" />
     <ClInclude Include="GetHwndFromPid.h" />

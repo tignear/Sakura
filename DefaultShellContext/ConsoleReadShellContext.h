@@ -1,4 +1,5 @@
 #pragma once
+#include <MessageQueue.h>
 #include <GetHwndFromPid.h>
 #include <unordered_map>
 #include <condition_variable>
@@ -12,17 +13,17 @@
 #include <unordered_map>
 #include <algorithm>
 #undef min
-namespace tignear::sakura {
+namespace tignear::sakura::conread {
 	class ConsoleReadShellContext:public ShellContext {
-		static const constexpr std::hash<std::wstring_view> wstr_hash{};
-		std::condition_variable m_update_watch_variable;
-		std::mutex m_update_watch_mutex;
-		bool m_update_watch_closing=false;
-		bool m_update=false;
+		struct WinMessage {
+			UINT msg;
+			LPARAM lp;
+		};
+		thread::MessageQueue<WinMessage> m_message;
 		HANDLE m_child_process;
 
-		std::thread m_update_watch_thread;
 		std::thread m_close_watch_thread;
+		std::thread m_worker_thread;
 		DWORD m_child_pid;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*, std::vector<TextUpdateInfoLine>)>> m_text_change_listeners;
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*, bool, bool)>> m_layout_change_listeners;
@@ -32,13 +33,16 @@ namespace tignear::sakura {
 		HANDLE m_win_mutex = NULL;
 		std::atomic<std::thread::id> m_lock_holder;
 		unsigned int m_lock_count = 0;
-		std::wstring m_nodata_text;
 		const std::wstring m_default_font;
 		const double m_fontsize;
 		HWND m_child_hwnd=0;
-		//metods
+		size_t m_pagesize=0;
+		size_t m_view_start=0;
+		//methods
+		void Worker();
 		std::wstring_view GetStringAtLineCount(int lc)const;
 		stdex::array_view<WORD> GetAttributesAtLineCount(int lc)const;
+
 		class AttributeTextImpl:public ansi::AttributeText {
 			std::wstring_view text;
 			const std::wstring& m_font;
@@ -140,7 +144,6 @@ namespace tignear::sakura {
 			
 		};
 		class attrtext_line_impl :public attrtext_line {
-			size_t m_text_hash;
 			const unsigned short line_count;
 			ConsoleReadShellContext* self;
 			std::shared_ptr<void> m_resource;
@@ -148,8 +151,9 @@ namespace tignear::sakura {
 			std::vector<AttributeTextImpl> buildAttrText()const {
 				std::vector<AttributeTextImpl> ret;
 				auto arr=self->GetAttributesAtLineCount(line_count);
+				
 				auto sv = self->GetStringAtLineCount(line_count);
-				auto e = arr.front();
+				auto e = arr.empty()?static_cast<WORD>(0):arr.front();
 				for (size_t i = 0; i < arr.size();) {
 					auto n=arr.find_first_not_of(e,i);
 					e = arr[i];
@@ -159,14 +163,13 @@ namespace tignear::sakura {
 				return ret;
 			}
 		public:
-			attrtext_line_impl(const attrtext_line_impl& from) :m_text_hash(from.m_text_hash),line_count(from.line_count), self(from.self),m_resource(from.m_resource){}
+			attrtext_line_impl(const attrtext_line_impl& from) :line_count(from.line_count), self(from.self),m_resource(from.m_resource){}
 			attrtext_line_impl(ConsoleReadShellContext* self,unsigned short lc):self(self),line_count(lc) {
-
 			}
-			attrtext_iterator begin() {
+			attrtext_iterator begin()override {
 				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_attr_text.begin()));
 			}
-			attrtext_iterator end() {
+			attrtext_iterator end()override {
 				return attrtext_iterator(std::make_unique<attrtext_iterator_impl>(m_attr_text.end()));
 			}
 			std::shared_ptr<void>& resource()override {
@@ -182,40 +185,11 @@ namespace tignear::sakura {
 			bool operator!=(const attrtext_line& l)const {
 				return !operator==(l);
 			}
-			const std::vector<AttributeTextImpl>attr_text()const {
+			const std::vector<AttributeTextImpl>attr_text()const{
 				return m_attr_text;
 			}
-			bool isUpdated(){
-				bool r = false;
-				//text
-				{
-					auto begin = self->m_view.info()->viewBeginY;
-					if ((!self->m_view) || line_count < begin || line_count>begin + self->m_view.info()->viewSize) {
-						return false;
-					}
-					auto && str = self->GetStringAtLineCount(line_count);
-					auto temp = wstr_hash(str);
-					if (m_text_hash != temp) {
-						r = true;
-						m_text_hash = temp;
-					}
-				}
-				//attr
-				{
-					auto attr = self->GetAttributesAtLineCount(line_count);
-					std::vector<WORD> buf;
-					for (auto&& e : m_attr_text) {
-						std::vector<WORD> m(e.length(), e.word());
-						buf.insert(buf.end(),m.begin(),m.end());
-					}
-					if (!memcmp(buf.data(), attr.data(), std::min(buf.size(), attr.size()))) {
-						r = true;
-					}
-				}
-				if (r) {
-					m_attr_text = buildAttrText();
-				}
-				return r;
+			void update() {
+				m_attr_text = buildAttrText();
 			}
 		};
 		
@@ -228,8 +202,15 @@ namespace tignear::sakura {
 				return m_lines.at(i);
 			}
 			m_lines.reserve(i);
+			std::vector<TextUpdateInfoLine> info;
 			for (unsigned short j =static_cast<unsigned short>( m_lines.size()); j <= i;++j) {
 				m_lines.emplace_back(this,j);
+				info.emplace_back(std::make_unique<TextUpdateInfoLineImpl>(TextUpdateStatus::NEW,m_lines,j));
+			}
+			if (!info.empty()) {
+				for (auto&& l : m_text_change_listeners) {
+					l.second(this, info);
+				}
 			}
 			return m_lines.at(i);
 		}
@@ -326,6 +307,7 @@ namespace tignear::sakura {
 		ConsoleReadShellContext(stdex::tstring exe,stdex::tstring cmd,std::wstring default_font,double fontsize) :
 			m_default_font(default_font),
 			m_fontsize(fontsize),
+			m_worker_thread(std::bind(&ConsoleReadShellContext::Worker,this)),
 			m_child_process([this,&exe,&cmd]() {
 				SHELLEXECUTEINFO sei{};
 				sei.cbSize = sizeof(sei);
@@ -350,59 +332,7 @@ namespace tignear::sakura {
 				mutex_name += _T(".");
 				mutex_name += str_process_cnt;
 				return CreateMutexEx(NULL, mutex_name.c_str(), NULL, MUTEX_ALL_ACCESS);
-		}()),
-			m_update_watch_thread([this]() {
-			MappingInfo prev_info{};
-			while (true) {
-				{
-					std::unique_lock lock(m_update_watch_mutex);
-					m_update_watch_variable.wait(lock, [this]() {return m_update || m_update_watch_closing; });
-				}
-				if (m_update_watch_closing) {
-					return;
-				}
-				if (!m_view) {
-					m_update = false;
-					continue;
-				}
-				if (m_update) {
-					//text update
-					Lock();
-					auto s = m_view.info()->viewBeginY;
-					auto e = s + m_view.info()->viewSize;
-					std::vector<TextUpdateInfoLine> up;
-					for (unsigned short i = s; i < e; ++i) {
-						while(i >= m_lines.size()) {
-							m_lines.emplace_back(this,static_cast<unsigned short>(m_lines.size()));
-						}
-						if (m_lines[i].isUpdated()) {
-							up.emplace_back(std::make_unique<TextUpdateInfoLineImpl>(ShellContext::TextUpdateStatus::MODIFY, m_lines,i));
-						}
-					}
-					if (!up.empty()) {
-						for (auto&& elem : m_text_change_listeners) {
-							elem.second(this, up);
-						}
-					}
-					//layout update					
-					if (memcmp(&prev_info, m_view.info(), sizeof(prev_info))) {
-						if (prev_info.width != m_view.info()->width) {
-							m_nodata_text.assign(m_view.info()->width, L' ');
-						}
-						for (auto&& l : m_layout_change_listeners) {
-							l.second(this, true, true);
-						}
-						memcpy(&prev_info, m_view.info(), sizeof(prev_info));
-					}
-					Unlock();
-					{
-						std::lock_guard lock(m_update_watch_mutex);
-						m_update = false;
-
-					}
-				}
-			}
-			})
+		}())
 		{
 			WaitForInputIdle(m_child_process,INFINITE);
 			while (!(m_child_hwnd)) {
@@ -418,10 +348,10 @@ namespace tignear::sakura {
 		attrtext_document& GetAll()override;//lock call
 		attrtext_document& GetView()override;//lock call
 		std::wstring_view GetTitle()const override;//no lock call
-		size_t GetLineCount()const override;//no lock call
-		size_t GetViewCount()const override;//no lock call
-		void SetPageSize(size_t count)override;//no lock call
-		size_t GetViewStart()const override;//no lock call
+		size_t GetLineCount()const override;//no lock call.All line count.
+		size_t GetViewCount()const override;//no lock call.get view line count.
+		void SetPageSize(size_t count)override;//no lock call.set view count.
+		size_t GetViewStart()const override;//no lock call.get view start position.
 		attrtext_line_impl& GetCursorY()override;
 		attrtext_line_iterator GetCursorYItr()override;
 		size_t GetCursorXWStringPos()const override;//no lock call.wstring_view position
@@ -444,12 +374,6 @@ namespace tignear::sakura {
 		LRESULT OnMessage(UINT,LPARAM lparam)override;
 		~ConsoleReadShellContext() {
 			CloseHandle(m_win_mutex);
-			{
-				std::lock_guard lock(m_update_watch_mutex);
-				m_update_watch_closing = true;
-			}
-			m_update_watch_variable.notify_all();
-			m_update_watch_thread.join();
 		};//no lock call.bat not require lock.
 	};
 }

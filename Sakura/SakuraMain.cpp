@@ -114,7 +114,7 @@ int Sakura::Main(HINSTANCE hInstance,
 	LPTSTR,
 	int)
 {
-	
+
 	appInstance = hInstance;
 	auto L=std::make_shared<LuaIntf::LuaContext>();
 
