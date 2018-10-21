@@ -3,6 +3,7 @@
 #include "ConsoleWindow.h"
 #include "FailToThrow.h"
 #include "Dpi.h"
+#include <wchar.h>
 using tignear::sakura::ShellContextFactory;
 using tignear::sakura::ConsoleWindow;
 using tignear::sakura::cwnd::Context;

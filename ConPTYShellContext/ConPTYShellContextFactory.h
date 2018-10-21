@@ -23,21 +23,20 @@ namespace tignear::sakura {
 			for (auto e : fonts) {
 				fontmap.push_back(cp_to_wide(e.value().toValue<std::string>(), 65001));
 			}
-			auto admin = false;
-			auto hasAdminParam = info.shellConf.has("admin");
-			if (hasAdminParam) {
-				admin = info.shellConf.get<bool>("admin");
-			}
+			auto admin = info.shellConf.get<bool>("admin",false);
+			
+			auto ambiguous_size = info.shellConf.get<unsigned char>("ambiguous_size",1);
+			
 #ifdef UNICODE
 			auto cmdc = cp_to_wide(cmd, 65001);
 #else
 			auto cmdc = std::move(cmd);
 #endif // UNICODE
 			if (admin) {
-				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExeAdmin.exe"), cmdc, iocpMgr,2, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
+				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExeAdmin.exe"), cmdc, iocpMgr, ambiguous_size, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
 			}
 			else {
-				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExe.exe"), cmdc, iocpMgr,2, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
+				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExe.exe"), cmdc, iocpMgr, ambiguous_size, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
 
 			}
 		}

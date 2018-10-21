@@ -729,6 +729,7 @@ Microsoft::WRL::ComPtr<IDWriteTextLayout1> ConsoleWindowTextArea::GetLayout(Shel
 	if (pair.first) {
 		l.resource() = std::make_shared<cwnd::LineResouce>(pair.second);
 	}
+	
 	return pair.second;
 }
 std::pair<bool,Microsoft::WRL::ComPtr<IDWriteTextLayout1>> ConsoleWindowTextArea::BuildLayout(ShellContext::attrtext_line& l){

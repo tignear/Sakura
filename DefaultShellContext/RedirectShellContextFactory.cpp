@@ -21,22 +21,20 @@ namespace tignear::sakura {
 		for (auto e : fonts) {
 			fontmap.push_back(cp_to_wide(e.value().toValue<std::string>(),65001));
 		}
-		auto admin = false;
-		auto hasAdminParam = info.shellConf.has("admin");
-		if (hasAdminParam) {
-			admin=info.shellConf.get<bool>("admin");
-		}
+		auto admin = info.shellConf.get<bool>("admin", false);
+
+		auto ambiguous_size = info.shellConf.get<unsigned char>("ambiguous_size", 1);
 #ifdef UNICODE
 		auto cmdc = cp_to_wide(cmd, 65001);
 #else
 		auto cmdc = std::move(cmd);
 #endif // UNICODE
 		if (admin) {
-			return ShellExecuteExShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "AdminRedirectShellContext.exe"), cmdc, iocpMgr, 1,cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ShellExecuteExShellContext::Options{});
+			return ShellExecuteExShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "AdminRedirectShellContext.exe"), cmdc, iocpMgr, ambiguous_size,cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ShellExecuteExShellContext::Options{});
 		}
 		else {
 
-			return RedirectShellContext::Create(cmdc, iocpMgr,1, cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, RedirectShellContext::Options{});
+			return RedirectShellContext::Create(cmdc, iocpMgr, ambiguous_size, cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, RedirectShellContext::Options{});
 
 		}
 	}
