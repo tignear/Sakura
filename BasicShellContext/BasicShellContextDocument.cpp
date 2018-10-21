@@ -85,7 +85,7 @@ namespace tignear::sakura {
 		if (m_cursorY_itr != m_text.end()) {
 			return false;
 		}
-		m_text.emplace_back(m_color_sys, m_color_256, m_fontmap);
+		m_text.emplace_back(m_ambiguous_size,m_color_sys, m_color_256, m_fontmap);
 		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::NEW, m_text.back())});
 		--m_cursorY_itr;
 		if (m_text.size() > m_max_line) {
@@ -279,6 +279,8 @@ namespace tignear::sakura {
 	}
 	void BasicShellContextDocument::Erase(size_t count) {
 		m_cursorY_itr->Erase(m_cursorX, count);//ignor
+		NotifyTextChange(std::vector<TextUpdateInfoLine>{BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus::MODIFY, *m_cursorY_itr)});
+
 	}
 	attrtext_document_all_impl& BasicShellContextDocument::GetAll() {
 		return m_all;
@@ -304,7 +306,7 @@ namespace tignear::sakura {
 					continue;
 				}
 				++cnt;
-				nowEAW += icuex::EastAsianWidth(uc,2);//MAGIC_NUMBER
+				nowEAW += icuex::EastAsianWidth(uc,m_ambiguous_size);//MAGIC_NUMBER
 			}
 		}
 		return cnt;

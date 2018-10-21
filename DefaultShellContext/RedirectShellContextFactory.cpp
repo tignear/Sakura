@@ -32,11 +32,11 @@ namespace tignear::sakura {
 		auto cmdc = std::move(cmd);
 #endif // UNICODE
 		if (admin) {
-			return ShellExecuteExShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "AdminRedirectShellContext.exe"), cmdc, iocpMgr, cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ShellExecuteExShellContext::Options{});
+			return ShellExecuteExShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "AdminRedirectShellContext.exe"), cmdc, iocpMgr, 1,cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ShellExecuteExShellContext::Options{});
 		}
 		else {
 
-			return RedirectShellContext::Create(cmdc, iocpMgr, cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, RedirectShellContext::Options{});
+			return RedirectShellContext::Create(cmdc, iocpMgr,1, cp, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, RedirectShellContext::Options{});
 
 		}
 	}

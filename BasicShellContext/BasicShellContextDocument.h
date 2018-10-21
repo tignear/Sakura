@@ -65,6 +65,7 @@ namespace tignear::sakura {
 	class BasicShellContextDocument {
 		using TextUpdateInfoLine = ShellContext::TextUpdateInfoLine;
 		static TextUpdateInfoLine BuildTextUpdateInfoLine(ShellContext::TextUpdateStatus, ShellContext::attrtext_line&);
+		const unsigned char m_ambiguous_size;
 		std::list<BasicShellContextLineText> m_text;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr;
 		std::list<BasicShellContextLineText>::iterator m_cursorY_itr_save;
@@ -96,12 +97,14 @@ namespace tignear::sakura {
 
 	public:
 		BasicShellContextDocument(
+			unsigned char ambiguous_size,
 			const ansi::ColorTable& color_sys,
 			const ansi::ColorTable& color_256,
 			const std::vector<std::wstring>& fontmap,
 			const Attribute& def,
 			std::function<void(bool,bool)> layout_change,
 			std::function<void(std::vector<ShellContext::TextUpdateInfoLine>)> text_change) :
+			m_ambiguous_size(ambiguous_size),
 			m_color_256(color_256),
 			m_color_sys(color_sys),
 			m_fontmap(fontmap),

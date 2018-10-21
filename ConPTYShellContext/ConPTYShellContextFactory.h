@@ -34,10 +34,10 @@ namespace tignear::sakura {
 			auto cmdc = std::move(cmd);
 #endif // UNICODE
 			if (admin) {
-				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExeAdmin.exe"), cmdc, iocpMgr, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
+				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExeAdmin.exe"), cmdc, iocpMgr,2, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
 			}
 			else {
-				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExe.exe"), cmdc, iocpMgr, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
+				return ConPTYShellContext::Create(stdex::tstring(tignear::win::GetModuleFilePath(m_hinst) / "ConPTYShellContextExe.exe"), cmdc, iocpMgr,2, ansi::BasicSystemColorTable(), ansi::Basic256ColorTable(), terminal_echo, fontmap, fontsize, ConPTYShellContext::Options{});
 
 			}
 		}

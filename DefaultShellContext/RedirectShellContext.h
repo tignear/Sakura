@@ -24,6 +24,7 @@ namespace tignear::sakura {
 		static std::shared_ptr<RedirectShellContext> Create(
 			stdex::tstring,
 			std::shared_ptr<iocp::IOCPMgr>,
+			unsigned char ambiguous_size,
 			unsigned int codepage,
 			std::unordered_map<unsigned int, uint32_t>,
 			std::unordered_map<unsigned int, uint32_t>,
@@ -34,6 +35,7 @@ namespace tignear::sakura {
 		);
 		RedirectShellContext(
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+			unsigned char ambiguous_size,
 			unsigned int codepage,
 			const ansi::ColorTable& c_sys,
 			const ansi::ColorTable& c_256,
@@ -43,8 +45,9 @@ namespace tignear::sakura {
 			Attribute& def
 		) :
 			BasicShellContext(
-			iocpmgr,
-			codepage,
+				iocpmgr,
+				ambiguous_size,
+				codepage,
 				c_sys,
 				c_256,
 				use_terminal_echoback,

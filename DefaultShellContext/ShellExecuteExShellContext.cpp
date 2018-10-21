@@ -75,6 +75,7 @@ namespace tignear::sakura {
 		stdex::tstring executable,
 		tstring cmdstr,
 		std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+		unsigned char ambiguous_size,
 		unsigned int codepage,
 		std::unordered_map<unsigned int, uint32_t> colorsys,
 		std::unordered_map<unsigned int, uint32_t> color256,
@@ -88,7 +89,7 @@ namespace tignear::sakura {
 		attr.frColor.color_system = 30;
 		attr.bgColor.type = ColorType::ColorSystem;
 		attr.bgColor.color_system = 47;
-		auto r = std::make_shared<ShellExecuteExShellContext>(iocpmgr, codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
+		auto r = std::make_shared<ShellExecuteExShellContext>(iocpmgr, ambiguous_size,codepage, colorsys, color256, use_terminal_echoback, fontmap, fontsize, attr);
 		if (CreateShell(r,executable ,cmdstr, opt))
 		{
 			if (!r->WorkerStart(r)) {

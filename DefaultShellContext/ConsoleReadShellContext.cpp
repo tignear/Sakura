@@ -14,6 +14,8 @@ namespace tignear::sakura::conread {
 			if (eve.msg == 0) {
 				return;
 			}
+			std::scoped_lock lock(m_mutex);
+
 			switch (eve.msg)
 			{
 			case UPDATE_CARET:
@@ -218,25 +220,10 @@ namespace tignear::sakura::conread {
 		m_exit_listeners.erase(k);
 	}
 	void ConsoleReadShellContext::Lock() {
-		auto id = std::this_thread::get_id();
-		if (m_lock_holder != id) {
-			WaitForSingleObject(m_win_mutex, INFINITE);
-			m_lock_holder = id;
-			++m_lock_count;
-		}
-		else
-		{
-			++m_lock_count;
-		}
-
+		m_mutex.lock();
 	}
 	void ConsoleReadShellContext::Unlock() {
-		if (m_lock_holder == std::this_thread::get_id()) {
-			--m_lock_count;
-			if (m_lock_count == 0) {
-				ReleaseMutex(m_win_mutex);
-			}
-		}
+		m_mutex.unlock();
 	}
 	void ConsoleReadShellContext::Resize(UINT , UINT ) {
 
@@ -272,6 +259,7 @@ namespace tignear::sakura::conread {
 		if (!(msg >= static_cast<UINT>(CREATE_VIEW) && msg <= static_cast<UINT>(END_OF_MESSAGE))) {
 			return FALSE;
 		}
+		std::scoped_lock lock(m_mutex);
 		switch (msg) {
 		case CREATE_VIEW:
 		{

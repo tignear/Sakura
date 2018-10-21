@@ -77,15 +77,16 @@ namespace tignear::sakura {
 		}
 	public:
 		ConPTYShellContext(
-
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+			unsigned char ambiguous_size,
+
 			const ansi::ColorTable& c_sys,
 			const ansi::ColorTable& c_256,
 			bool use_terminal_echoback,
 			std::vector<std::wstring> fontmap,
 			double fontsize,
 			Attribute& def
-		) :BasicShellContext(iocpmgr,65001,c_sys,c_256,use_terminal_echoback,fontmap,fontsize,def) {
+		) :BasicShellContext(iocpmgr, ambiguous_size,65001,c_sys,c_256,use_terminal_echoback,fontmap,fontsize,def) {
 
 		}
 		void InputChar(WPARAM c, LPARAM)override {
@@ -149,6 +150,7 @@ namespace tignear::sakura {
 			stdex::tstring cmd,
 			
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+			unsigned char ambiguous_size,
 			const ansi::ColorTable& c_sys,
 			const ansi::ColorTable& c_256,
 			bool use_terminal_echoback,
@@ -160,7 +162,7 @@ namespace tignear::sakura {
 			attr.frColor.color_system = 30;
 			attr.bgColor.type = ColorType::ColorSystem;
 			attr.bgColor.color_system = 47;
-			auto r = std::make_shared<ConPTYShellContext>(iocpmgr, c_sys, c_256, use_terminal_echoback, fontmap, fontsize,attr);
+			auto r = std::make_shared<ConPTYShellContext>(iocpmgr, ambiguous_size, c_sys, c_256, use_terminal_echoback, fontmap, fontsize,attr);
 			
 			if (!Init(r,exe,cmd,opt)) {
 				r.reset();

@@ -21,6 +21,7 @@ namespace tignear::sakura {
 			stdex::tstring executable,
 			stdex::tstring,
 			std::shared_ptr<iocp::IOCPMgr>,
+			unsigned char ambiguous_size,
 			unsigned int codepage,
 			std::unordered_map<unsigned int, uint32_t>,
 			std::unordered_map<unsigned int, uint32_t>,
@@ -31,6 +32,7 @@ namespace tignear::sakura {
 		);
 		ShellExecuteExShellContext(
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+			unsigned char ambiguous_size,
 			unsigned int codepage,
 			const ansi::ColorTable& c_sys,
 			const ansi::ColorTable& c_256,
@@ -40,6 +42,7 @@ namespace tignear::sakura {
 			Attribute& def
 		):BasicShellContext(
 				iocpmgr,
+				ambiguous_size,
 				codepage,
 				c_sys,
 				c_256,

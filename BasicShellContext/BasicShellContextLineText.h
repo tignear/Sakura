@@ -20,11 +20,14 @@ namespace tignear::sakura {
 		std::list<AttributeTextImpl>::iterator m_elem;
 	};
 	class BasicShellContextLineText:public ShellContext::attrtext_line {
+		const unsigned char m_ambiguous_size;//MAGIC_NUMBER
+
 		std::list<AttributeTextImpl>& Value();
 		std::shared_ptr<void> m_resource;
 
 	public:
-		BasicShellContextLineText(const ansi::ColorTable& ct_sys,const ansi::ColorTable& ct_256, const std::vector<std::wstring>& fontmap):
+		BasicShellContextLineText(unsigned char ambiguous_size,const ansi::ColorTable& ct_sys,const ansi::ColorTable& ct_256, const std::vector<std::wstring>& fontmap):
+			m_ambiguous_size(ambiguous_size),
 			m_ct_sys(ct_sys),
 			m_ct_256(ct_256),
 			m_fontmap(fontmap){}
@@ -34,6 +37,7 @@ namespace tignear::sakura {
 		size_t RemoveAfter(size_t p);
 		size_t RemoveBefore(size_t p);
 		static inline std::pair<int32_t,uint32_t> EAWtoIndex(const icu::UnicodeString&, uint32_t eaw,unsigned char ambiguous_size);
+		static inline std::tuple<size_t, size_t, std::list<AttributeTextImpl>::iterator,int32_t,uint32_t> EAWtoIndexMulti(std::list<AttributeTextImpl>& ustr, size_t eaw, unsigned char ambiguous_size);
 
 		ShellContext::attrtext_iterator begin() override;
 		ShellContext::attrtext_iterator end() override;

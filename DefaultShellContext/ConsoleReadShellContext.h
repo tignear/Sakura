@@ -12,6 +12,7 @@
 #include <ShellContext.h>
 #include <unordered_map>
 #include <algorithm>
+#include <mutex>
 #undef min
 namespace tignear::sakura::conread {
 	class ConsoleReadShellContext:public ShellContext {
@@ -21,7 +22,7 @@ namespace tignear::sakura::conread {
 		};
 		thread::MessageQueue<WinMessage> m_message;
 		HANDLE m_child_process;
-
+		std::recursive_mutex m_mutex;
 		std::thread m_close_watch_thread;
 		std::thread m_worker_thread;
 		DWORD m_child_pid;
@@ -30,7 +31,6 @@ namespace tignear::sakura::conread {
 		mutable std::unordered_map<std::uintptr_t, std::function<void(ShellContext*)>> m_exit_listeners;
 		MappingView m_view;
 		//fields
-		HANDLE m_win_mutex = NULL;
 		std::atomic<std::thread::id> m_lock_holder;
 		unsigned int m_lock_count = 0;
 		const std::wstring m_default_font;
@@ -324,17 +324,7 @@ namespace tignear::sakura::conread {
 				}
 				return sei.hProcess;
 			}()),
-			m_child_pid(GetProcessId(m_child_process)),
-			m_win_mutex([this]() {
-				using namespace stdex;
-				tstring mutex_name = _T("tignear.sakura.ConsoleReadShellContext.mutex.");
-				auto str_process_id = to_tstring(GetCurrentProcessId());
-				auto str_process_cnt = to_tstring(reinterpret_cast<uintptr_t>(this));
-				mutex_name += str_process_id;
-				mutex_name += _T(".");
-				mutex_name += str_process_cnt;
-				return CreateMutexEx(NULL, mutex_name.c_str(), NULL, MUTEX_ALL_ACCESS);
-		}())
+			m_child_pid(GetProcessId(m_child_process))
 		{
 			WaitForInputIdle(m_child_process,INFINITE);
 			while (!(m_child_hwnd)) {
@@ -375,7 +365,6 @@ namespace tignear::sakura::conread {
 		void Terminate()override;
 		LRESULT OnMessage(UINT,LPARAM lparam)override;
 		~ConsoleReadShellContext() {
-			CloseHandle(m_win_mutex);
 		};//no lock call.bat not require lock.
 	};
 }

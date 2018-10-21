@@ -60,6 +60,7 @@ namespace tignear::sakura {
 
 		BasicShellContext(
 			std::shared_ptr<iocp::IOCPMgr> iocpmgr,
+			unsigned char ambiguous_size,
 			unsigned int codepage,
 			const ansi::ColorTable& c_sys,
 			const ansi::ColorTable& c_256,
@@ -72,7 +73,7 @@ namespace tignear::sakura {
 			m_codepage(codepage),
 			m_fr_color(SolveColor(def.frColor,c_sys,c_256)),
 			m_bg_color(SolveColor(def.bgColor, c_sys, c_256)),
-			m_document(BasicShellContextDocument(c_sys, c_256, fontmap, def, std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this), std::placeholders::_1, std::placeholders::_2), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this), std::placeholders::_1))),
+			m_document(BasicShellContextDocument(ambiguous_size,c_sys, c_256, fontmap, def, std::bind(&BasicShellContext::NotifyLayoutChange, std::ref(*this), std::placeholders::_1, std::placeholders::_2), std::bind(&BasicShellContext::NotifyTextChange, std::ref(*this), std::placeholders::_1))),
 			m_use_terminal_echoback(use_terminal_echoback),
 			m_fontmap(fontmap),
 			m_fontsize(fontsize),
